@@ -536,23 +536,28 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
                 setMessages((prev) => [...prev, snapshotMessage]);
               }
 
+              const safeStringify = (val) => {
+                try {
+                  return JSON.stringify(val);
+                } catch {
+                  return '[unserializable]';
+                }
+              };
+
               const resultStr =
                 typeof result === 'object'
                   ? call.name === 'takeSnapshot'
                     ? 'Snapshot taken successfully'
-                    : JSON.stringify(result)
-                  : result;
+                    : safeStringify(result)
+                  : String(result ?? '');
 
               // Track function call execution in PostHog
               posthog.capture('ai_function_call', {
                 $ai_trace_id: AI_CONVERSATION_ID,
                 ai_function_name: call.name,
-                ai_function_args: JSON.stringify(call.args || {}),
+                ai_function_args: safeStringify(call.args || {}),
                 ai_function_status: 'success',
-                ai_function_result:
-                  typeof resultStr === 'string'
-                    ? resultStr.slice(0, 2000)
-                    : String(resultStr),
+                ai_function_result: resultStr.slice(0, 2000),
                 ai_response_id: responseId,
                 ai_user_prompt: messageText
               });
@@ -573,12 +578,19 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
               console.error(`Error executing function ${call.name}:`, error);
 
               // Track failed function call in PostHog
+              const safeStringifyErr = (val) => {
+                try {
+                  return JSON.stringify(val);
+                } catch {
+                  return '[unserializable]';
+                }
+              };
               posthog.capture('ai_function_call', {
                 $ai_trace_id: AI_CONVERSATION_ID,
                 ai_function_name: call.name,
-                ai_function_args: JSON.stringify(call.args || {}),
+                ai_function_args: safeStringifyErr(call.args || {}),
                 ai_function_status: 'error',
-                ai_function_result: error.message,
+                ai_function_result: error?.message ?? String(error),
                 ai_response_id: responseId,
                 ai_user_prompt: messageText
               });
@@ -810,9 +822,9 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
       ai_rating: rating,
       ai_user_prompt: userPrompt || '',
       ai_text_response: aiTextResponse || '',
-      ai_function_calls: JSON.stringify(functionCalls),
+      ai_function_calls: functionCalls,
       ai_function_count: functionCalls.length,
-      ai_function_names: functionCalls.map((fc) => fc.name).join(','),
+      ai_function_names: functionCalls.map((fc) => fc.name).join(', '),
       ai_had_errors: functionCalls.some((fc) => fc.status === 'error'),
       $ai_model: AI_MODEL_ID
     });

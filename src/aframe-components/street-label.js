@@ -25,10 +25,8 @@ AFRAME.registerComponent('street-label', {
 
     // Subscribe to units preference changes
     useStore.subscribe((state) => {
-      // this.units = 'imperial';
       if (this.units !== state.unitsPreference) {
         this.units = state.unitsPreference;
-        // this.units = 'imperial';
         this.updateLabels();
       }
     });

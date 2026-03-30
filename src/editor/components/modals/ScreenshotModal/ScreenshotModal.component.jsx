@@ -220,15 +220,7 @@ function ScreenshotModal() {
       return;
     }
 
-    // Check if user can use image feature
-    const canUse = await canUseImageFeature(currentUser);
-    if (!canUse) {
-      startCheckout('image');
-      return;
-    }
-
     const targetModel = modelKey || selectedModel;
-    const startTime = Date.now();
 
     // Clear any previous error state for this model
     setRenderErrors((prev) => {
@@ -237,19 +229,28 @@ function ScreenshotModal() {
       return next;
     });
 
-    // Update rendering state for this specific model
+    // Update rendering state immediately (no timer yet — show "Sending...")
     setRenderingStates((prev) => ({ ...prev, [targetModel]: true }));
-    setRenderTimers((prev) => ({
-      ...prev,
-      [targetModel]: { startTime, elapsed: 0 }
-    }));
 
-    // For single render mode, set global states
+    // For single render mode, set global states (no timer yet)
     if (renderMode === '1x') {
       setIsGeneratingAI(true);
       setRenderProgress(0);
-      setRenderStartTime(startTime);
+      setRenderStartTime(null);
       setElapsedTime(0);
+    }
+
+    // Check if user can use image feature (after setting states so UI shows "Sending...")
+    const canUse = await canUseImageFeature(currentUser);
+    if (!canUse) {
+      // Reset states before returning
+      setRenderingStates((prev) => ({ ...prev, [targetModel]: false }));
+      if (renderMode === '1x') {
+        setIsGeneratingAI(false);
+        setRenderStartTime(null);
+      }
+      startCheckout('image');
+      return;
     }
 
     try {
@@ -299,6 +300,16 @@ function ScreenshotModal() {
       }
 
       const sceneId = STREET.utils.getCurrentSceneId();
+
+      // Now that image is prepared and ready to send, start the timer
+      const startTime = Date.now();
+      setRenderTimers((prev) => ({
+        ...prev,
+        [targetModel]: { startTime, elapsed: 0 }
+      }));
+      if (renderMode === '1x') {
+        setRenderStartTime(startTime);
+      }
 
       // Route to the correct cloud function based on model type
       let result;
@@ -712,9 +723,10 @@ function ScreenshotModal() {
                     type="checkbox"
                     checked={useMixedModels}
                     onChange={(e) => setUseMixedModels(e.target.checked)}
-                    disabled={Object.values(renderingStates).some(
-                      (state) => state
-                    )}
+                    disabled={
+                      isGeneratingAI ||
+                      Object.values(renderingStates).some((state) => state)
+                    }
                   />
                   <div className={styles.toggleSwitch}></div>
                 </label>
@@ -722,9 +734,10 @@ function ScreenshotModal() {
                   <AIModelSelector
                     value={selectedModel}
                     onChange={setSelectedModel}
-                    disabled={Object.values(renderingStates).some(
-                      (state) => state
-                    )}
+                    disabled={
+                      isGeneratingAI ||
+                      Object.values(renderingStates).some((state) => state)
+                    }
                   />
                 )}
               </div>
@@ -766,19 +779,27 @@ function ScreenshotModal() {
               >
                 {isGeneratingAI ? (
                   <div className={styles.renderingContent}>
-                    <div className={styles.progressContainer}>
-                      <div
-                        className={styles.progressBar}
-                        style={{ width: `${renderProgress}%` }}
-                      />
-                      <div className={styles.progressStripes} />
-                    </div>
-                    <span className={styles.progressText}>
-                      {`${elapsedTime}/${AI_MODELS[selectedModel]?.estimatedTime || 30}s`}
-                    </span>
-                    {showOvertimeWarning && (
-                      <span className={styles.overtimeText}>
-                        Generation taking longer than expected.
+                    {renderStartTime ? (
+                      <>
+                        <div className={styles.progressContainer}>
+                          <div
+                            className={styles.progressBar}
+                            style={{ width: `${renderProgress}%` }}
+                          />
+                          <div className={styles.progressStripes} />
+                        </div>
+                        <span className={styles.progressText}>
+                          {`${elapsedTime}/${AI_MODELS[selectedModel]?.estimatedTime || 30}s`}
+                        </span>
+                        {showOvertimeWarning && (
+                          <span className={styles.overtimeText}>
+                            Generation taking longer than expected.
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className={styles.progressText}>
+                        Sending request...
                       </span>
                     )}
                   </div>
@@ -1055,7 +1076,11 @@ function ScreenshotModal() {
                             {isRendering ? (
                               <div className={styles.renderingPlaceholder}>
                                 <div className={styles.spinner}></div>
-                                <span>Rendering...</span>
+                                <span>
+                                  {timer?.startTime
+                                    ? 'Rendering...'
+                                    : 'Sending...'}
+                                </span>
                               </div>
                             ) : imageUrl ? (
                               <>

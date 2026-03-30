@@ -222,6 +222,14 @@ function ScreenshotModal() {
 
     const targetModel = modelKey || selectedModel;
 
+    // Guard against re-entry (e.g. double-click before state flushes)
+    if (
+      renderingStates[targetModel] ||
+      (renderMode === '1x' && isGeneratingAI)
+    ) {
+      return;
+    }
+
     // Clear any previous error state for this model
     setRenderErrors((prev) => {
       const next = { ...prev };

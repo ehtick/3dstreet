@@ -280,10 +280,10 @@ const generateReplicateImage = functions
         // Seedream uses image_input as an array and different parameters (optional)
         if (imageUrl) {
           modelInput.image_input = [imageUrl];
-          modelInput.aspect_ratio = 'match_input_image';
         }
         modelInput.size = '2K';
-        modelInput.output_format = 'jpg';
+        // Note: output_format and aspect_ratio are omitted for seedream-4.5
+        // as the API uses default aspect_ratio of match_input_image
         // Remove parameters that Seedream doesn't use
         delete modelInput.guidance;
         delete modelInput.num_inference_steps;

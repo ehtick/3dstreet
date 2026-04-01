@@ -7,6 +7,7 @@ import mixinCatalog from '../../catalog.json';
 
 // Base asset path for images
 const assetBasePath = 'https://assets.3dstreet.app/';
+// const assetBasePath = 'http://upd.streetplan.net:8089/'; // use this path if none specified in index.html assets tag
 
 /**
  * Gets all mixin data divided into groups, from a-mixin DOM elements

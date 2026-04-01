@@ -775,7 +775,8 @@ AFRAME.registerComponent('street-label', {
 
       let widthText;
       if (this.units === 'metric') {
-        widthText = parseFloat(width).toFixed(1).replace(/^0+/, '') + '';
+        widthText =
+          (Math.round(width * 10) / 10).toString().replace(/^0+/, '') + '';
       } else if (this.units === 'imperial') {
         const widthFeet = width * 3.28084;
         widthText = Math.round(widthFeet * 2) / 2 + '';
@@ -814,7 +815,8 @@ AFRAME.registerComponent('street-label', {
 
       let widthText;
       if (this.units === 'metric') {
-        widthText = parseFloat(width).toFixed(1) + '';
+        widthText =
+          (Math.round(width * 10) / 10).toString().replace(/^0+/, '') + '';
       } else if (this.units === 'imperial') {
         const widthFeet = width * 3.28084;
         widthText = Math.round(widthFeet * 2) / 2 + '';
@@ -868,7 +870,8 @@ AFRAME.registerComponent('street-label', {
 
       let widthText;
       if (this.units === 'metric') {
-        widthText = parseFloat(width).toFixed(1) + '';
+        widthText =
+          (Math.round(width * 10) / 10).toString().replace(/^0+/, '') + '';
       } else if (this.units === 'imperial') {
         const widthFeet = width * 3.28084;
         widthText = Math.round(widthFeet * 2) / 2 + '';

@@ -590,6 +590,14 @@ AFRAME.registerComponent('managed-street', {
       if (currentSegment.type === previousSegment.type) {
         variantString = 'dashed-stripe';
       }
+      if (
+        (currentSegment.type === 'bus-lane' &&
+          previousSegment.type === 'drive-lane') ||
+        (currentSegment.type === 'drive-lane' &&
+          previousSegment.type === 'bus-lane')
+      ) {
+        variantString = 'dashed-stripe';
+      }
 
       // Drive lane and turn lane combination would go here if needed
     }

@@ -1386,226 +1386,226 @@ const STREETPLAN_OBJECT_TO_GENERATED_CLONES_MAPPING = {
   usedcars: '',
   'vivo sign': '',
   '10 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-10mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '10 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-10mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '12 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-12mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '12 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-12mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '15 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-15mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '15 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-15mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '20 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-20mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '20 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-20mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '25 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-25mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '25 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-25mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '30 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-30mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '30 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-30mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '35 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-35mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '35 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-35mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '40 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-40mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '40 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-40mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '45 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-45mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '45 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-45mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '50 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-50mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '50 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-50mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '55 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-55mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '55 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-55mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '60 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-60mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '60 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-60mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '65 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-65mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '65 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-65mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '70 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-70mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '70 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-70mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '75 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-75mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '75 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-75mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '80 mph': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-80mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },
   '80 mph nopole': {
-    mode: 'fixed',
+    mode: 'fit',
     modelsArray: 'sp-sign-speed-limit-80mph',
-    spacing: 40,
+    spacing: 50,
     count: 10,
     facing: 180
   },

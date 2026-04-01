@@ -7,7 +7,7 @@ if (typeof STREET !== 'undefined') {
 }
 
 const assetBasePath = 'https://assets.3dstreet.app/'; // use this path if none specified in index.html assets tag
-// const assetBasePath = 'http://upd.streetplan.net:8089/'; // use this path if none specified in index.html assets tag
+// const assetBasePath = 'http://upd.streetplan.net:8089/';
 
 function buildAssetHTML(assetUrl, categories) {
   console.log('[street]', 'Using street assets from', assetUrl);

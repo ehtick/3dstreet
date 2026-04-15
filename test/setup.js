@@ -78,6 +78,31 @@ vi.mock('../../src/generator/main.js', () => ({
   }
 }));
 
+// jsdom doesn't implement URL.createObjectURL / revokeObjectURL, and its
+// fetch doesn't understand blob: URLs. Shim both so tests that round-trip
+// Blob -> object URL -> fetch -> Blob work in the test environment.
+if (typeof URL.createObjectURL !== 'function') {
+  const blobStore = new Map();
+  URL.createObjectURL = (blob) => {
+    const url = `blob:mock/${Math.random().toString(36).slice(2)}`;
+    blobStore.set(url, blob);
+    return url;
+  };
+  URL.revokeObjectURL = (url) => {
+    blobStore.delete(url);
+  };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : input?.url;
+    if (typeof url === 'string' && url.startsWith('blob:mock/')) {
+      const blob = blobStore.get(url);
+      if (!blob) return Promise.reject(new Error('blob URL not found'));
+      return Promise.resolve(new Response(blob));
+    }
+    return originalFetch(input, init);
+  };
+}
+
 // Mock environment variables
 process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_mock';
 process.env.STRIPE_MONTHLY_PRICE_ID = 'price_monthly_mock';

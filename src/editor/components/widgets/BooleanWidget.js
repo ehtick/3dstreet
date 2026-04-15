@@ -4,8 +4,7 @@ import classNames from 'classnames';
 
 export default class BooleanWidget extends React.Component {
   static propTypes = {
-    componentname: PropTypes.string.isRequired,
-    entity: PropTypes.object,
+    id: PropTypes.string,
     name: PropTypes.string.isRequired,
     onChange: PropTypes.func,
     value: PropTypes.bool
@@ -36,8 +35,6 @@ export default class BooleanWidget extends React.Component {
   };
 
   render() {
-    const id = this.props.componentname + '.' + this.props.name;
-
     const checkboxClasses = classNames({
       checkboxAnim: true,
       checked: this.state.value
@@ -46,13 +43,13 @@ export default class BooleanWidget extends React.Component {
     return (
       <div className={checkboxClasses} onClick={this.onChange}>
         <input
-          id={id}
+          id={this.props.id}
           type="checkbox"
           checked={this.state.value}
           value={this.state.value}
           onChange={() => null}
         />
-        <label htmlFor={id} onClick={(e) => e.stopPropagation()} />
+        <label htmlFor={this.props.id} onClick={(e) => e.stopPropagation()} />
       </div>
     );
   }

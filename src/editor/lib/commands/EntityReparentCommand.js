@@ -32,11 +32,13 @@ export class EntityReparentCommand extends Command {
       // losslessly, including correct component dependency resolution.
       this.entityData = STREET.utils.getElementData(entity);
 
-      // Store world position and quaternion before reparenting
+      // Store world position, quaternion, and scale before reparenting
       this.worldPosition = new THREE.Vector3();
       this.worldQuaternion = new THREE.Quaternion();
+      this.worldScale = new THREE.Vector3();
       entity.object3D.getWorldPosition(this.worldPosition);
       entity.object3D.getWorldQuaternion(this.worldQuaternion);
+      entity.object3D.getWorldScale(this.worldScale);
     }
   }
 
@@ -55,9 +57,19 @@ export class EntityReparentCommand extends Command {
       .invert()
       .multiply(this.worldQuaternion);
 
+    // Calculate the new local scale
+    const parentWorldScale = new THREE.Vector3();
+    newParent.object3D.getWorldScale(parentWorldScale);
+    const newLocalScale = new THREE.Vector3(
+      this.worldScale.x / parentWorldScale.x,
+      this.worldScale.y / parentWorldScale.y,
+      this.worldScale.z / parentWorldScale.z
+    );
+
     // Apply the new local transform to the entity
     entity.object3D.position.copy(newLocalPosition);
     entity.object3D.quaternion.copy(newLocalQuaternion);
+    entity.object3D.scale.copy(newLocalScale);
 
     // Update A-Frame attributes to reflect the changes
     entity.setAttribute('position', {
@@ -70,11 +82,28 @@ export class EntityReparentCommand extends Command {
       newLocalQuaternion,
       'YXZ'
     );
-    entity.setAttribute('rotation', {
-      x: THREE.MathUtils.radToDeg(euler.x),
-      y: THREE.MathUtils.radToDeg(euler.y),
-      z: THREE.MathUtils.radToDeg(euler.z)
-    });
+    const rotX = THREE.MathUtils.radToDeg(euler.x);
+    const rotY = THREE.MathUtils.radToDeg(euler.y);
+    const rotZ = THREE.MathUtils.radToDeg(euler.z);
+    if (rotX === 0 && rotY === 0 && rotZ === 0) {
+      entity.removeAttribute('rotation');
+    } else {
+      entity.setAttribute('rotation', { x: rotX, y: rotY, z: rotZ });
+    }
+
+    if (
+      newLocalScale.x === 1 &&
+      newLocalScale.y === 1 &&
+      newLocalScale.z === 1
+    ) {
+      entity.removeAttribute('scale');
+    } else {
+      entity.setAttribute('scale', {
+        x: newLocalScale.x,
+        y: newLocalScale.y,
+        z: newLocalScale.z
+      });
+    }
   }
 
   execute(nextCommandCallback) {

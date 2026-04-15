@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 
 export default class InputWidget extends React.Component {
   static propTypes = {
-    componentname: PropTypes.string,
-    entity: PropTypes.object,
+    id: PropTypes.string,
     name: PropTypes.string.isRequired,
     onChange: PropTypes.func,
     value: PropTypes.any,
@@ -37,10 +36,12 @@ export default class InputWidget extends React.Component {
   render() {
     return (
       <input
+        id={this.props.id}
         type="text"
         className="string"
         value={this.state.value || ''}
         onChange={this.onChange}
+        spellCheck="false"
       />
     );
   }

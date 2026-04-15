@@ -1,79 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Events from '../../lib/Events';
-
-function getUrlFromId(assetId) {
-  return (
-    assetId.length > 1 &&
-    document.querySelector(assetId) &&
-    document.querySelector(assetId).getAttribute('src')
-  );
-}
-
-function GetFilename(url) {
-  if (url) {
-    var m = url.toString().match(/.*\/(.+?)\./);
-    if (m && m.length > 1) {
-      return m[1];
-    }
-  }
-  return '';
-}
-
-function insertNewAsset(type, id, src) {
-  var element = null;
-  switch (type) {
-    case 'img':
-      element = document.createElement('img');
-      element.id = id;
-      element.src = src;
-      break;
-  }
-  if (element) {
-    document.getElementsByTagName('a-assets')[0].appendChild(element);
-  }
-}
-
-function insertOrGetImageAsset(src) {
-  var id = GetFilename(src);
-  // Search for already loaded asset by src
-  var element = document.querySelector("a-assets > img[src='" + src + "']");
-
-  if (element) {
-    id = element.id;
-  } else {
-    // Check if first char of the ID is a number (Non a valid ID)
-    // In that case a 'i' preffix will be added
-    if (!isNaN(parseInt(id[0], 10))) {
-      id = 'i' + id;
-    }
-    if (document.getElementById(id)) {
-      var i = 1;
-      while (document.getElementById(id + '_' + i)) {
-        i++;
-      }
-      id += '_' + i;
-    }
-    insertNewAsset('img', id, src);
-  }
-
-  return id;
-}
+import { getUrlFromId } from '../../lib/assetsUtils';
 
 export default class TextureWidget extends React.Component {
   static propTypes = {
-    componentname: PropTypes.string,
-    entity: PropTypes.object,
-    mapName: PropTypes.string,
+    id: PropTypes.string,
     name: PropTypes.string.isRequired,
     onChange: PropTypes.func,
     value: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
   };
 
   static defaultProps = {
-    value: '',
-    mapName: 'nomap',
-    dataURL: ''
+    value: ''
   };
 
   constructor(props) {
@@ -201,10 +140,6 @@ export default class TextureWidget extends React.Component {
         return;
       }
       var value = image.value;
-      if (image.type !== 'asset') {
-        var assetId = insertOrGetImageAsset(image.src);
-        value = '#' + assetId;
-      }
 
       if (this.props.onChange) {
         this.props.onChange(this.props.name, value);
@@ -230,6 +165,7 @@ export default class TextureWidget extends React.Component {
     return (
       <span className="texture">
         <input
+          id={this.props.id}
           className="map_value string"
           type="text"
           title={hint}

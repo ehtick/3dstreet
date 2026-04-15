@@ -2,32 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Events from '../../lib/Events';
 import Modal from '@shared/components/Modal/Modal.jsx';
-import { insertNewAsset } from '../../lib/assetsUtils';
-
-function getFilename(url, converted = false) {
-  var filename = url.split('/').pop();
-  if (converted) {
-    filename = getValidId(filename);
-  }
-  return filename;
-}
-
-function isValidId(id) {
-  // The correct re should include : and . but A-frame seems to fail while accessing them
-  var re = /^[A-Za-z]+[\w-]*$/;
-  return re.test(id);
-}
-
-function getValidId(name) {
-  // info.name.replace(/\.[^/.]+$/, '').replace(/\s+/g, '')
-  return name
-    .split('.')
-    .shift()
-    .replace(/\s/, '-')
-    .replace(/^\d+\s*/, '')
-    .replace(/[\W]/, '')
-    .toLowerCase();
-}
+import {
+  getFilename,
+  getIdFromUrl,
+  insertNewAsset,
+  isValidId
+} from '../../lib/assetsUtils';
 
 export default class ModalTextures extends React.Component {
   static propTypes = {
@@ -157,15 +137,20 @@ export default class ModalTextures extends React.Component {
     var self = this;
     function onImageLoaded(img) {
       var src = self.preview.current.src;
+      var name = getFilename(src, true);
+      var existingAssetId = getIdFromUrl(src);
+      if (existingAssetId) {
+        name = existingAssetId;
+      }
       self.setState({
         preview: {
           width: self.preview.current.naturalWidth,
           height: self.preview.current.naturalHeight,
           src: src,
           id: '',
-          name: getFilename(src, true),
+          name: name,
           filename: getFilename(src),
-          type: 'new',
+          type: existingAssetId ? 'asset' : 'new',
           loaded: true,
           value: 'url(' + src + ')'
         }
@@ -178,12 +163,6 @@ export default class ModalTextures extends React.Component {
     this.imageName.current.focus();
   };
 
-  onNameKeyUp = (event) => {
-    if (event.keyCode === 13 && this.isValidAsset()) {
-      this.addNewAsset();
-    }
-  };
-
   onNameChanged = (event) => {
     var state = this.state.preview;
     state.name = event.target.value;
@@ -192,6 +171,7 @@ export default class ModalTextures extends React.Component {
 
   toggleNewDialog = () => {
     this.setState({ addNewDialogOpened: !this.state.addNewDialogOpened });
+    this.clear();
   };
 
   clear() {
@@ -215,23 +195,19 @@ export default class ModalTextures extends React.Component {
     this.setState({ newUrl: e.target.value });
   };
 
-  isValidAsset() {
-    let validUrl = isValidId(this.state.preview.name);
-    let validAsset = this.state.preview.loaded && validUrl;
-    return validAsset;
-  }
-
   addNewAsset = () => {
-    var self = this;
+    if (this.state.preview.type === 'asset') {
+      return;
+    }
+
     insertNewAsset(
       'img',
       this.state.preview.name,
       this.state.preview.src,
-      true,
-      function () {
-        self.generateFromAssets();
-        self.setState({ addNewDialogOpened: false });
-        self.clear();
+      () => {
+        this.generateFromAssets();
+        this.setState({ addNewDialogOpened: false });
+        this.clear();
       }
     );
   };
@@ -243,15 +219,20 @@ export default class ModalTextures extends React.Component {
   renderRegistryImages() {
     var self = this;
     let selectSample = function (image) {
+      let name = getFilename(image.name, true);
+      const existingAssetId = getIdFromUrl(image.src);
+      if (existingAssetId) {
+        name = existingAssetId;
+      }
       self.setState({
         preview: {
           width: image.width,
           height: image.height,
           src: image.src,
           id: '',
-          name: getFilename(image.name, true),
+          name: name,
           filename: getFilename(image.src),
-          type: 'registry',
+          type: existingAssetId ? 'asset' : 'registry',
           loaded: true,
           value: 'url(' + image.src + ')'
         }
@@ -291,8 +272,14 @@ export default class ModalTextures extends React.Component {
     let loadedTextures = this.state.loadedTextures;
     let preview = this.state.preview;
 
-    let validUrl = isValidId(this.state.preview.name);
-    let validAsset = this.isValidAsset();
+    let validId = isValidId(this.state.preview.name);
+    let assetIdTaken =
+      validId && !!document.getElementById(this.state.preview.name);
+    let validAsset =
+      this.state.preview.loaded &&
+      validId &&
+      !assetIdTaken &&
+      this.state.preview.type !== 'asset';
 
     let addNewAssetButton = this.state.addNewDialogOpened
       ? 'BACK'
@@ -320,6 +307,7 @@ export default class ModalTextures extends React.Component {
                     value={this.state.newUrl}
                     onChange={this.onUrlChange}
                     onKeyUp={this.onNewUrl}
+                    spellCheck="false"
                   />
                 </li>
                 <li>
@@ -343,13 +331,33 @@ export default class ModalTextures extends React.Component {
               <input
                 ref={this.imageName}
                 className={
-                  this.state.preview.name.length > 0 && !validUrl ? 'error' : ''
+                  this.state.preview.name.length > 0 &&
+                  (!validId || assetIdTaken)
+                    ? 'error'
+                    : ''
                 }
+                readOnly={preview.type === 'asset'}
                 type="text"
                 value={this.state.preview.name}
                 onChange={this.onNameChanged}
-                onKeyUp={this.onNameKeyUp}
+                onKeyUp={(event) => {
+                  if (event.keyCode === 13 && validAsset) {
+                    this.addNewAsset();
+                  }
+                }}
+                spellCheck="false"
               />
+              {preview.type !== 'asset' && assetIdTaken && (
+                <div className="iderror">
+                  Name already taken by another asset or entity
+                </div>
+              )}
+              {this.state.preview.name.length > 0 && !validId && (
+                <div className="iderror">Name is not valid</div>
+              )}
+              {preview.type === 'asset' && (
+                <div className="iderror">Texture already loaded</div>
+              )}
               <img
                 ref={this.preview}
                 width="155px"

@@ -41,6 +41,7 @@ export default class InputWidget extends React.Component {
         className="string"
         value={this.state.value || ''}
         onChange={this.onChange}
+        spellCheck="false"
       />
     );
   }

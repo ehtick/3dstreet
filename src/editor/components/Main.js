@@ -24,8 +24,6 @@ import useStore from '@/store';
 import { AIChatProvider } from '../contexts/AIChatContext';
 import AIChatPanel from './scenegraph/AIChatPanel';
 
-THREE.ImageUtils.crossOrigin = '';
-
 // Define the libraries array as a constant outside of the component
 const GOOGLE_MAPS_LIBRARIES = ['places'];
 

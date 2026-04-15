@@ -380,10 +380,7 @@ export function Viewport(inspector) {
 
   Events.on('entityupdate', (detail) => {
     const object = detail.entity.object3D;
-    if (
-      inspector.selected === object &&
-      inspector.selectedEntity.object3DMap.mesh
-    ) {
+    if (inspector.selected === object) {
       selectionBox.setFromObject(inspector.selected);
       hoverBox.visible = false;
     }
@@ -513,20 +510,6 @@ export function Viewport(inspector) {
 
   Events.on('entityupdate', (detail) => {
     const object = detail.entity.object3D;
-    if (inspector.selected === object) {
-      // Hack because object3D always has geometry :(
-      if (
-        object.geometry &&
-        ((object.geometry.vertices && object.geometry.vertices.length > 0) ||
-          (object.geometry.attributes &&
-            object.geometry.attributes.position &&
-            object.geometry.attributes.position.array.length))
-      ) {
-        selectionBox.setFromObject(object);
-        hoverBox.visible = false;
-      }
-    }
-
     transformControls.update();
     if (object instanceof THREE.PerspectiveCamera) {
       object.updateProjectionMatrix();

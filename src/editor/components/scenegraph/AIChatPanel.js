@@ -536,6 +536,32 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
                 setMessages((prev) => [...prev, snapshotMessage]);
               }
 
+              const safeStringify = (val) => {
+                try {
+                  return JSON.stringify(val);
+                } catch {
+                  return '[unserializable]';
+                }
+              };
+
+              const resultStr =
+                typeof result === 'object'
+                  ? call.name === 'takeSnapshot'
+                    ? 'Snapshot taken successfully'
+                    : safeStringify(result)
+                  : String(result ?? '');
+
+              // Track function call execution in PostHog
+              posthog.capture('ai_function_call', {
+                $ai_trace_id: AI_CONVERSATION_ID,
+                ai_function_name: call.name,
+                ai_function_args: safeStringify(call.args || {}),
+                ai_function_status: 'success',
+                ai_function_result: resultStr.slice(0, 2000),
+                ai_response_id: responseId,
+                ai_user_prompt: messageText
+              });
+
               // Update function call status to success
               setMessages((prev) =>
                 prev.map((msg) =>
@@ -543,18 +569,32 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
                     ? {
                         ...msg,
                         status: 'success',
-                        result:
-                          typeof result === 'object'
-                            ? call.name === 'takeSnapshot'
-                              ? 'Snapshot taken successfully'
-                              : JSON.stringify(result)
-                            : result
+                        result: resultStr
                       }
                     : msg
                 )
               );
             } catch (error) {
               console.error(`Error executing function ${call.name}:`, error);
+
+              // Track failed function call in PostHog
+              const safeStringifyErr = (val) => {
+                try {
+                  return JSON.stringify(val);
+                } catch {
+                  return '[unserializable]';
+                }
+              };
+              posthog.capture('ai_function_call', {
+                $ai_trace_id: AI_CONVERSATION_ID,
+                ai_function_name: call.name,
+                ai_function_args: safeStringifyErr(call.args || {}),
+                ai_function_status: 'error',
+                ai_function_result: error?.message ?? String(error),
+                ai_response_id: responseId,
+                ai_user_prompt: messageText
+              });
+
               // Update function call status to error
               setMessages((prev) =>
                 prev.map((msg) =>
@@ -724,6 +764,41 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
 
   // Function to handle response rating
   const handleResponseRating = (responseId, rating) => {
+    // Gather context about the rated response from message history
+    const relatedMessages = messages.filter(
+      (msg) => msg.responseId === responseId
+    );
+    const functionCalls = relatedMessages
+      .filter((msg) => msg.type === 'functionCall')
+      .map((msg) => ({
+        name: msg.name,
+        args: msg.args,
+        status: msg.status,
+        result:
+          typeof msg.result === 'string'
+            ? msg.result.slice(0, 500)
+            : String(msg.result)
+      }));
+    const aiTextResponse = relatedMessages.find(
+      (msg) => msg.role === 'assistant'
+    )?.content;
+
+    // Find the user message that preceded this response.
+    // User messages don't have responseId, so find the last user message
+    // before the first message with this responseId.
+    const firstResponseIdx = messages.findIndex(
+      (msg) => msg.responseId === responseId
+    );
+    let userPrompt = '';
+    if (firstResponseIdx > 0) {
+      for (let i = firstResponseIdx - 1; i >= 0; i--) {
+        if (messages[i].role === 'user') {
+          userPrompt = messages[i].content;
+          break;
+        }
+      }
+    }
+
     // Log the rating to PostHog using the existing trace structure with user feedback
     posthog.capture('$ai_generation', {
       $ai_model: AI_MODEL_ID,
@@ -738,6 +813,20 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
               : 'This response was not helpful'
         }
       ]
+    });
+
+    // Capture detailed feedback event with full context
+    posthog.capture('ai_response_rating', {
+      $ai_trace_id: AI_CONVERSATION_ID,
+      ai_response_id: responseId,
+      ai_rating: rating,
+      ai_user_prompt: userPrompt || '',
+      ai_text_response: aiTextResponse || '',
+      ai_function_calls: functionCalls,
+      ai_function_count: functionCalls.length,
+      ai_function_names: functionCalls.map((fc) => fc.name).join(', '),
+      ai_had_errors: functionCalls.some((fc) => fc.status === 'error'),
+      $ai_model: AI_MODEL_ID
     });
 
     // Mark the response as rated in our local state

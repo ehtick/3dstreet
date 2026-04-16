@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getVertexAI } from 'firebase/vertexai';
+import { getAI, VertexAIBackend } from 'firebase/ai';
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -20,7 +20,7 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
-const vertexAI = getVertexAI(app, { location: 'global' });
+const ai = getAI(app, { backend: new VertexAIBackend() });
 
 // Admin utilities exposed on window for console access
 // Server-side functions still enforce admin claim check
@@ -88,4 +88,4 @@ window.adminTools = {
   }
 };
 
-export { firebaseConfig, app, auth, storage, db, functions, vertexAI };
+export { firebaseConfig, app, auth, storage, db, functions, ai };

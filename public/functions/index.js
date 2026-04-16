@@ -76,7 +76,8 @@ exports.createStripeSession = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -163,7 +164,8 @@ exports.getStripeSessionStatus = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -199,7 +201,8 @@ exports.checkActiveSubscriptions = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -255,7 +258,8 @@ exports.createStripeBillingPortal = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -293,7 +297,8 @@ exports.handleSubscriptionWebhook = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET_SUBSCRIPTION"] })
   .https
   .onRequest(async (req, res) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     let event;
 
     try {
@@ -338,7 +343,8 @@ exports.stripeWebhook = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET_CHECKOUT", "STRIPE_YEARLY_PRICE_ID", "STRIPE_MONTHLY_PRICE_ID"] })
   .https
   .onRequest(async (req, res) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     let event;
 
     try {

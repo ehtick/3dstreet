@@ -202,7 +202,8 @@ exports.auditUserSubscriptions = functions
       throw new functions.https.HttpsError('permission-denied', 'Admin access required.');
     }
 
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const fixDiscrepancies = data?.fixDiscrepancies === true;
     const dryRun = !fixDiscrepancies;
 
@@ -421,7 +422,8 @@ exports.auditUserSubscriptionsHttp = functions
         return;
       }
 
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      const Stripe = require('stripe');
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
       const fixDiscrepancies = req.body?.fixDiscrepancies === true;
 
       // Run the same audit logic (simplified for HTTP response)

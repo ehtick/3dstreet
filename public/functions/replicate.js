@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const Replicate = require('replicate');
 const admin = require('firebase-admin');
 const { checkAndRefillImageTokensInternal } = require('./token-management.js');
@@ -213,6 +213,7 @@ const generateReplicateImage = functions
 
       const replicate = new Replicate({
         auth: process.env.REPLICATE_API_TOKEN,
+        useFileOutput: false
       });
 
       let imageUrl = input_image;
@@ -546,6 +547,7 @@ const generateReplicateVideo = functions
     try {
       const replicate = new Replicate({
         auth: process.env.REPLICATE_API_TOKEN,
+        useFileOutput: false
       });
 
       let imageUrl = input_image;

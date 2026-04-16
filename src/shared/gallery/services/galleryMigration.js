@@ -5,8 +5,8 @@
  * Migration is per-user and happens only once
  */
 
-import galleryService from './galleryService.jsx';
-import galleryServiceV2 from './galleryServiceV2.jsx';
+import galleryService from './galleryService.js';
+import galleryServiceV2 from './galleryServiceV2.js';
 
 /**
  * Remove undefined values from object (Firestore doesn't accept undefined)

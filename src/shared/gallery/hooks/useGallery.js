@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import posthog from 'posthog-js';
-import galleryServiceV2 from '../services/galleryServiceV2.jsx';
+import galleryServiceV2 from '../services/galleryServiceV2.js';
 import galleryMigration from '../services/galleryMigration.js';
 import {
   ASSET_TYPES,

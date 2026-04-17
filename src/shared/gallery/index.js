@@ -1,6 +1,6 @@
 /**
  * Shared Gallery Module - Barrel export
- * V2 (Firestore + Firebase Storage) is the primary service
+ * Uses Firestore + Firebase Storage
  */
 
 // Constants
@@ -14,9 +14,7 @@ export {
 } from './constants';
 
 // Services
-export { default as galleryService } from './services/galleryService'; // V1 - kept for migration only
-export { default as galleryServiceV2 } from './services/galleryServiceV2'; // V2 - primary service
-export { default as galleryMigration } from './services/galleryMigration';
+export { default as galleryServiceV2 } from './services/galleryServiceV2';
 
 // Hooks
 export { default as useGallery } from './hooks/useGallery';

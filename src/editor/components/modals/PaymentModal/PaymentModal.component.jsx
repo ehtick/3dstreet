@@ -1,7 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
 import styles from './PaymentModal.module.scss';
 import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { useAuthContext } from '../../../contexts/index.js';
 import { CheckMark32Icon, Loader } from '@shared/icons';
 import { Button } from '../../elements/index.js';
@@ -9,15 +8,6 @@ import Modal from '@shared/components/Modal/Modal.jsx';
 import { functions } from '@shared/services/firebase';
 import posthog from 'posthog-js';
 import useStore from '@/store';
-
-let stripePromise;
-const getStripe = () => {
-  if (!stripePromise) {
-    stripePromise = loadStripe(process.env.STRIPE_PUBLISHABLE_KEY);
-  }
-
-  return stripePromise;
-};
 
 const resetPaymentQueryParam = () => {
   const newUrl = window.location.href.replace(/\?payment=(success|cancel)/, '');
@@ -75,7 +65,7 @@ const PaymentModal = () => {
     setIsLoading(true);
     try {
       const {
-        data: { id }
+        data: { url }
       } = await httpsCallable(
         functions,
         'createStripeSession'
@@ -96,8 +86,7 @@ const PaymentModal = () => {
         // allow_promotion_codes: true
       });
 
-      const stripe = await getStripe();
-      await stripe.redirectToCheckout({ sessionId: id });
+      window.location.href = url;
     } catch (error) {
       console.log(error);
     }

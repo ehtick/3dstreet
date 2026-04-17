@@ -330,7 +330,7 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
 
         const model = getGenerativeModel(ai, {
           model: AI_MODEL_ID,
-          tools: entityTools,
+          tools: [entityTools],
           systemInstruction: enhancedSystemPrompt
         });
 
@@ -737,7 +737,7 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
 
         const model = getGenerativeModel(ai, {
           model: AI_MODEL_ID,
-          tools: entityTools,
+          tools: [entityTools],
           systemInstruction: enhancedSystemPrompt
         });
         // generate new uuid

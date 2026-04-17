@@ -1,5 +1,5 @@
-import { getGenerativeModel } from 'firebase/vertexai';
-import { vertexAI } from '@shared/services/firebase.js';
+import { getGenerativeModel } from 'firebase/ai';
+import { ai } from '@shared/services/firebase.js';
 
 class AIChatService {
   constructor(firebaseApp) {
@@ -9,7 +9,7 @@ class AIChatService {
 
   async initialize(firebaseApp) {
     try {
-      this.model = getGenerativeModel(vertexAI, {
+      this.model = getGenerativeModel(ai, {
         model: 'gemini-3-flash-preview'
       });
     } catch (error) {

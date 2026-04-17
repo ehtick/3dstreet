@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     environment: 'jsdom',
     globals: true,
@@ -17,7 +19,7 @@ export default defineConfig({
       ],
       exclude: [
         'src/generator/index.js',
-        'src/editor/index.js',
+        'src/editor/index.jsx',
         '**/*.stories.jsx'
       ]
     }
@@ -26,13 +28,5 @@ export default defineConfig({
     alias: {
       '@shared': path.resolve(__dirname, './src/shared')
     }
-  },
-  esbuild: {
-    // Handle JSX in .js files (common in this codebase)
-    loader: 'jsx',
-    include: /\.(js|jsx)$/,
-    exclude: [],
-    // Auto-inject React for JSX
-    jsx: 'automatic'
   }
 });

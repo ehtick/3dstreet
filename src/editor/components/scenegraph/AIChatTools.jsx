@@ -7,7 +7,7 @@
 import { Parser } from 'expr-eval';
 import Events from '../../lib/Events.js';
 import * as THREE from 'three';
-import { Schema } from 'firebase/vertexai';
+import { Schema } from 'firebase/ai';
 import useStore from '@/store';
 
 // Define the function declarations for entity operations

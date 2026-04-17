@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { getGeoidHeightFromPGM } = require('./geoid.js');
 const { Client: GoogleMapsClient } = require("@googlemaps/google-maps-services-js");

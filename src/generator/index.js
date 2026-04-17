@@ -16,9 +16,9 @@ import './styles/styles.css';
 import { auth } from '@shared/services/firebase.js';
 
 // Import auth mount function
-import { mountAuthUI, mountTokenDisplay } from './mount-auth.js';
-import { mountAppSwitcher } from './mount-app-switcher.js';
-import { mountPurchaseModal } from './mount-purchase-modal.js';
+import { mountAuthUI, mountTokenDisplay } from './mount-auth.jsx';
+import { mountAppSwitcher } from './mount-app-switcher.jsx';
+import { mountPurchaseModal } from './mount-purchase-modal.jsx';
 import { mountGallery } from './mount-gallery.js';
 
 // Import all modules

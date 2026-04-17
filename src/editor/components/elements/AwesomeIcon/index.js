@@ -1,1 +1,1 @@
-export { AwesomeIcon } from './AwesomeIcon.component.js';
+export { AwesomeIcon } from './AwesomeIcon.component.jsx';

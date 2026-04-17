@@ -143,15 +143,6 @@ Firestore-based service with full CRUD operations:
 - `searchAssets()` - Simple text search
 - `dataUriToBlob()` - Convert data URI to blob
 
-### `galleryMigration.js`
-
-**One-way, one-time** migration utility from V1 (IndexedDB) → V2 (Firestore):
-
-- `isMigrationNeeded()` - Check if user needs migration
-- `hasMigrated()` - Check per-user migration flag
-- `migrateAll()` - Migrate all V1 assets to V2 with progress tracking
-- `deleteV1Database()` - Completely delete V1 IndexedDB after successful migration
-
 ## Security Rules
 
 ### Firestore Rules
@@ -242,21 +233,9 @@ function GalleryComponent() {
   const {
     items,
     isLoading,
-    needsMigration,
-    isMigrating,
-    migrationProgress,
     addItem,
-    removeItem,
-    runMigration
+    removeItem
   } = useGallery();
-
-  if (needsMigration) {
-    return (
-      <button onClick={runMigration} disabled={isMigrating}>
-        {isMigrating ? `Migrating... ${migrationProgress.toFixed(1)}%` : 'Migrate Gallery'}
-      </button>
-    );
-  }
 
   return <div>{/* render items */}</div>;
 }
@@ -286,7 +265,6 @@ This was intentionally deferred to simplify the initial implementation.
 ## File Locations
 
 - `src/shared/gallery/services/galleryServiceV2.js` - Main Firestore service
-- `src/shared/gallery/services/galleryMigration.js` - V1→V2 migration utility
 - `src/shared/gallery/hooks/useGallery.js` - React hook
 - `src/shared/gallery/components/GalleryItem.jsx` - Thumbnail card
 - `src/shared/gallery/components/GalleryModal.jsx` - Detail view modal
@@ -301,11 +279,6 @@ This was intentionally deferred to simplify the initial implementation.
 - [ ] Thumbnails auto-generated
 - [ ] Delete asset → Soft delete
 - [ ] Search/filter by type, category
-
-**Migration:**
-- [ ] V1 → V2 migration works with progress
-- [ ] Per-user migration flag in localStorage
-- [ ] No migration prompt after first migration
 
 **Security:**
 - [ ] Users see only their own images

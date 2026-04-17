@@ -9,9 +9,9 @@ import '../styles/tailwind.css';
 import './styles.css';
 
 import { auth } from '@shared/services/firebase.js';
-import { mountAuthUI } from './mount-auth.js';
+import { mountAuthUI } from './mount-auth.jsx';
 import { mountGallery } from './mount-gallery.js';
-import { mountAppSwitcher } from './mount-app-switcher.js';
+import { mountAppSwitcher } from './mount-app-switcher.jsx';
 
 // Expose auth for compatibility with vanilla JS
 window.firebaseAuth = auth;

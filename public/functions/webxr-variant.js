@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 
 // Function to serve a modified version of index.html with WebXR variant launch script
 exports.serveWebXRVariant = functions.https.onRequest((req, res) => {

@@ -19,7 +19,7 @@ import { GeoLocationDisplay } from './elements/GeoLocationDisplay';
 import { NewModal } from './modals/NewModal';
 import { ReportModal } from './modals/ReportModal';
 import { LoadingSceneModal } from './modals/LoadingSceneModal';
-import { ToolbarWrapper } from './scenegraph/ToolbarWrapper.js';
+import { ToolbarWrapper } from './scenegraph/ToolbarWrapper.jsx';
 import useStore from '@/store';
 import { AIChatProvider } from '../contexts/AIChatContext';
 import AIChatPanel from './scenegraph/AIChatPanel';

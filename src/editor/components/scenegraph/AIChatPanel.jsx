@@ -5,8 +5,8 @@ import {
   useImperativeHandle,
   forwardRef
 } from 'react';
-import { vertexAI } from '@shared/services/firebase';
-import { getGenerativeModel } from 'firebase/vertexai';
+import { ai } from '@shared/services/firebase';
+import { getGenerativeModel } from 'firebase/ai';
 import {
   Copy32Icon,
   DownloadIcon,
@@ -20,7 +20,7 @@ import posthog from 'posthog-js';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { systemPrompt } from './AIChatPrompt.js';
-import AIChatTools, { entityTools } from './AIChatTools.js';
+import AIChatTools, { entityTools } from './AIChatTools.jsx';
 import { PanelToggleButton } from '../../components/elements';
 import { AwesomeIcon } from '../../components/elements/AwesomeIcon';
 import {
@@ -328,9 +328,9 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
         // Get the enhanced system prompt with mixin information
         const enhancedSystemPrompt = getEnhancedSystemPrompt();
 
-        const model = getGenerativeModel(vertexAI, {
+        const model = getGenerativeModel(ai, {
           model: AI_MODEL_ID,
-          tools: entityTools,
+          tools: [entityTools],
           systemInstruction: enhancedSystemPrompt
         });
 
@@ -735,9 +735,9 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
         // Get the enhanced system prompt with mixin information
         const enhancedSystemPrompt = getEnhancedSystemPrompt();
 
-        const model = getGenerativeModel(vertexAI, {
+        const model = getGenerativeModel(ai, {
           model: AI_MODEL_ID,
-          tools: entityTools,
+          tools: [entityTools],
           systemInstruction: enhancedSystemPrompt
         });
         // generate new uuid

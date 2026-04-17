@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { checkAndRefillImageTokensInternal } = require('./token-management.js');
 const { REPLICATE_MODELS, AI_MODEL_NAMES } = require('./replicate-models.js');

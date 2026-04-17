@@ -11,6 +11,19 @@
   transition: 0.2s ease-in-out;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   width: 100%;
+
+  // In inspector mode the left cluster moved into the left panel,
+  // so the toolbar now only hosts the floating top-right cluster.
+  &[data-inspector='true'] {
+    top: 12px;
+    left: auto;
+    right: 12px;
+    width: auto;
+    background: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
+    padding: 0;
+  }
 }
 
 // Horizontal Menubar styles

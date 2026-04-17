@@ -10,10 +10,16 @@ import { LayersIcon, ArrowLeftIcon } from '@shared/icons';
 import { createUniqueId, getEntityDisplayName } from '../../lib/entity';
 import posthog from 'posthog-js';
 import GeoLayer from './GeoLayer';
+import AppMenu from './AppMenu';
+import { AppSwitcher } from '@shared/navigation/components';
+import { SceneEditTitle } from '../elements/SceneEditTitle';
+import { Save } from '../elements/Save';
+import { AuthContext } from '@/editor/contexts';
 const HIDDEN_CLASSES = ['teleportRay', 'hitEntity', 'hideFromSceneGraph'];
 const HIDDEN_IDS = ['dropPlane', 'previewEntity'];
 
 export default class SceneGraph extends React.Component {
+  static contextType = AuthContext;
   static propTypes = {
     scene: PropTypes.object,
     selectedEntity: PropTypes.object,
@@ -465,12 +471,14 @@ export default class SceneGraph extends React.Component {
       return null;
     }
 
-    // Outliner class names.
     const className = classNames({
-      outliner: true,
-      hide: this.state.leftBarHide,
-      'mt-16': true
+      'scenegraph-panel': true,
+      hide: this.state.leftBarHide
     });
+
+    const currentUser = this.context?.currentUser;
+    const isCollapsed = this.state.leftBarHide;
+    const authorName = currentUser?.displayName || null;
 
     return (
       <div id="scenegraph" className="scenegraph">
@@ -480,29 +488,47 @@ export default class SceneGraph extends React.Component {
           onKeyDown={this.onKeyDown}
           onKeyUp={this.onKeyUp}
         >
-          <div
-            className={'layersBlock'}
-            id="layers-title"
-            onClick={this.toggleLeftBar}
-          >
-            <div id="toggle-leftbar">
-              {this.state.leftBarHide ? (
-                <div className="move-icon">
-                  <LayersIcon />
+          <div id="left-panel-header">
+            <div className="left-panel-header-row">
+              <AppSwitcher />
+              {!isCollapsed && <AppMenu currentUser={currentUser} />}
+              <button
+                type="button"
+                className="left-panel-collapse-toggle"
+                onClick={this.toggleLeftBar}
+                aria-label={isCollapsed ? 'Expand panel' : 'Collapse panel'}
+              >
+                <ArrowLeftIcon
+                  style={{
+                    transform: isCollapsed ? 'rotate(180deg)' : 'none'
+                  }}
+                />
+              </button>
+            </div>
+            <div className="left-panel-title-row">
+              <div id="scene-title" className="clickable truncate">
+                <SceneEditTitle />
+              </div>
+              {!isCollapsed && <Save currentUser={currentUser} />}
+            </div>
+            {isCollapsed && authorName && (
+              <div className="left-panel-author-row">{authorName}</div>
+            )}
+          </div>
+          {!isCollapsed && (
+            <>
+              <div className={'layersBlock'} id="layers-title">
+                <div className={'layersBlock'}>
+                  <LayersIcon className="toggle-icon" />
+                  <span>Layers</span>
                 </div>
-              ) : (
-                <ArrowLeftIcon />
-              )}
-            </div>
-            <div className={'layersBlock'}>
-              <LayersIcon className="toggle-icon" />
-              <span>Layers</span>
-            </div>
-          </div>
-          <div className="layers">
-            <GeoLayer />
-            <div>{this.renderEntities()}</div>
-          </div>
+              </div>
+              <div className="layers">
+                <GeoLayer />
+                <div>{this.renderEntities()}</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );

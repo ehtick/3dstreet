@@ -668,19 +668,7 @@ const AppMenu = ({ currentUser }) => {
             >
               Reset Camera View
             </Menubar.Item>
-          </Menubar.Content>
-        </Menubar.Portal>
-      </Menubar.Menu>
-
-      <Menubar.Menu>
-        <Menubar.Trigger className="MenubarTrigger">Run</Menubar.Trigger>
-        <Menubar.Portal>
-          <Menubar.Content
-            className="MenubarContent"
-            align="start"
-            sideOffset={5}
-            alignOffset={-3}
-          >
+            <Menubar.Separator className="MenubarSeparator" />
             <Menubar.Item
               className="MenubarItem"
               onClick={() => {

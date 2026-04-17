@@ -1,12 +1,10 @@
 /**
  * useGallery Hook - React hook for managing gallery state
- * Uses V2 (Firestore + Firebase Storage) exclusively
  */
 
 import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import posthog from 'posthog-js';
 import galleryServiceV2 from '../services/galleryServiceV2.js';
-import galleryMigration from '../services/galleryMigration.js';
 import {
   ASSET_TYPES,
   ASSET_CATEGORIES,
@@ -46,12 +44,6 @@ const useGallery = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-  const [needsMigration, setNeedsMigration] = useState(false);
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [migrationProgress, setMigrationProgress] = useState(0);
-  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
-  const [zipProgress, setZipProgress] = useState(0);
-
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const userId = currentUser?.uid || null;
 
@@ -145,13 +137,6 @@ const useGallery = () => {
 
         // Initialize V2 service
         await galleryServiceV2.init();
-
-        // Check if migration is needed
-        const migrationNeeded =
-          await galleryMigration.isMigrationNeeded(userId);
-        setNeedsMigration(migrationNeeded);
-
-        // UI will show migration prompt if migrationNeeded is true
 
         // Load items from Firestore
         await reloadItems();
@@ -346,48 +331,6 @@ const useGallery = () => {
   );
 
   /**
-   * Download V1 local images as a ZIP file
-   * @returns {Promise<void>}
-   */
-  const downloadV1AsZip = useCallback(async () => {
-    try {
-      setIsDownloadingZip(true);
-      setZipProgress(0);
-
-      await galleryMigration.downloadV1AsZip((progress) => {
-        setZipProgress(progress.percentage);
-      });
-    } catch (error) {
-      console.error('Failed to download V1 as ZIP:', error);
-      throw error;
-    } finally {
-      setIsDownloadingZip(false);
-      setZipProgress(0);
-    }
-  }, []);
-
-  /**
-   * Discard V1 local data without migrating
-   * @returns {Promise<void>}
-   */
-  const discardV1Data = useCallback(async () => {
-    // Get userId directly from Firebase auth (handles generator timing issues)
-    const currentUserId =
-      auth.currentUser?.uid || window.authState?.currentUser?.uid;
-    if (!currentUserId) {
-      throw new Error('User must be logged in to discard V1 data');
-    }
-
-    try {
-      await galleryMigration.discardV1Data(currentUserId);
-      setNeedsMigration(false);
-    } catch (error) {
-      console.error('Failed to discard V1 data:', error);
-      throw error;
-    }
-  }, []);
-
-  /**
    * Download an item
    * For cross-origin URLs (Firebase Storage), fetches blob first then downloads
    * @param {object} item - Gallery item to download
@@ -452,62 +395,6 @@ const useGallery = () => {
     [page, pageSize, items.length]
   );
 
-  /**
-   * Run V1 to V2 migration
-   * @returns {Promise<object>}
-   */
-  const runMigration = useCallback(async () => {
-    // Check multiple sources for user ID to handle timing issues
-    // where auth.currentUser is set but React state hasn't updated yet
-    const effectiveUserId =
-      userId || auth.currentUser?.uid || window.authState?.currentUser?.uid;
-
-    if (!effectiveUserId) {
-      throw new Error('User must be logged in to migrate');
-    }
-
-    try {
-      setIsMigrating(true);
-      setMigrationProgress(0);
-
-      // Track migration started
-      posthog.capture('gallery_migration_started');
-
-      const status = await galleryMigration.migrateAll(
-        effectiveUserId,
-        (progress) => {
-          setMigrationProgress(progress.percentage);
-        }
-      );
-
-      // Track migration completed
-      posthog.capture('gallery_migration_completed', {
-        migrated_count: status.migrated,
-        failed_count: status.failed,
-        total_count: status.total,
-        skipped_count: status.skipped
-      });
-
-      // Reload items after migration
-      await reloadItems();
-
-      setNeedsMigration(false);
-
-      // Emit success event
-      galleryServiceV2.events.dispatchEvent(
-        new CustomEvent('migrationComplete', { detail: { status } })
-      );
-
-      return status;
-    } catch (error) {
-      console.error('Migration failed:', error);
-      throw error;
-    } finally {
-      setIsMigrating(false);
-      setMigrationProgress(0);
-    }
-  }, [userId, reloadItems]);
-
   // Check auth state from multiple sources for isLoggedIn
   // This handles the generator case where auth.currentUser may be set before state updates
   const isLoggedIn = !!(
@@ -528,17 +415,7 @@ const useGallery = () => {
     addItem,
     removeItem,
     downloadItem,
-    reloadItems,
-    // Migration
-    needsMigration,
-    isMigrating,
-    migrationProgress,
-    runMigration,
-    // V1 data management
-    downloadV1AsZip,
-    discardV1Data,
-    isDownloadingZip,
-    zipProgress
+    reloadItems
   };
 };
 

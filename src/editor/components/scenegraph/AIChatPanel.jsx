@@ -20,7 +20,7 @@ import posthog from 'posthog-js';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { systemPrompt } from './AIChatPrompt.js';
-import AIChatTools, { entityTools } from './AIChatTools.js';
+import AIChatTools, { entityTools } from './AIChatTools.jsx';
 import { PanelToggleButton } from '../../components/elements';
 import { AwesomeIcon } from '../../components/elements/AwesomeIcon';
 import {

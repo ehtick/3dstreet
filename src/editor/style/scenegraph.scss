@@ -18,13 +18,23 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 8px 12px 4px 12px;
+    padding: 8px 12px 12px 12px;
+    border-bottom: 1px solid variables.$gray-700;
     flex-shrink: 0;
 
     .left-panel-header-row {
       display: flex;
       align-items: center;
       gap: 4px;
+      min-width: 0;
+
+      #scene-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
 
     .left-panel-title-row {
@@ -40,14 +50,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-    }
-
-    .left-panel-author-row {
-      font-size: 12px;
-      color: variables.$lightgray-400;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     .left-panel-collapse-toggle {
@@ -403,7 +405,7 @@
     display: flex;
     flex-direction: column;
     padding: 0;
-    background: variables.$darkgray-800;
+    background: variables.$darkgray-200;
     transition: width 0.3s ease-in-out;
     z-index: 1;
 
@@ -425,7 +427,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
+      padding: 12px 12px 8px 12px;
       flex-shrink: 0;
 
       #tabsWrapper {
@@ -458,9 +460,8 @@
       }
     }
 
-    // Collapsed state — app switcher + project name + author only
+    // Collapsed state — app switcher + project name on one row
     &.hide {
-      width: 220px;
       height: auto;
     }
   }

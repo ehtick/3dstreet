@@ -491,7 +491,6 @@ export default class SceneGraph extends React.Component {
 
     const currentUser = this.context?.currentUser;
     const isCollapsed = this.state.leftBarHide;
-    const authorName = currentUser?.displayName || null;
 
     return (
       <div id="scenegraph" className="scenegraph">
@@ -505,6 +504,11 @@ export default class SceneGraph extends React.Component {
             <div className="left-panel-header-row">
               <AppSwitcher />
               {!isCollapsed && <AppMenu currentUser={currentUser} />}
+              {isCollapsed && (
+                <div id="scene-title" className="clickable truncate">
+                  <SceneEditTitle />
+                </div>
+              )}
               <button
                 type="button"
                 className="left-panel-collapse-toggle"
@@ -518,14 +522,13 @@ export default class SceneGraph extends React.Component {
                 />
               </button>
             </div>
-            <div className="left-panel-title-row">
-              <div id="scene-title" className="clickable truncate">
-                <SceneEditTitle />
+            {!isCollapsed && (
+              <div className="left-panel-title-row">
+                <div id="scene-title" className="clickable truncate">
+                  <SceneEditTitle />
+                </div>
+                <Save currentUser={currentUser} />
               </div>
-              {!isCollapsed && <Save currentUser={currentUser} />}
-            </div>
-            {isCollapsed && authorName && (
-              <div className="left-panel-author-row">{authorName}</div>
             )}
           </div>
           {!isCollapsed && (

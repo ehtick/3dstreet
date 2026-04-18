@@ -25,6 +25,9 @@ const GalleryItem = ({ item, onItemClick, onDelete, onDownload }) => {
     onItemClick(item);
   };
 
+  const typeLabel = item.type === 'video' ? 'Video' : 'Image';
+  const sourceLabel = item.metadata?.model || 'Unknown';
+
   return (
     <div
       className={styles.item}
@@ -37,30 +40,15 @@ const GalleryItem = ({ item, onItemClick, onDelete, onDownload }) => {
         <img src={imageUrl} alt="Generated image" loading="lazy" />
       )}
 
-      {/* Overlay for buttons */}
-      <div className={styles.itemOverlay}>
-        {/* Download Button */}
-        <button
-          className={`${styles.itemButton} ${styles.downloadBtn}`}
-          onClick={handleDownload}
-          title={item.type === 'video' ? 'Download Video' : 'Download Image'}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-        </button>
+      {/* Type / source label on top */}
+      <div className={styles.itemDetails}>
+        <p>
+          {typeLabel} · {sourceLabel}
+        </p>
+      </div>
 
-        {/* Delete Button */}
+      {/* Action buttons: delete on bottom-left, download on bottom-right */}
+      <div className={styles.itemOverlay}>
         <button
           className={`${styles.itemButton} ${styles.deleteBtn}`}
           onClick={handleDelete}
@@ -80,11 +68,26 @@ const GalleryItem = ({ item, onItemClick, onDelete, onDownload }) => {
             />
           </svg>
         </button>
-      </div>
 
-      {/* Details on hover */}
-      <div className={styles.itemDetails}>
-        <p>{item.metadata?.model || 'Unknown'}</p>
+        <button
+          className={`${styles.itemButton} ${styles.downloadBtn}`}
+          onClick={handleDownload}
+          title={item.type === 'video' ? 'Download Video' : 'Download Image'}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );

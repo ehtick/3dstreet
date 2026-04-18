@@ -398,7 +398,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 280px;
+    width: 370px;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -418,6 +418,43 @@
       span {
         font-size: 16px;
         font-weight: 500;
+      }
+    }
+
+    .left-panel-tabs-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      flex-shrink: 0;
+
+      #tabsWrapper {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+      }
+    }
+
+    .left-panel-add-layer {
+      all: unset;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      color: variables.$lightgray-200;
+      flex-shrink: 0;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background-color: variables.$purple-900;
+        color: variables.$white;
       }
     }
 

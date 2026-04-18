@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Cross24Icon, Plus20Circle } from '@shared/icons';
+import { Cross24Icon } from '@shared/icons';
 import { createPortal } from 'react-dom';
 import { useAuthContext } from '../../../contexts/index.js';
-import { Button, Tabs, PanelToggleButton } from '../../elements';
+import { Button, Tabs } from '../../elements';
 import styles from './AddLayerPanel.module.scss';
 import classNames from 'classnames';
 import CardPlaceholder from '../../../../../ui_assets/card-placeholder.svg';
@@ -506,14 +506,6 @@ const AddLayerPanel = () => {
 
   return (
     <>
-      <PanelToggleButton
-        icon={Plus20Circle}
-        isOpen={isOpen}
-        onClick={() => setModal('addlayer')}
-        className={styles.addLayerButton}
-      >
-        Add Layer &nbsp;🌳🚦🚗
-      </PanelToggleButton>
       <div
         ref={panelRef}
         className={classNames(styles.panel, {

@@ -6,14 +6,17 @@ import React from 'react';
 import Events from '../../lib/Events';
 import Entity, { isContainer } from './Entity';
 import { ToolbarWrapper } from './ToolbarWrapper';
-import { LayersIcon, ArrowLeftIcon } from '@shared/icons';
+import { ArrowLeftIcon, Plus20Circle } from '@shared/icons';
 import { createUniqueId, getEntityDisplayName } from '../../lib/entity';
 import posthog from 'posthog-js';
 import GeoLayer from './GeoLayer';
+import GalleryPanel from './GalleryPanel';
 import AppMenu from './AppMenu';
 import { AppSwitcher } from '@shared/navigation/components';
 import { SceneEditTitle } from '../elements/SceneEditTitle';
 import { Save } from '../elements/Save';
+import { Tabs } from '../elements';
+import useStore from '@/store';
 import { AuthContext } from '@/editor/contexts';
 const HIDDEN_CLASSES = ['teleportRay', 'hitEntity', 'hideFromSceneGraph'];
 const HIDDEN_IDS = ['dropPlane', 'previewEntity'];
@@ -36,6 +39,7 @@ export default class SceneGraph extends React.Component {
       entities: [],
       expandedElements: new WeakMap([[props.scene, true]]),
       leftBarHide: false,
+      activeTab: 'layers',
       selectedIndex: -1,
       // Drag and drop state
       draggedEntity: null,
@@ -414,6 +418,15 @@ export default class SceneGraph extends React.Component {
     this.setState({ leftBarHide: !this.state.leftBarHide });
   };
 
+  setActiveTab = (tab) => {
+    this.setState({ activeTab: tab });
+  };
+
+  openAddLayer = () => {
+    useStore.getState().setModal('addlayer');
+    posthog.capture('add_layer_panel_opened', { source: 'left_panel_plus' });
+  };
+
   renderEntities = () => {
     const renderedEntities = [];
     const entityOptions = this.state.entities.filter((entityOption) => {
@@ -517,16 +530,43 @@ export default class SceneGraph extends React.Component {
           </div>
           {!isCollapsed && (
             <>
-              <div className={'layersBlock'} id="layers-title">
-                <div className={'layersBlock'}>
-                  <LayersIcon className="toggle-icon" />
-                  <span>Layers</span>
+              <div className="left-panel-tabs-row">
+                <Tabs
+                  tabs={[
+                    {
+                      label: 'Layers',
+                      value: 'layers',
+                      isSelected: this.state.activeTab === 'layers',
+                      onClick: () => this.setActiveTab('layers')
+                    },
+                    {
+                      label: 'Gallery',
+                      value: 'gallery',
+                      isSelected: this.state.activeTab === 'gallery',
+                      onClick: () => this.setActiveTab('gallery')
+                    }
+                  ]}
+                />
+                {this.state.activeTab === 'layers' && (
+                  <button
+                    type="button"
+                    className="left-panel-add-layer"
+                    onClick={this.openAddLayer}
+                    aria-label="Add layer"
+                    title="Add layer"
+                  >
+                    <Plus20Circle />
+                  </button>
+                )}
+              </div>
+              {this.state.activeTab === 'layers' ? (
+                <div className="layers">
+                  <GeoLayer />
+                  <div>{this.renderEntities()}</div>
                 </div>
-              </div>
-              <div className="layers">
-                <GeoLayer />
-                <div>{this.renderEntities()}</div>
-              </div>
+              ) : (
+                <GalleryPanel />
+              )}
             </>
           )}
         </div>

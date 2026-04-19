@@ -21,7 +21,6 @@ import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { systemPrompt } from './AIChatPrompt.js';
 import AIChatTools, { entityTools } from './AIChatTools.jsx';
-import { PanelToggleButton } from '../../components/elements';
 import { AwesomeIcon } from '../../components/elements/AwesomeIcon';
 import {
   faRotate,
@@ -868,20 +867,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
 
   return (
     <>
-      <div
-        className={`${styles.aiChatToggle} ${isOpen ? styles.isOpen : ''} ai-chat-toggle-container`}
-      >
-        {!isOpen && (
-          <PanelToggleButton
-            icon={ChatbotIcon}
-            isOpen={isOpen}
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            <span>Assistant</span>
-          </PanelToggleButton>
-        )}
-      </div>
-
       {isOpen && (
         <div className={`${styles.chatContainer} ai-chat-panel-container`}>
           <div className={styles.proFeaturesWrapper}>

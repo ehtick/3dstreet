@@ -17,7 +17,6 @@ import posthog from 'posthog-js';
 import { commandsByType } from './lib/commands/index.js';
 import useStore from '@/store';
 import { initializeLocationSync } from './lib/location-sync';
-import { Gallery, galleryServiceV2 } from '@shared/gallery';
 
 // Helper function to check if viewer mode is requested via URL parameter
 function isViewerModeRequested() {
@@ -113,9 +112,6 @@ Inspector.prototype = {
       visibilityRoot.render(<VisibilityToggle />);
     }
 
-    // Mount Gallery component
-    this.mountGallery();
-
     this.scene = this.sceneEl.object3D;
     this.helpers = {};
     this.sceneHelpers = new THREE.Scene();
@@ -134,111 +130,6 @@ Inspector.prototype = {
     if (isViewerModeRequested()) {
       useStore.getState().setIsInspectorEnabled(false);
     }
-  },
-
-  mountGallery: function () {
-    galleryServiceV2.init().catch((error) => {
-      console.error('Failed to initialize gallery:', error);
-    });
-
-    // Create mount point for gallery
-    const galleryRoot = document.createElement('div');
-    galleryRoot.id = 'editor-gallery-root';
-    document.body.appendChild(galleryRoot);
-
-    // Gallery action handlers
-    const handleCopyParams = (item) => {
-      if (!item.metadata) {
-        console.log('No parameters available for this image');
-        return;
-      }
-      const params = JSON.stringify(item.metadata, null, 2);
-      navigator.clipboard
-        .writeText(params)
-        .then(() => console.log('Parameters copied to clipboard!'))
-        .catch((err) => console.error('Failed to copy parameters:', err));
-    };
-
-    // Handlers for opening generator app with gallery items
-    const openGeneratorWithItem = async (item, tabName) => {
-      try {
-        // Get the full-size image URL (not thumbnail)
-        // Priority: fullImageURL > storageUrl > objectURL
-        const imageUrl = item.fullImageURL || item.storageUrl || item.objectURL;
-
-        if (!imageUrl) {
-          throw new Error('No valid image URL available');
-        }
-
-        // Fetch the full-size image and convert to data URL
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
-        const dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-
-        // Save item data to localStorage for cross-window communication
-        const galleryItemData = {
-          imageDataUrl: dataUrl,
-          id: item.id,
-          metadata: item.metadata,
-          timestamp: Date.now(),
-          targetTab: tabName
-        };
-
-        localStorage.setItem(
-          'pendingGalleryItem',
-          JSON.stringify(galleryItemData)
-        );
-
-        // Open generator in new window with appropriate hash
-        const generatorUrl = `/generator/#${tabName}`;
-        window.open(generatorUrl, '_blank');
-
-        console.log(`Opening generator ${tabName} tab with gallery item`);
-      } catch (error) {
-        console.error('Failed to open generator with gallery item:', error);
-      }
-    };
-
-    const handleUseForInpaint = (item) => {
-      openGeneratorWithItem(item, 'inpaint');
-    };
-
-    const handleUseForOutpaint = (item) => {
-      openGeneratorWithItem(item, 'outpaint');
-    };
-
-    const handleUseForGenerator = (item) => {
-      openGeneratorWithItem(item, 'modify');
-    };
-
-    const handleUseForVideo = (item) => {
-      openGeneratorWithItem(item, 'video');
-    };
-
-    const handleNotification = (message, type) => {
-      console.log(`[${type}] ${message}`);
-    };
-
-    // Mount the React gallery component
-    const root = createRoot(galleryRoot);
-    root.render(
-      <AuthProvider>
-        <Gallery
-          mode="sidebar"
-          onCopyParams={handleCopyParams}
-          onUseForInpaint={handleUseForInpaint}
-          onUseForOutpaint={handleUseForOutpaint}
-          onUseForGenerator={handleUseForGenerator}
-          onUseForVideo={handleUseForVideo}
-          onNotification={handleNotification}
-        />
-      </AuthProvider>
-    );
   },
 
   removeObject: function (object) {

@@ -1,6 +1,6 @@
 import { ZoomButtons } from './elements';
 import { useState, useEffect, useRef } from 'react';
-import ComponentsSidebar from './elements/Sidebar';
+import RightPanel from './scenegraph/RightPanel';
 import Events from '../lib/Events';
 import ModalTextures from './modals/ModalTextures';
 import SceneGraph from './scenegraph/SceneGraph';
@@ -20,6 +20,8 @@ import { NewModal } from './modals/NewModal';
 import { ReportModal } from './modals/ReportModal';
 import { LoadingSceneModal } from './modals/LoadingSceneModal';
 import { ToolbarWrapper } from './scenegraph/ToolbarWrapper.jsx';
+import { ActionBar } from './elements/ActionBar';
+import { PrimaryToolbar } from './elements/PrimaryToolbar';
 import useStore from '@/store';
 import { AIChatProvider } from '../contexts/AIChatContext';
 import AIChatPanel from './scenegraph/AIChatPanel';
@@ -41,11 +43,7 @@ export default function Main() {
   const [state, setState] = useState({
     entity: null,
     isModalTexturesOpen: false,
-    sceneEl: AFRAME.scenes[0],
-    visible: {
-      scenegraph: true,
-      attributes: true
-    }
+    sceneEl: AFRAME.scenes[0]
   });
 
   useEffect(() => {
@@ -68,37 +66,6 @@ export default function Main() {
         entity: entity
       }));
     });
-    Events.on('togglesidebar', (event) => {
-      if (event.which === 'all') {
-        setState((prevState) => {
-          const isVisible =
-            prevState.visible.scenegraph || prevState.visible.attributes;
-          return {
-            ...prevState,
-            visible: {
-              scenegraph: !isVisible,
-              attributes: !isVisible
-            }
-          };
-        });
-      } else if (event.which === 'attributes') {
-        setState((prevState) => ({
-          ...prevState,
-          visible: {
-            ...prevState.visible,
-            attributes: !prevState.visible.attributes
-          }
-        }));
-      } else if (event.which === 'scenegraph') {
-        setState((prevState) => ({
-          ...prevState,
-          visible: {
-            ...prevState.visible,
-            scenegraph: !prevState.visible.scenegraph
-          }
-        }));
-      }
-    });
   }, []);
 
   const onModalTextureOnClose = (value) => {
@@ -113,6 +80,7 @@ export default function Main() {
 
   const scene = state.sceneEl;
   const isInspectorEnabled = useStore((state) => state.isInspectorEnabled);
+  const panelsVisible = useStore((state) => state.panelsVisible);
 
   return (
     <div id="inspectorContainer">
@@ -123,14 +91,35 @@ export default function Main() {
             <SceneGraph
               scene={scene}
               selectedEntity={state.entity}
-              visible={state.visible.scenegraph}
+              visible={true}
             />
             <AIChatPanel ref={aiChatPanelRef} />
-            <div id="rightPanel">
-              <ComponentsSidebar
-                entity={state.entity}
-                visible={state.visible.attributes}
-              />
+            {panelsVisible && (
+              <RightPanel entity={state.entity} visible={true} />
+            )}
+            <div
+              className="clickable"
+              style={{
+                position: 'absolute',
+                top: '12px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 10
+              }}
+            >
+              <PrimaryToolbar />
+            </div>
+            <div
+              className="clickable"
+              style={{
+                position: 'absolute',
+                bottom: '16px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 10
+              }}
+            >
+              <ActionBar selectedEntity={state.entity} />
             </div>
           </div>
         </AIChatProvider>

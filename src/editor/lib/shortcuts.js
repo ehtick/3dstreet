@@ -166,9 +166,9 @@ export const Shortcuts = {
       }
     }
 
-    // 0: toggle sidebars visibility
-    if (event.keyCode === 48) {
-      Events.emit('togglesidebar', { which: 'all' });
+    // `: toggle panels visibility
+    if (event.keyCode === 192) {
+      useStore.getState().togglePanelsVisible();
       event.preventDefault();
       event.stopPropagation();
     }

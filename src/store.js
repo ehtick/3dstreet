@@ -181,6 +181,11 @@ const useStore = create(
           Events.emit('gridvisibilitychanged', newIsGridVisible);
           set({ isGridVisible: newIsGridVisible });
         },
+        panelsVisible: true,
+        setPanelsVisible: (newPanelsVisible) =>
+          set({ panelsVisible: newPanelsVisible }),
+        togglePanelsVisible: () =>
+          set((state) => ({ panelsVisible: !state.panelsVisible })),
         isInspectorEnabled: true,
         setIsInspectorEnabled: (newIsInspectorEnabled) => {
           const viewerModeUI = document.getElementById('viewer-mode-ui');

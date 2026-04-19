@@ -6,7 +6,7 @@ import React from 'react';
 import Events from '../../lib/Events';
 import Entity, { isContainer } from './Entity';
 import { ToolbarWrapper } from './ToolbarWrapper';
-import { ArrowLeftIcon, Plus20Circle } from '@shared/icons';
+import { Plus20Circle } from '@shared/icons';
 import { createUniqueId, getEntityDisplayName } from '../../lib/entity';
 import posthog from 'posthog-js';
 import GeoLayer from './GeoLayer';
@@ -38,7 +38,7 @@ export default class SceneGraph extends React.Component {
     this.state = {
       entities: [],
       expandedElements: new WeakMap([[props.scene, true]]),
-      leftBarHide: false,
+      panelsVisible: useStore.getState().panelsVisible,
       activeTab: 'layers',
       selectedIndex: -1,
       // Drag and drop state
@@ -76,6 +76,10 @@ export default class SceneGraph extends React.Component {
     Events.on('entityupdate', this.onEntityUpdate);
     document.addEventListener('child-attached', this.onChildAttachedDetached);
     document.addEventListener('child-detached', this.onChildAttachedDetached);
+    this.unsubscribePanels = useStore.subscribe(
+      (state) => state.panelsVisible,
+      (panelsVisible) => this.setState({ panelsVisible })
+    );
   }
 
   componentWillUnmount() {
@@ -88,6 +92,7 @@ export default class SceneGraph extends React.Component {
       'child-detached',
       this.onChildAttachedDetached
     );
+    this.unsubscribePanels?.();
   }
 
   /**
@@ -414,10 +419,6 @@ export default class SceneGraph extends React.Component {
     return -1;
   };
 
-  toggleLeftBar = () => {
-    this.setState({ leftBarHide: !this.state.leftBarHide });
-  };
-
   setActiveTab = (tab) => {
     this.setState({ activeTab: tab });
   };
@@ -484,13 +485,13 @@ export default class SceneGraph extends React.Component {
       return null;
     }
 
+    const isCollapsed = !this.state.panelsVisible;
     const className = classNames({
       'scenegraph-panel': true,
-      hide: this.state.leftBarHide
+      hide: isCollapsed
     });
 
     const currentUser = this.context?.currentUser;
-    const isCollapsed = this.state.leftBarHide;
 
     return (
       <div id="scenegraph" className="scenegraph">
@@ -509,18 +510,6 @@ export default class SceneGraph extends React.Component {
                   <SceneEditTitle />
                 </div>
               )}
-              <button
-                type="button"
-                className="left-panel-collapse-toggle"
-                onClick={this.toggleLeftBar}
-                aria-label={isCollapsed ? 'Expand panel' : 'Collapse panel'}
-              >
-                <ArrowLeftIcon
-                  style={{
-                    transform: isCollapsed ? 'rotate(180deg)' : 'none'
-                  }}
-                />
-              </button>
             </div>
             {!isCollapsed && (
               <div className="left-panel-title-row">

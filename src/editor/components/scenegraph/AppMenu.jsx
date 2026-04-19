@@ -4,7 +4,6 @@ import useStore from '@/store';
 import { makeScreenshot, convertToObject } from '@/editor/lib/SceneUtils';
 import posthog from 'posthog-js';
 import Events from '../../lib/Events.js';
-import canvasRecorder from '../../lib/CanvasRecorder';
 import { useAuthContext } from '@/editor/contexts';
 import { saveBlob } from '../../lib/utils';
 import {
@@ -105,12 +104,9 @@ const filterRiggedEntities = (scene, visible) => {
 const AppMenu = ({ currentUser }) => {
   const {
     setModal,
-    isInspectorEnabled,
-    setIsInspectorEnabled,
     isGridVisible,
     setIsGridVisible,
     saveScene,
-    startCheckout,
     setGeojsonImportData
   } = useStore();
   const { currentUser: authUser } = useAuthContext();
@@ -667,55 +663,6 @@ const AppMenu = ({ currentUser }) => {
               onClick={() => AFRAME.INSPECTOR.controls.resetZoom()}
             >
               Reset Camera View
-            </Menubar.Item>
-            <Menubar.Separator className="MenubarSeparator" />
-            <Menubar.Item
-              className="MenubarItem"
-              onClick={() => {
-                setIsInspectorEnabled(!isInspectorEnabled);
-              }}
-            >
-              Start Viewer
-              <div className="RightSlot">5</div>
-            </Menubar.Item>
-            <Menubar.Item
-              className="MenubarItem"
-              onClick={async () => {
-                if (!authUser) {
-                  setModal('signin');
-                  return;
-                }
-
-                if (!authUser.isPro) {
-                  startCheckout(null);
-                  posthog.capture('recording_feature_paywall_shown');
-                  return;
-                }
-
-                const aframeCanvas = document.querySelector('a-scene').canvas;
-                if (!aframeCanvas) {
-                  console.error('Could not find A-Frame canvas for recording');
-                  return;
-                }
-
-                const success = await canvasRecorder.startRecording(
-                  aframeCanvas,
-                  {
-                    name:
-                      '3DStreet-Recording-' +
-                      new Date().toISOString().slice(0, 10)
-                  }
-                );
-
-                if (success) {
-                  setIsInspectorEnabled(!isInspectorEnabled);
-                }
-              }}
-            >
-              Start and Record{' '}
-              <div className="RightSlot">
-                <span className="pro-badge">Pro</span>
-              </div>
             </Menubar.Item>
           </Menubar.Content>
         </Menubar.Portal>

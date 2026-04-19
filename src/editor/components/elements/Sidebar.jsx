@@ -23,9 +23,6 @@ import {
   Copy32Icon,
   ArrowsPointingInwardIcon
 } from '@shared/icons';
-import GeoSidebar from './GeoSidebar';
-import EnviroSidebar from './EnviroSidebar';
-import ViewerSidebar from './ViewerSidebar';
 import IntersectionSidebar from './IntersectionSidebar';
 import StreetSegmentSidebar from './StreetSegmentSidebar';
 import ManagedStreetSidebar from './ManagedStreetSidebar';
@@ -140,7 +137,6 @@ export default class Sidebar extends React.Component {
               <div className="scroll">
                 {entity.id !== 'reference-layers' &&
                 entity.id !== 'environment' &&
-                entity.id !== 'cameraRig' &&
                 entity.id !== 'street-container' &&
                 !entity.getAttribute('street-segment') ? (
                   <>
@@ -260,15 +256,6 @@ export default class Sidebar extends React.Component {
                           <AdvancedComponents entity={entity} />
                         </div>
                       </>
-                    )}
-                    {entity.id === 'reference-layers' && (
-                      <GeoSidebar entity={entity} />
-                    )}
-                    {entity.id === 'environment' && (
-                      <EnviroSidebar entity={entity} />
-                    )}
-                    {entity.id === 'cameraRig' && (
-                      <ViewerSidebar entity={entity} />
                     )}
                     {entity.id === 'street-container' && (
                       <UserLayersSidebar entity={entity} />

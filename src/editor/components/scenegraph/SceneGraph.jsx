@@ -9,8 +9,8 @@ import { ToolbarWrapper } from './ToolbarWrapper';
 import { Plus20Circle } from '@shared/icons';
 import { createUniqueId, getEntityDisplayName } from '../../lib/entity';
 import posthog from 'posthog-js';
-import GeoLayer from './GeoLayer';
 import GalleryPanel from './GalleryPanel';
+import GeoSidebar from '../elements/GeoSidebar';
 import AppMenu from './AppMenu';
 import { AppSwitcher } from '@shared/navigation/components';
 import { SceneEditTitle } from '../elements/SceneEditTitle';
@@ -428,14 +428,46 @@ export default class SceneGraph extends React.Component {
     posthog.capture('add_layer_panel_opened', { source: 'left_panel_plus' });
   };
 
+  getEntityById = (id) => document.getElementById(id);
+
+  selectGeoTab = () => {
+    this.setState({ activeTab: 'geo' });
+    posthog.capture('geo_layer_clicked', { source: 'left_panel_tab' });
+    const currentUser = this.context?.currentUser;
+    const entity = this.getEntityById('reference-layers');
+    if (!currentUser) {
+      useStore.getState().setModal('signin');
+      return;
+    }
+    if (!entity?.hasAttribute?.('street-geo')) {
+      useStore.getState().setModal('geo');
+    }
+  };
+
+  // Top-level layer ids that are presented through their own tabs, not in the
+  // Layers list. Keeping this in one place so it's easy to adjust later.
+  isSystemLayerId = (id) =>
+    id === 'reference-layers' || id === 'environment' || id === 'cameraRig';
+
+  isEntityInsideSystemLayer = (entity) => {
+    let curr = entity;
+    while (curr && curr.isEntity) {
+      if (this.isSystemLayerId(curr.id)) return true;
+      curr = curr.parentNode;
+    }
+    return false;
+  };
+
   renderEntities = () => {
     const renderedEntities = [];
     const entityOptions = this.state.entities.filter((entityOption) => {
       if (!this.isVisibleInSceneGraph(entityOption.entity)) {
         return false;
-      } else {
-        return true;
       }
+      if (this.isEntityInsideSystemLayer(entityOption.entity)) {
+        return false;
+      }
+      return true;
     });
     let children = [];
     for (let i = 0; i < entityOptions.length; i++) {
@@ -532,6 +564,12 @@ export default class SceneGraph extends React.Component {
                       onClick: () => this.setActiveTab('layers')
                     },
                     {
+                      label: 'Geospatial',
+                      value: 'geo',
+                      isSelected: this.state.activeTab === 'geo',
+                      onClick: this.selectGeoTab
+                    },
+                    {
                       label: 'Gallery',
                       value: 'gallery',
                       isSelected: this.state.activeTab === 'gallery',
@@ -551,13 +589,16 @@ export default class SceneGraph extends React.Component {
                   </button>
                 )}
               </div>
-              {this.state.activeTab === 'layers' ? (
+              {this.state.activeTab === 'layers' && (
                 <div className="layers">
-                  <GeoLayer />
                   <div>{this.renderEntities()}</div>
                 </div>
-              ) : (
-                <GalleryPanel />
+              )}
+              {this.state.activeTab === 'gallery' && <GalleryPanel />}
+              {this.state.activeTab === 'geo' && (
+                <div className="left-panel-geo-content">
+                  <GeoSidebar entity={this.getEntityById('reference-layers')} />
+                </div>
               )}
             </>
           )}

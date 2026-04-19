@@ -3,7 +3,7 @@ import { Button } from '../elements';
 import { useAuthContext } from '@/editor/contexts/index.js';
 import AdvancedComponents from './AdvancedComponents';
 import PropertyRow from './PropertyRow';
-import { Magnifier20Icon } from '@shared/icons';
+import { Magnifier20Icon, SunIcon } from '@shared/icons';
 import posthog from 'posthog-js';
 import useStore from '@/store';
 import { useState, useEffect } from 'react';
@@ -51,7 +51,8 @@ const FlatteningShapeSelector = ({
         entity: entity,
         component: componentName,
         property: 'flatteningShape',
-        value: value
+        value: value,
+        noSelectEntity: true
       });
     }
   };
@@ -75,7 +76,8 @@ const FlatteningShapeSelector = ({
           entity: entity,
           component: componentName,
           property: 'flatteningShape',
-          value: existingShape.id
+          value: existingShape.id,
+          noSelectEntity: true
         });
       }
       return;
@@ -106,7 +108,8 @@ const FlatteningShapeSelector = ({
           entity: entity,
           component: componentName,
           property: 'flatteningShape',
-          value: shapeId
+          value: shapeId,
+          noSelectEntity: true
         });
       }
     }, 100);
@@ -158,6 +161,72 @@ FlatteningShapeSelector.propTypes = {
   componentName: PropTypes.string.isRequired,
   shapeEntities: PropTypes.array.isRequired,
   currentValue: PropTypes.string
+};
+
+const EnvironmentSection = () => {
+  const envEntity = document.getElementById('environment');
+  const [, forceUpdate] = useState({});
+
+  useEffect(() => {
+    if (!envEntity) return;
+    const handle = (detail) => {
+      if (
+        detail.entity === envEntity &&
+        detail.component === 'street-environment'
+      ) {
+        forceUpdate({});
+      }
+    };
+    Events.on('entityupdate', handle);
+    return () => Events.off('entityupdate', handle);
+  }, [envEntity]);
+
+  if (!envEntity) return null;
+  const component = envEntity.components?.['street-environment'];
+  if (!component || !component.schema || !component.data) return null;
+
+  return (
+    <div className="collapsible component">
+      <div className="static">
+        <div className="componentHeader collapsible-header">
+          <span
+            className="componentTitle"
+            title="Environment"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <SunIcon />
+            <span>Environment</span>
+          </span>
+        </div>
+      </div>
+      <div className="content">
+        <div className="collapsible-content">
+          <PropertyRow
+            key="preset"
+            name="preset"
+            label="Preset"
+            schema={component.schema['preset']}
+            data={component.data['preset']}
+            componentname="street-environment"
+            isSingle={false}
+            entity={envEntity}
+            noSelectEntity={true}
+          />
+          <PropertyRow
+            key="backgroundColor"
+            name="backgroundColor"
+            label="Background"
+            schema={component.schema['backgroundColor']}
+            data={component.data['backgroundColor']}
+            componentname="street-environment"
+            isSingle={false}
+            entity={envEntity}
+            noSelectEntity={true}
+          />
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const GeoSidebar = ({ entity }) => {
@@ -242,7 +311,8 @@ const GeoSidebar = ({ entity }) => {
                               entity: entity,
                               component: 'street-geo',
                               property: 'maps',
-                              value: mapType
+                              value: mapType,
+                              noSelectEntity: true
                             });
                           }
                         }}
@@ -519,6 +589,9 @@ const GeoSidebar = ({ entity }) => {
                 )}
               </>
             )}
+
+            <EnvironmentSection />
+
             {component && component.schema && component.data && (
               <>
                 {/* only show this if google3d is selected */}
@@ -542,6 +615,7 @@ const GeoSidebar = ({ entity }) => {
                           componentname="street-geo"
                           isSingle={false}
                           entity={entity}
+                          noSelectEntity={true}
                         />
                         {component.data['blendingEnabled'] && (
                           <PropertyRow
@@ -553,6 +627,7 @@ const GeoSidebar = ({ entity }) => {
                             componentname="street-geo"
                             isSingle={false}
                             entity={entity}
+                            noSelectEntity={true}
                           />
                         )}
                         <PropertyRow
@@ -564,6 +639,7 @@ const GeoSidebar = ({ entity }) => {
                           componentname="street-geo"
                           isSingle={false}
                           entity={entity}
+                          noSelectEntity={true}
                         />
                         {component.data['enableFlattening'] && (
                           <FlatteningShapeSelector

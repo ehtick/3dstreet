@@ -264,7 +264,7 @@ export default class SceneGraph extends React.Component {
       for (let i = 0; i < element.children.length; i++) {
         let entity = element.children[i];
 
-        if (!this.includeInSceneGraph(entity) || (depth === 1 && !entity.id)) {
+        if (!this.includeInSceneGraph(entity)) {
           continue;
         }
 
@@ -277,39 +277,13 @@ export default class SceneGraph extends React.Component {
         treeIterate(entity, depth);
       }
     };
-    const layers = this.props.scene.children;
-    const orderedLayers = [];
 
-    for (const layer of layers) {
-      if (layer.id === 'reference-layers') {
-        orderedLayers.unshift(layer);
-      } else if (layer.id === 'environment') {
-        orderedLayers.splice(1, 0, layer);
-      } else if (layer.id === 'cameraRig') {
-        orderedLayers.splice(2, 0, layer);
-      } else if (layer.id === 'street-container') {
-        orderedLayers.splice(3, 0, layer);
-      } else {
-        orderedLayers.push(layer);
-      }
+    const streetContainer = this.props.scene.querySelector('#street-container');
+    if (streetContainer) {
+      treeIterate(streetContainer, 0);
     }
 
-    treeIterate({ children: orderedLayers }, 0);
-
-    this.setState({
-      entities: entities,
-      // Expand User Layers by default initially
-      expandedElements: orderedLayers.reduce((expandedElements, layer) => {
-        if (
-          expandedElements.get(layer) === undefined &&
-          layer.id === 'street-container'
-        ) {
-          return expandedElements.set(layer, true);
-        } else {
-          return expandedElements;
-        }
-      }, this.state.expandedElements)
-    });
+    this.setState({ entities });
   };
 
   selectIndex = (index) => {
@@ -358,17 +332,13 @@ export default class SceneGraph extends React.Component {
   };
 
   isVisibleInSceneGraph = (x) => {
-    if (
-      x.id === 'reference-layers' &&
-      !window.location.search.includes('debug=true')
-    ) {
-      return false;
-    }
     let curr = x.parentNode;
     if (!curr) {
       return false;
     }
-    while (curr?.isEntity) {
+    // Stop at street-container — it's the implicit root of the tree and isn't
+    // rendered, so its expanded state shouldn't gate visibility of its children.
+    while (curr?.isEntity && curr.id !== 'street-container') {
       if (!this.isExpanded(curr)) {
         return false;
       }
@@ -444,31 +414,11 @@ export default class SceneGraph extends React.Component {
     }
   };
 
-  // Top-level layer ids that are presented through their own tabs, not in the
-  // Layers list. Keeping this in one place so it's easy to adjust later.
-  isSystemLayerId = (id) =>
-    id === 'reference-layers' || id === 'environment' || id === 'cameraRig';
-
-  isEntityInsideSystemLayer = (entity) => {
-    let curr = entity;
-    while (curr && curr.isEntity) {
-      if (this.isSystemLayerId(curr.id)) return true;
-      curr = curr.parentNode;
-    }
-    return false;
-  };
-
   renderEntities = () => {
     const renderedEntities = [];
-    const entityOptions = this.state.entities.filter((entityOption) => {
-      if (!this.isVisibleInSceneGraph(entityOption.entity)) {
-        return false;
-      }
-      if (this.isEntityInsideSystemLayer(entityOption.entity)) {
-        return false;
-      }
-      return true;
-    });
+    const entityOptions = this.state.entities.filter((entityOption) =>
+      this.isVisibleInSceneGraph(entityOption.entity)
+    );
     let children = [];
     for (let i = 0; i < entityOptions.length; i++) {
       const entityOption = entityOptions[i];

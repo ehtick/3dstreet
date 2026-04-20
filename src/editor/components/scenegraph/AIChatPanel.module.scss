@@ -1,62 +1,40 @@
 @use '../../style/variables.scss';
 
-.aiChatToggle {
-  position: fixed;
-  left: 50%;
-  bottom: 20px; /* Position it at the bottom of the window */
-  transform: translateX(-50%); /* Center it horizontally */
-  z-index: 9; /* Lower z-index to be below modals */
-
-  button {
-    padding: 18px 14px; /* Adjusted padding to keep icon centered */
-    border-radius: 10px; /* Rounded corners on all sides since it's centered */
-    height: 60px;
-    /* When toggle is open, don't expand width and don't show text on hover */
-    &.isOpen {
-      display: none;
-    }
-  }
-}
-
 .chatContainer {
-  position: fixed;
-  left: 50%;
-  bottom: 20px; /* Position it above the toggle button */
-  transform: translateX(-50%); /* Center it horizontally */
-  z-index: 8; /* Lower z-index to be below modals */
-  min-width: 450px;
-  width: 50vw;
-  overflow-y: auto;
-  background-color: rgba(40, 40, 40, 0.8);
-  backdrop-filter: blur(10px);
-  border-radius: 8px; /* Rounded corners on all sides */
-  border: 1px solid variables.$gray-200;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background-color: transparent;
+  color: variables.$white;
 
   .chat-header {
     display: flex;
     align-items: center;
-    padding: 18px 15px;
-    border-bottom: 1px solid variables.$gray-700;
-    position: relative;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 12px 12px 12px;
+    flex-shrink: 0;
 
     .chat-title {
-      font-weight: 1000;
       color: variables.$white;
-      font-size: 24px;
+      font-size: 18px;
+      font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 12px; /* Add space between text and icon */
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      justify-content: center;
-      pointer-events: none; /* Allow clicks to pass through to elements below */
+      gap: 8px;
+      min-width: 0;
+
+      span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
       svg {
-        pointer-events: none; /* Ensure icon doesn't capture clicks */
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
       }
     }
 
@@ -72,69 +50,25 @@
       );
       color: white;
       font-weight: bold;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 12px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 10px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
       white-space: nowrap;
+      flex-shrink: 0;
 
       &:hover {
         opacity: 0.8;
       }
     }
-
-    .chat-actions {
-      display: flex;
-      gap: 8px;
-      margin-left: auto; /* Push to the right side */
-
-      .reset-button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: variables.$gray-400;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 4px;
-        border-radius: 4px;
-
-        &:hover {
-          color: variables.$white;
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      }
-
-      .closeButton {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: variables.$gray-400;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 4px;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-
-        &:hover {
-          color: variables.$white;
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-      }
-    }
   }
 
   .chatMessages {
-    max-height: 50vh;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
-    padding: 10px 15px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -273,27 +207,26 @@
     &.assistant {
       align-self: flex-start;
       background-color: variables.$black;
-      width: 100%; // Ensure full width for JSON content
+      width: 100%;
       position: relative;
+      padding-left: 36px;
 
       .assistantAvatar {
         position: absolute;
-        top: 3px;
-        right: -45px;
-        width: 40px;
-        height: 40px;
+        top: 6px;
+        left: 6px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         overflow: hidden;
-        border: 2px solid variables.$purple-900;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        z-index: 0;
+        background-color: variables.$purple-900;
         display: flex;
         align-items: center;
         justify-content: center;
 
         svg {
-          width: 24px;
-          height: 24px;
+          width: 16px;
+          height: 16px;
           color: variables.$white;
         }
       }
@@ -303,24 +236,26 @@
   .chatInput {
     display: flex;
     flex-direction: column;
-    padding: 10px 15px;
-    border-top: 1px solid variables.$gray-700;
-    gap: 8px;
-    background-color: rgb(50, 50, 50);
+    margin: 8px 12px 12px 12px;
+    padding: 8px 10px 8px 10px;
+    gap: 6px;
+    background-color: transparent;
+    border: 1px solid variables.$purple-500;
+    border-radius: 10px;
+    flex-shrink: 0;
 
     input,
     .chatTextarea {
-      background-color: rgb(50, 50, 50) !important;
+      background-color: transparent !important;
       width: 100%;
-      font-size: 18px !important;
-      padding: 10px 4px;
-      color: variables.$white !important; /* Ensure text is white */
-      caret-color: variables.$white; /* Make cursor white too */
+      font-size: 14px !important;
+      padding: 6px 4px;
+      color: variables.$white !important;
+      caret-color: variables.$white;
 
       &:disabled {
         opacity: 0.6;
         cursor: not-allowed;
-        background-color: rgba(255, 255, 255, 0.05);
       }
     }
 
@@ -328,50 +263,69 @@
       resize: none;
       border: none;
       outline: none;
-      min-height: 40px;
-      max-height: 320px;
+      min-height: 32px;
+      max-height: 240px;
       line-height: 1.4;
       font-family: inherit;
-      box-sizing: border-box; /* Ensure padding is included in height calculations */
-      transition: height 0.1s ease; /* Smooth height transitions */
+      box-sizing: border-box;
+      transition: height 0.1s ease;
     }
 
     .actionButtons {
       display: flex;
       justify-content: space-between;
-      gap: 8px;
+      align-items: center;
+      gap: 4px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
 
       .leftButtons {
         display: flex;
-        gap: 8px;
-        justify-content: flex-start;
+        align-items: center;
+        gap: 0;
         flex-grow: 1;
+        flex-wrap: wrap;
+        min-width: 0;
       }
 
       .rightButtons {
         display: flex;
-        gap: 8px;
+        align-items: center;
+        gap: 6px;
         justify-content: flex-end;
+        flex-shrink: 0;
       }
 
       .actionButton {
-        background-color: transparent;
+        background: none;
         color: variables.$white;
-        border: 1px solid variables.$purple-500;
-        border-radius: 4px;
-        padding: 8px 16px;
+        border: none;
+        padding: 4px 8px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        font-size: 13px;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+        position: relative;
+
+        & + & {
+          &::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: 20%;
+            bottom: 20%;
+            width: 1px;
+            background-color: rgba(255, 255, 255, 0.2);
+          }
+        }
 
         &:hover {
-          background-color: rgba(variables.$purple-500, 0.1);
+          background-color: rgba(255, 255, 255, 0.08);
         }
 
         &:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
-          border-color: variables.$gray-600;
-          color: variables.$gray-400;
         }
       }
 
@@ -379,10 +333,20 @@
         background-color: variables.$purple-100;
         color: variables.$white;
         border: none;
-        border-radius: 4px;
-        padding: 8px 16px;
+        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
         cursor: pointer;
         transition: all 0.2s ease;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
 
         &:hover {
           background-color: variables.$purple-200;
@@ -406,7 +370,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 8px;
+        padding: 6px;
         border-radius: 4px;
 
         &:hover {
@@ -559,16 +523,20 @@
 
 .proFeaturesWrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 
   .proOverlay {
     position: absolute;
-    top: 57px;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
-    border-radius: 0 0 12px 12px; /* Only round the bottom corners */
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;

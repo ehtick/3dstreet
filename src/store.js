@@ -186,6 +186,8 @@ const useStore = create(
           set({ panelsVisible: newPanelsVisible }),
         togglePanelsVisible: () =>
           set((state) => ({ panelsVisible: !state.panelsVisible })),
+        rightPanelTab: 'properties',
+        setRightPanelTab: (newTab) => set({ rightPanelTab: newTab }),
         isInspectorEnabled: true,
         setIsInspectorEnabled: (newIsInspectorEnabled) => {
           const viewerModeUI = document.getElementById('viewer-mode-ui');

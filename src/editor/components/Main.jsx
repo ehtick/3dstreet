@@ -1,5 +1,5 @@
 import { ZoomButtons } from './elements';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import RightPanel from './scenegraph/RightPanel';
 import Events from '../lib/Events';
 import ModalTextures from './modals/ModalTextures';
@@ -24,22 +24,11 @@ import { ActionBar } from './elements/ActionBar';
 import { PrimaryToolbar } from './elements/PrimaryToolbar';
 import useStore from '@/store';
 import { AIChatProvider } from '../contexts/AIChatContext';
-import AIChatPanel from './scenegraph/AIChatPanel';
 
 // Define the libraries array as a constant outside of the component
 const GOOGLE_MAPS_LIBRARIES = ['places'];
 
 export default function Main() {
-  // Create a ref for the AIChatPanel component
-  const aiChatPanelRef = useRef(null);
-
-  // Expose the ref globally for other components to access
-  useEffect(() => {
-    window.aiChatPanelRef = aiChatPanelRef.current;
-    return () => {
-      window.aiChatPanelRef = null;
-    };
-  }, []);
   const [state, setState] = useState({
     entity: null,
     isModalTexturesOpen: false,
@@ -93,7 +82,6 @@ export default function Main() {
               selectedEntity={state.entity}
               visible={true}
             />
-            <AIChatPanel ref={aiChatPanelRef} />
             {panelsVisible && (
               <RightPanel entity={state.entity} visible={true} />
             )}

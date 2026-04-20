@@ -11,7 +11,7 @@ import {
   Copy32Icon,
   DownloadIcon,
   ChatbotIcon,
-  Cross24Icon
+  ArrowUp24Icon
 } from '@shared/icons';
 import { useAuthContext } from '../../contexts';
 import useStore from '@/store';
@@ -313,11 +313,10 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
   const [latestResponseId, setLatestResponseId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
   const chatContainerRef = useRef(null);
   const { currentUser } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
+  const setRightPanelTab = useStore((state) => state.setRightPanelTab);
 
   const modelRef = useRef(null);
 
@@ -713,16 +712,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
     }
   }, [messages]);
 
-  // Restore scroll position when panel is opened
-  useEffect(() => {
-    if (isOpen && chatContainerRef.current && savedScrollPosition > 0) {
-      // Use setTimeout to ensure the DOM has fully rendered
-      setTimeout(() => {
-        chatContainerRef.current.scrollTop = savedScrollPosition;
-      }, 0);
-    }
-  }, [isOpen, savedScrollPosition]);
-
   const resetConversation = () => {
     setMessages([]);
     setInput('');
@@ -838,10 +827,9 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
 
   // Expose methods to be called from outside components
   useImperativeHandle(ref, () => ({
-    // Open the chat panel
+    // Switch the right panel to the Console tab where this chat lives
     openPanel: () => {
-      setIsOpen(true);
-      // Scroll position will be restored via useEffect
+      setRightPanelTab('console');
     },
     // Reset the conversation
     resetConversation: () => {
@@ -866,243 +854,201 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
   }));
 
   return (
-    <>
-      {isOpen && (
-        <div className={`${styles.chatContainer} ai-chat-panel-container`}>
-          <div className={styles.proFeaturesWrapper}>
-            <div className={styles['chat-header']}>
-              <a
-                href="https://3dstreet.com/blog/2025/05/22/introducing-ai-assistant-beta-your-creative-partner-for-street-design#the-fine-print-beta-status-and-availability"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div className={styles.betaPill}>Free Chat in Beta</div>
-              </a>
-              <div className={styles['chat-title']}>
-                {!isMessages ? 'What can I help with?' : 'Assistant'}{' '}
-                {/* <img
-                            src="../../../ui_assets/cards/icons/dadbot.jpg"
-                            alt="DadBot AI Assistant"
-                          /> */}
-                <ChatbotIcon />
-              </div>
-              <div className={styles['chat-actions']}>
-                <button
-                  className={styles.closeButton}
-                  onClick={() => {
-                    // Save scroll position before closing
-                    if (chatContainerRef.current) {
-                      setSavedScrollPosition(
-                        chatContainerRef.current.scrollTop
-                      );
-                    }
-                    setIsOpen(false);
-                  }}
-                  title="Close assistant"
-                >
-                  <Cross24Icon />
-                </button>
-              </div>
-            </div>
-            {showResetConfirm && (
-              <div className={styles.resetConfirmOverlay}>
-                <div className={styles.resetConfirmModal}>
-                  <div className={styles.resetConfirmContent}>
-                    <p>
-                      Are you sure you want to reset the conversation? This will
-                      delete all messages.
-                    </p>
-                    <div className={styles.resetConfirmButtons}>
-                      <button onClick={resetConversation}>Yes, reset</button>
-                      <button onClick={() => setShowResetConfirm(false)}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {isMessages && (
-              <div ref={chatContainerRef} className={styles.chatMessages}>
-                {messages.map((message, index) => {
-                  if (message.type === 'functionCall') {
-                    return (
-                      <FunctionCallMessage
-                        key={message.id}
-                        functionCall={message}
-                      />
-                    );
-                  } else if (message.type === 'snapshot') {
-                    return (
-                      <SnapshotMessage key={message.id} snapshot={message} />
-                    );
-                  } else if (message.type === 'rating') {
-                    // Only show rating UI if this is the latest response and it's not already rated
-                    const isLatest = message.responseId === latestResponseId;
-
-                    return (
-                      <div key={message.id} className={styles.ratingContainer}>
-                        {isLatest && !message.isRated && (
-                          <div className={styles.ratingButtons}>
-                            <button
-                              className={styles.ratingButton}
-                              onClick={() =>
-                                handleResponseRating(
-                                  message.responseId,
-                                  'thumbs_up'
-                                )
-                              }
-                              title="This response was helpful"
-                            >
-                              <AwesomeIcon icon={faThumbsUp} />
-                            </button>
-                            <button
-                              className={styles.ratingButton}
-                              onClick={() =>
-                                handleResponseRating(
-                                  message.responseId,
-                                  'thumbs_down'
-                                )
-                              }
-                              title="This response was not helpful"
-                            >
-                              <AwesomeIcon icon={faThumbsDown} />
-                            </button>
-                          </div>
-                        )}
-                        {isLatest && message.isRated && (
-                          <div className={styles.ratingFeedback}>
-                            Thank you for your feedback
-                          </div>
-                        )}
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div
-                        key={index}
-                        className={`${styles.chatMessage} ${styles[message.role]}`}
-                      >
-                        {message.role === 'assistant' && (
-                          <div className={styles.assistantAvatar}>
-                            <ChatbotIcon />
-                          </div>
-                        )}
-                        <MessageContent
-                          content={message.content}
-                          isAssistant={message.role === 'assistant'}
-                        />
-                      </div>
-                    );
-                  }
-                })}
-                {isLoading && (
-                  <div className={styles.loadingIndicator}>Thinking...</div>
-                )}
-              </div>
-            )}
-
-            <div className={styles.chatInput}>
-              <textarea
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  adjustTextareaHeight(e.target);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (e.shiftKey) {
-                      // Let the default behavior happen (create a newline)
-                      return;
-                    } else if (currentUser) {
-                      e.preventDefault(); // Prevent default to avoid creating a newline
-                      handleSendMessage();
-                    }
-                  }
-                }}
-                placeholder={
-                  isMessages ? 'Reply to Assistant...' : 'Ask anything'
-                }
-                disabled={!currentUser}
-                rows="1"
-                className={styles.chatTextarea}
-                ref={(el) => {
-                  if (el) adjustTextareaHeight(el);
-                }}
-              />
-              <div className={styles.actionButtons}>
-                <div className={styles.leftButtons}>
-                  {!isMessages && (
-                    <>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() =>
-                          setInput(
-                            'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes'
-                          )
-                        }
-                        disabled={isLoading || !currentUser}
-                      >
-                        🛣️ Create a Street
-                      </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() =>
-                          setInput('take 3 snapshots with different types')
-                        }
-                        disabled={isLoading || !currentUser}
-                      >
-                        📸 Take Snapshots
-                      </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() => setModal('report')}
-                        disabled={isLoading || !currentUser}
-                      >
-                        📋 Generate Report
-                      </button>
-                    </>
-                  )}
-                </div>
-                <div className={styles.rightButtons}>
-                  {isMessages && (
-                    <button
-                      onClick={() => setShowResetConfirm(true)}
-                      className={`${styles.resetButton} ${styles.greenIcon}`}
-                      title="Reset conversation"
-                      disabled={isLoading || !currentUser}
-                    >
-                      <AwesomeIcon icon={faRotate} />
-                    </button>
-                  )}
-                  <button
-                    className={styles.sendButton}
-                    onClick={handleSendMessage}
-                    disabled={isLoading || !currentUser}
-                  >
-                    Send
+    <div className={`${styles.chatContainer} ai-chat-panel-container`}>
+      <div className={styles.proFeaturesWrapper}>
+        <div className={styles['chat-header']}>
+          <div className={styles['chat-title']}>
+            <ChatbotIcon />
+            <span>{!isMessages ? 'What can I help with?' : 'Assistant'}</span>
+          </div>
+          <a
+            href="https://3dstreet.com/blog/2025/05/22/introducing-ai-assistant-beta-your-creative-partner-for-street-design#the-fine-print-beta-status-and-availability"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <div className={styles.betaPill}>Free Chat in Beta</div>
+          </a>
+        </div>
+        {showResetConfirm && (
+          <div className={styles.resetConfirmOverlay}>
+            <div className={styles.resetConfirmModal}>
+              <div className={styles.resetConfirmContent}>
+                <p>
+                  Are you sure you want to reset the conversation? This will
+                  delete all messages.
+                </p>
+                <div className={styles.resetConfirmButtons}>
+                  <button onClick={resetConversation}>Yes, reset</button>
+                  <button onClick={() => setShowResetConfirm(false)}>
+                    Cancel
                   </button>
                 </div>
               </div>
             </div>
-
-            {!currentUser && (
-              <div
-                className={styles.proOverlay}
-                onClick={() => setModal('signin')}
-              >
-                <div className={styles.proOverlayContent}>
-                  <span role="img" aria-label="lock">
-                    🔒
-                  </span>
-                  <span>Please log in to use the Assistant</span>
+          </div>
+        )}
+        <div ref={chatContainerRef} className={styles.chatMessages}>
+          {messages.map((message, index) => {
+            if (message.type === 'functionCall') {
+              return (
+                <FunctionCallMessage key={message.id} functionCall={message} />
+              );
+            } else if (message.type === 'snapshot') {
+              return <SnapshotMessage key={message.id} snapshot={message} />;
+            } else if (message.type === 'rating') {
+              const isLatest = message.responseId === latestResponseId;
+              return (
+                <div key={message.id} className={styles.ratingContainer}>
+                  {isLatest && !message.isRated && (
+                    <div className={styles.ratingButtons}>
+                      <button
+                        className={styles.ratingButton}
+                        onClick={() =>
+                          handleResponseRating(message.responseId, 'thumbs_up')
+                        }
+                        title="This response was helpful"
+                      >
+                        <AwesomeIcon icon={faThumbsUp} />
+                      </button>
+                      <button
+                        className={styles.ratingButton}
+                        onClick={() =>
+                          handleResponseRating(
+                            message.responseId,
+                            'thumbs_down'
+                          )
+                        }
+                        title="This response was not helpful"
+                      >
+                        <AwesomeIcon icon={faThumbsDown} />
+                      </button>
+                    </div>
+                  )}
+                  {isLatest && message.isRated && (
+                    <div className={styles.ratingFeedback}>
+                      Thank you for your feedback
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            } else {
+              return (
+                <div
+                  key={index}
+                  className={`${styles.chatMessage} ${styles[message.role]}`}
+                >
+                  {message.role === 'assistant' && (
+                    <div className={styles.assistantAvatar}>
+                      <ChatbotIcon />
+                    </div>
+                  )}
+                  <MessageContent
+                    content={message.content}
+                    isAssistant={message.role === 'assistant'}
+                  />
+                </div>
+              );
+            }
+          })}
+          {isLoading && (
+            <div className={styles.loadingIndicator}>Thinking...</div>
+          )}
+        </div>
+
+        <div className={styles.chatInput}>
+          <textarea
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              adjustTextareaHeight(e.target);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                  return;
+                } else if (currentUser) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }
+            }}
+            placeholder={isMessages ? 'Reply to Assistant...' : 'Ask anything'}
+            disabled={!currentUser}
+            rows="1"
+            className={styles.chatTextarea}
+            ref={(el) => {
+              if (el) adjustTextareaHeight(el);
+            }}
+          />
+          <div className={styles.actionButtons}>
+            <div className={styles.leftButtons}>
+              {!isMessages && (
+                <>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() =>
+                      setInput(
+                        'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes'
+                      )
+                    }
+                    disabled={isLoading || !currentUser}
+                  >
+                    Create a street
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() =>
+                      setInput('take 3 snapshots with different types')
+                    }
+                    disabled={isLoading || !currentUser}
+                  >
+                    Take snapshot
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() => setModal('report')}
+                    disabled={isLoading || !currentUser}
+                  >
+                    Generate report
+                  </button>
+                </>
+              )}
+            </div>
+            <div className={styles.rightButtons}>
+              {isMessages && (
+                <button
+                  onClick={() => setShowResetConfirm(true)}
+                  className={`${styles.resetButton} ${styles.greenIcon}`}
+                  title="Reset conversation"
+                  disabled={isLoading || !currentUser}
+                >
+                  <AwesomeIcon icon={faRotate} />
+                </button>
+              )}
+              <button
+                className={styles.sendButton}
+                onClick={handleSendMessage}
+                disabled={isLoading || !currentUser}
+                title="Send"
+              >
+                <ArrowUp24Icon />
+              </button>
+            </div>
           </div>
         </div>
-      )}
-    </>
+
+        {!currentUser && (
+          <div className={styles.proOverlay} onClick={() => setModal('signin')}>
+            <div className={styles.proOverlayContent}>
+              <span role="img" aria-label="lock">
+                🔒
+              </span>
+              <span>Please log in to use the Assistant</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 });
 

@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useContext, useRef } from 'react';
 import { Tooltip } from 'radix-ui';
 import posthog from 'posthog-js';
 import { faLockOpen } from '@fortawesome/free-solid-svg-icons';
@@ -8,6 +8,7 @@ import { AuthContext } from '@/editor/contexts';
 import ComponentsSidebar from '../elements/Sidebar';
 import { Button, Tabs } from '../elements';
 import { AwesomeIcon } from '../elements/AwesomeIcon';
+import AIChatPanel from './AIChatPanel';
 import styles from './RightPanel.module.scss';
 
 const TooltipWrapper = ({ children, content, side = 'bottom' }) => (
@@ -37,7 +38,9 @@ const TooltipWrapper = ({ children, content, side = 'bottom' }) => (
 export default function RightPanel({ entity, visible }) {
   const { currentUser: authUser, isLoading } = useContext(AuthContext) || {};
   const setModal = useStore((s) => s.setModal);
-  const [activeTab, setActiveTab] = useState('properties');
+  const activeTab = useStore((s) => s.rightPanelTab);
+  const setActiveTab = useStore((s) => s.setRightPanelTab);
+  const aiChatPanelRef = useRef(null);
 
   const planLabel = authUser?.isPro
     ? authUser?.isProTeam
@@ -61,17 +64,8 @@ export default function RightPanel({ entity, visible }) {
     useStore.getState().setModal('share');
   };
 
-  const handleOpenConsole = () => {
-    if (window.aiChatPanelRef?.openPanel) {
-      window.aiChatPanelRef.openPanel();
-    }
-  };
-
   const openPropertiesTab = () => setActiveTab('properties');
-  const openConsoleTab = () => {
-    setActiveTab('console');
-    handleOpenConsole();
-  };
+  const openConsoleTab = () => setActiveTab('console');
 
   return (
     <Tooltip.Provider>
@@ -129,23 +123,18 @@ export default function RightPanel({ entity, visible }) {
           />
         </div>
         <div className={styles.content}>
-          {activeTab === 'properties' ? (
+          <div
+            className={`${styles.tabPane} ${styles.tabPaneScroll}`}
+            style={{ display: activeTab === 'properties' ? 'block' : 'none' }}
+          >
             <ComponentsSidebar entity={entity} visible={visible} />
-          ) : (
-            <div className={styles.consolePlaceholder}>
-              <p>
-                The AI assistant is available as a floating panel. Click the
-                button below to open it.
-              </p>
-              <button
-                type="button"
-                className={styles.consoleOpenButton}
-                onClick={handleOpenConsole}
-              >
-                Open AI Assistant
-              </button>
-            </div>
-          )}
+          </div>
+          <div
+            className={`${styles.tabPane} ${styles.tabPaneFlex}`}
+            style={{ display: activeTab === 'console' ? 'flex' : 'none' }}
+          >
+            <AIChatPanel ref={aiChatPanelRef} />
+          </div>
         </div>
       </div>
     </Tooltip.Provider>

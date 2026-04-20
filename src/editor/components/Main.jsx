@@ -17,7 +17,6 @@ import { PaymentModal } from './modals/PaymentModal';
 import { AddLayerPanel } from './elements/AddLayerPanel';
 import { GeoLocationDisplay } from './elements/GeoLocationDisplay';
 import { NewModal } from './modals/NewModal';
-import { ReportModal } from './modals/ReportModal';
 import { LoadingSceneModal } from './modals/LoadingSceneModal';
 import { ToolbarWrapper } from './scenegraph/ToolbarWrapper.jsx';
 import { ActionBar } from './elements/ActionBar';
@@ -119,7 +118,6 @@ export default function Main() {
       <ScenesModal />
       <ProfileModal />
       <NewModal />
-      <ReportModal />
       <LoadingSceneModal />
       <LoadScript
         googleMapsApiKey={firebaseConfig.apiKey}

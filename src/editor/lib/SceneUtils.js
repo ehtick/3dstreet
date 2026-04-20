@@ -61,15 +61,6 @@ export function createElementsForScenesFromJSON(streetData, memoryData) {
     return;
   }
 
-  // Load project info from memory if available
-  if (memoryData && memoryData.projectInfo) {
-    console.log(
-      'Loading project info from memory in createElementsForScenesFromJSON:',
-      memoryData.projectInfo
-    );
-    useStore.getState().setProjectInfo(memoryData.projectInfo);
-  }
-
   // Resolve camera state: explicit snapshot > auto-saved > null (default)
   let defaultSnapshotCameraState = memoryData?.cameraState || null;
   if (memoryData?.snapshots?.length > 0) {

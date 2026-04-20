@@ -74,17 +74,13 @@ function convertDOMElToObject(entity) {
     }
   }
 
-  // Get project info from Zustand store
   const storeState = useStore.getState();
-  const memory = {
-    projectInfo: storeState.projectInfo
-  };
 
   return {
     title: storeState.sceneTitle,
     version: '0.5.6',
     data: data,
-    memory: memory
+    memory: {}
   };
 }
 STREET.utils.convertDOMElToObject = convertDOMElToObject;
@@ -995,15 +991,6 @@ function createElementsFromJSON(streetJSON, clearUrlHash) {
   if (sceneTitle) {
     console.log('sceneTitle from createElementsFromJSON', sceneTitle);
     useStore.getState().setSceneTitle(sceneTitle);
-  }
-
-  // Load project info from memory if available
-  if (streetObject.memory && streetObject.memory.projectInfo) {
-    console.log(
-      'Loading project info from memory:',
-      streetObject.memory.projectInfo
-    );
-    useStore.getState().setProjectInfo(streetObject.memory.projectInfo);
   }
 
   const streetContainerEl = document.getElementById('street-container');

@@ -488,9 +488,12 @@ export default class SceneGraph extends React.Component {
               <AppSwitcher />
               {!isCollapsed && <AppMenu currentUser={currentUser} />}
               {isCollapsed && (
-                <div id="scene-title" className="clickable truncate">
-                  <SceneEditTitle />
-                </div>
+                <>
+                  <div id="scene-title" className="clickable truncate">
+                    <SceneEditTitle />
+                  </div>
+                  <Save currentUser={currentUser} />
+                </>
               )}
             </div>
             {!isCollapsed && (

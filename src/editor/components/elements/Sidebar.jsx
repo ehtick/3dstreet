@@ -281,7 +281,11 @@ export default class Sidebar extends React.Component {
         </div>
       );
     } else {
-      return <div />;
+      return (
+        <div className="properties-empty-state">
+          Select an object to edit properties.
+        </div>
+      );
     }
   }
 }

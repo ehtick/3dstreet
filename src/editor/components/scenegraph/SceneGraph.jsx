@@ -544,7 +544,21 @@ export default class SceneGraph extends React.Component {
               </div>
               {this.state.activeTab === 'layers' && (
                 <div className="layers">
-                  <div>{this.renderEntities()}</div>
+                  {this.state.entities.length === 0 ? (
+                    <div className="layers-empty-state">
+                      <p>Add a new layer to get started.</p>
+                      <button
+                        type="button"
+                        className="layers-empty-state-button"
+                        onClick={this.openAddLayer}
+                      >
+                        <Plus20Circle />
+                        <span>Add Layer</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div>{this.renderEntities()}</div>
+                  )}
                 </div>
               )}
               {this.state.activeTab === 'gallery' && <GalleryPanel />}

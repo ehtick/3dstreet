@@ -13,6 +13,42 @@
     min-height: 0;
   }
 
+  // Empty state for the layers panel
+  .layers-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 16px;
+    text-align: center;
+
+    p {
+      margin: 0;
+      color: variables.$lightgray-700;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+
+  .layers-empty-state-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid variables.$gray-700;
+    background: transparent;
+    color: variables.$lightgray-100;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: variables.$purple-900;
+      color: variables.$white;
+      border-color: variables.$purple-900;
+    }
+  }
+
   // Left panel header (app switcher + app menu + scene title + save)
   #left-panel-header {
     display: flex;

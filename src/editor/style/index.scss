@@ -470,7 +470,6 @@ body.aframe-inspector-opened {
   .modal,
   #action-bar,
   #geo,
-  #zoom-help-buttons,
   .clickable {
     pointer-events: all;
   }
@@ -515,16 +514,6 @@ body.aframe-inspector-opened {
       color: variables.$white;
     }
   }
-}
-
-#zoom-help-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: absolute;
-  right: 28px;
-  bottom: 62px;
-  z-index: -1;
 }
 
 .outliner {

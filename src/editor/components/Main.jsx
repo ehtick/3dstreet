@@ -1,4 +1,3 @@
-import { ZoomButtons } from './elements';
 import { useState, useEffect } from 'react';
 import RightPanel from './scenegraph/RightPanel';
 import Events from '../lib/Events';
@@ -15,7 +14,6 @@ import { GeoModal } from './modals/GeoModal';
 import { ScenesModal } from './modals/ScenesModal';
 import { PaymentModal } from './modals/PaymentModal';
 import { AddLayerPanel } from './elements/AddLayerPanel';
-import { GeoLocationDisplay } from './elements/GeoLocationDisplay';
 import { NewModal } from './modals/NewModal';
 import { LoadingSceneModal } from './modals/LoadingSceneModal';
 import { ToolbarWrapper } from './scenegraph/ToolbarWrapper.jsx';
@@ -132,15 +130,9 @@ export default function Main() {
       />
 
       {isInspectorEnabled && (
-        <>
-          <div id="zoom-help-buttons">
-            <ZoomButtons />
-          </div>
-          <div className="clickable">
-            <AddLayerPanel />
-          </div>
-          <GeoLocationDisplay />
-        </>
+        <div className="clickable">
+          <AddLayerPanel />
+        </div>
       )}
     </div>
   );

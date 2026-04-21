@@ -427,7 +427,7 @@ THREE.EditorControls = function (_object, domElement) {
   domElement.addEventListener('touchstart', touchStart, false);
   domElement.addEventListener('touchmove', touchMove, false);
 
-  // ZoomButtons
+  // ActionBar zoom/reset buttons
   let zoomInInterval;
   let zoomOutInterval;
 

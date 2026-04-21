@@ -72,19 +72,6 @@ export const Shortcuts = {
       setIsGridVisible(!isGridVisible);
     }
 
-    // 5: enter viewer mode
-    if (keyCode === 53) {
-      const { isInspectorEnabled, setIsInspectorEnabled } = useStore.getState();
-      setIsInspectorEnabled(!isInspectorEnabled);
-    }
-
-    // F5: enter viewer mode
-    if (keyCode === 116) {
-      event.preventDefault(); // Prevent browser refresh
-      const { isInspectorEnabled, setIsInspectorEnabled } = useStore.getState();
-      setIsInspectorEnabled(!isInspectorEnabled);
-    }
-
     // backspace & delete: remove selected entity
     if (keyCode === 8 || keyCode === 46) {
       removeSelectedEntity();

@@ -63,15 +63,10 @@ export default class PropertyRow extends React.Component {
       type = 'boolean';
     }
 
-    let value =
+    const value =
       type === 'selector'
         ? props.entity.getDOMAttribute(props.componentname)?.[props.name]
         : props.data;
-
-    if (type === 'string' && value && typeof value !== 'string') {
-      // Allow editing a custom type like event-set component schema
-      value = props.schema.stringify(value);
-    }
 
     const widgetProps = {
       name: props.name,

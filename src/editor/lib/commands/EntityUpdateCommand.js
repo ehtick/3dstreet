@@ -34,9 +34,10 @@ export class EntityUpdateCommand extends Command {
     if (component) {
       if (payload.property) {
         if (component.schema[payload.property]) {
-          this.newValue = component.schema[payload.property].stringify(
-            payload.value
-          );
+          this.newValue =
+            payload.value === null
+              ? null
+              : component.schema[payload.property].stringify(payload.value);
           this.oldValue = component.schema[payload.property].stringify(
             payload.entity.getAttribute(payload.component)[payload.property]
           );
@@ -57,9 +58,12 @@ export class EntityUpdateCommand extends Command {
           );
         }
       } else {
-        this.newValue = component.isSingleProperty
-          ? component.schema.stringify(payload.value)
-          : payload.value;
+        this.newValue =
+          payload.value === null
+            ? null
+            : component.isSingleProperty
+              ? component.schema.stringify(payload.value)
+              : payload.value;
         this.oldValue = component.isSingleProperty
           ? component.schema.stringify(
               payload.entity.getAttribute(payload.component)

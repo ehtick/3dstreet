@@ -152,9 +152,7 @@ export class EntityReparentCommand extends Command {
     // Update position/rotation/scale components relative to new parent
     this.updateLocalTransform(recreatedEntity, newParent);
 
-    // Wait for entity to be loaded before emitting events.
-    // createEntityFromObj also uses 'loaded' to set deferred components;
-    // its handler was registered first so it runs before this one.
+    // Wait for entity to be loaded before emitting events
     recreatedEntity.addEventListener(
       'loaded',
       () => {

@@ -5,6 +5,7 @@ export default class InputWidget extends React.Component {
   static propTypes = {
     id: PropTypes.string,
     name: PropTypes.string.isRequired,
+    onBlur: PropTypes.func,
     onChange: PropTypes.func,
     schema: PropTypes.object,
     value: PropTypes.any
@@ -13,6 +14,7 @@ export default class InputWidget extends React.Component {
   constructor(props) {
     super(props);
     this.state = { value: this.stringifyValue(props.value) };
+    this.input = React.createRef();
   }
 
   stringifyValue = (value) => {
@@ -45,6 +47,23 @@ export default class InputWidget extends React.Component {
     }
   };
 
+  onBlur = (e) => {
+    if (this.props.onBlur) {
+      const value = e.target.value;
+      this.props.onBlur(this.props.name, this.parseInput(value));
+    }
+  };
+
+  onKeyDown = (e) => {
+    e.stopPropagation();
+
+    // enter
+    if (e.keyCode === 13) {
+      this.input.current.blur();
+      return;
+    }
+  };
+
   componentDidUpdate(prevProps) {
     if (this.props.value !== prevProps.value) {
       this.setState({ value: this.stringifyValue(this.props.value) });
@@ -55,10 +74,13 @@ export default class InputWidget extends React.Component {
     return (
       <input
         id={this.props.id}
+        ref={this.input}
         type="text"
         className="string"
         value={this.state.value}
+        onBlur={this.onBlur}
         onChange={this.onChange}
+        onKeyDown={this.onKeyDown}
         spellCheck="false"
       />
     );

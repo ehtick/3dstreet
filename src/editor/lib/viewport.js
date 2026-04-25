@@ -472,12 +472,13 @@ export function Viewport(inspector) {
       } else if (object.el.hasAttribute('gltf-model')) {
         const listener = (event) => {
           if (event.target !== object.el) return; // we got an event for a child, ignore
+          object.el.removeEventListener('model-loaded', listener);
           // Some models have a wrong bounding box if we don't wait a bit
           setTimeout(() => {
+            if (object.parent === null) return; // entity was detached before timeout fired
             selectionBox.setFromObject(object);
             selectionBox.visible = true;
           }, 20);
-          object.el.removeEventListener('model-loaded', listener);
         };
         object.el.addEventListener('model-loaded', listener);
       } else if (!object.el.isScene && object.el.id !== 'street-container') {

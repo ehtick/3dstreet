@@ -87,24 +87,6 @@
         white-space: nowrap;
       }
     }
-
-    .left-panel-collapse-toggle {
-      all: unset;
-      margin-left: auto;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      cursor: pointer;
-      color: variables.$lightgray-300;
-
-      &:hover {
-        background-color: variables.$purple-900;
-        color: variables.$white;
-      }
-    }
   }
 
   // Layer block styling
@@ -406,8 +388,7 @@
     }
   }
 
-  // Left panel (renamed from .outliner to avoid colliding with the right
-  // Sidebar component which still uses .outliner)
+  // Left panel — paired with .properties-panel on the right.
   .scenegraph-panel {
     color: variables.$lightgray-100;
     cursor: default;

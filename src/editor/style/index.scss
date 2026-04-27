@@ -326,13 +326,6 @@ body.aframe-inspector-opened {
     vertical-align: middle;
   }
 
-  .scroll {
-    margin-top: 72px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 512px; // 584px - 72px
-  }
-
   #sidebar-buttons {
     display: flex;
     flex-direction: row;
@@ -465,21 +458,13 @@ body.aframe-inspector-opened {
   .ai-chat-toggle-container,
   .ai-chat-panel-container,
   #toolbar,
-  .outliner,
+  .properties-panel,
   .scenegraph-panel,
   .modal,
   #action-bar,
   #geo,
   .clickable {
     pointer-events: all;
-  }
-
-  #rightPanel .outliner {
-    border-radius: 8px 0 0 8px;
-  }
-
-  #rightPanel #layers-title {
-    border-top-left-radius: 8px;
   }
 
   .aframe-inspector-opened a-scene .a-canvas {
@@ -516,110 +501,27 @@ body.aframe-inspector-opened {
   }
 }
 
-.outliner {
+// Right-side properties panel rendered inside RightPanel's content area.
+.properties-panel {
   color: variables.$lightgray-100;
   cursor: default;
   font-size: 16px;
   outline: none;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  position: absolute;
-  top: 80px;
-  display: block !important;
-  align-items: center;
-  padding: 0px;
-  background: variables.$darkgray-800;
-  border-radius: 12px 0 0 0px;
-  z-index: 1;
-  li {
-    list-style: none;
-    margin-right: 0;
-    position: relative;
-  }
-
-  li a {
-    background: rgba(50, 50, 50, 0.5);
-    padding: 0;
-    list-style: none;
-    display: inline-flex;
-    font-size: 18px !important;
-    align-items: center;
-    transition: all 0.4s ease-in-out 0s;
-  }
-
-  li a:hover {
-    background: variables.$purple-800;
-  }
-
-  li a span {
-    margin-left: 16px;
-    font-size: 18px;
-    transition: all 0.4s ease-in-out 0s;
-    text-align: left;
-    width: 200px;
-    letter-spacing: 0.5;
-    margin-right: -270px;
-    padding-left: 60px;
-    color: rgba(50, 50, 50, 0.5);
-  }
-
-  li a:hover span {
-    margin-right: 0;
-    padding-left: 0;
-    color: variables.$white;
-  }
-
-  li a {
-    color: variables.$white;
-    text-decoration: none;
-  }
-
-  li a .icon {
-    vertical-align: middle;
-    z-index: 999;
-    padding: 16px;
-  }
-
-  li a:hover .icon {
-    background: variables.$purple-800;
-    z-index: 9;
-  }
-
-  li span.title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  #toggle-rightbar {
-    width: 56px;
-    height: 72px;
-    background: variables.$darkgray-900;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: -12px;
-  }
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 
   #layers-title {
-    width: 372px;
-    background: variables.$darkgray-800;
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
     align-items: center;
-    position: fixed;
-    z-index: 1;
-
-    #toggle-rightbar:active {
-      background-color: variables.$purple-200;
-    }
+    flex-shrink: 0;
+    padding: 8px 12px;
 
     .icon-container {
       min-width: 24px;
       min-height: 24px;
-      display: flex; // This helps with centering
+      display: flex;
       align-items: center;
       justify-content: center;
 
@@ -630,7 +532,6 @@ body.aframe-inspector-opened {
     }
 
     .layersBlock {
-      padding-left: 20px;
       display: flex;
       align-items: center;
       column-gap: 8px;
@@ -638,30 +539,19 @@ body.aframe-inspector-opened {
 
     span {
       font-weight: 500;
-      font-size: 24px;
+      font-size: 16px;
       color: variables.$white;
-      line-height: 28px;
-      background: none;
-
-      svg {
-        display: none;
-      }
+      line-height: 20px;
     }
   }
-}
 
-.outliner.hide {
-  display: block !important;
-  height: 584px;
-  width: 372px;
-}
-
-#toggle-rightbar:hover {
-  background-color: variables.$purple-100;
-}
-
-#toggle-rightbar:active {
-  background-color: variables.$purple-200;
+  .scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 16px;
+  }
 }
 
 span {
@@ -669,25 +559,4 @@ span {
   color: variables.$white;
   background-repeat: no-repeat;
   background-position: left;
-}
-
-.outliner.hide #layers-title:active {
-  background-color: variables.$purple-200;
-}
-
-.outliner.hide #toggle-rightbar {
-  background: rgba(50, 50, 50, 0.5) !important;
-  backdrop-filter: blur(24px);
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  border-radius: 12px 0px 0px 12px;
-}
-
-.outliner.hide #toggle-rightbar:active {
-  background-color: variables.$purple-200 !important;
-}
-
-.outliner.hide .entity,
-.outliner.hide .layer {
-  display: none;
 }

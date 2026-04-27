@@ -21,6 +21,7 @@ import { ActionBar } from './elements/ActionBar';
 import { PrimaryToolbar } from './elements/PrimaryToolbar';
 import useStore from '@/store';
 import { AIChatProvider } from '../contexts/AIChatContext';
+import styles from './Main.module.scss';
 
 // Define the libraries array as a constant outside of the component
 const GOOGLE_MAPS_LIBRARIES = ['places'];
@@ -75,28 +76,10 @@ export default function Main() {
           <div>
             <SceneGraph scene={scene} selectedEntity={state.entity} />
             <RightPanel entity={state.entity} />
-            <div
-              className="clickable"
-              style={{
-                position: 'absolute',
-                top: '12px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10
-              }}
-            >
+            <div className={`clickable ${styles.primaryToolbarDock}`}>
               <PrimaryToolbar />
             </div>
-            <div
-              className="clickable"
-              style={{
-                position: 'absolute',
-                bottom: '16px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10
-              }}
-            >
+            <div className={`clickable ${styles.actionBarDock}`}>
               <ActionBar selectedEntity={state.entity} />
             </div>
           </div>

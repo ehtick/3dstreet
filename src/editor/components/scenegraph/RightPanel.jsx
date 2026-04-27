@@ -127,7 +127,7 @@ export default function RightPanel({ entity }) {
             className={`${styles.tabPane} ${styles.tabPaneScroll}`}
             style={{ display: activeTab === 'properties' ? 'block' : 'none' }}
           >
-            <ComponentsSidebar entity={entity} visible={true} />
+            <ComponentsSidebar entity={entity} />
           </div>
           <div
             className={`${styles.tabPane} ${styles.tabPaneFlex}`}

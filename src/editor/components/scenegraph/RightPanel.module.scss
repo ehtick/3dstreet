@@ -64,47 +64,6 @@
   position: relative;
   display: flex;
   flex-direction: column;
-
-  // Neutralize the absolute positioning that .outliner applies globally.
-  :global(.outliner) {
-    position: static !important;
-    top: auto !important;
-    width: 100% !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    overflow: visible !important;
-    margin-top: 0 !important;
-  }
-
-  :global(.outliner #layers-title) {
-    position: relative !important;
-    width: 100% !important;
-    padding: 8px 12px !important;
-    background: transparent !important;
-  }
-
-  :global(.outliner #layers-title .layersBlock) {
-    padding-left: 0 !important;
-  }
-
-  :global(.outliner #layers-title span) {
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    line-height: 20px !important;
-  }
-
-  :global(.outliner #toggle-rightbar) {
-    display: none !important;
-  }
-
-  :global(.outliner .scroll) {
-    position: relative !important;
-    top: auto !important;
-    width: 100% !important;
-    height: auto !important;
-    margin-top: 0 !important;
-    padding: 0 0 16px 0 !important;
-  }
 }
 
 .tabPane {

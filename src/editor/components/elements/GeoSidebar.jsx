@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { Button } from '../elements';
 import { useAuthContext } from '@/editor/contexts/index.js';
-import AdvancedComponents from './AdvancedComponents';
 import PropertyRow from './PropertyRow';
 import { Magnifier20Icon, SunIcon } from '@shared/icons';
 import posthog from 'posthog-js';
@@ -510,7 +509,10 @@ const GeoSidebar = ({ entity }) => {
 
             {/* Upgrade prompt for users with 0 tokens */}
             {!currentUser?.isPro && tokenProfile?.geoToken === 0 && (
-              <div className="propertyRow" style={{ marginTop: '8px' }}>
+              <div
+                className="propertyRow"
+                style={{ marginTop: '8px', paddingRight: '12px' }}
+              >
                 <Button
                   variant="toolbtn"
                   style={{
@@ -654,12 +656,6 @@ const GeoSidebar = ({ entity }) => {
                   </div>
                 )}
               </>
-            )}
-
-            {entity && entity.components && (
-              <div className="propertyRow">
-                <AdvancedComponents entity={entity} />
-              </div>
             )}
           </div>
         </div>

@@ -25,8 +25,7 @@ export default class SceneGraph extends React.Component {
   static contextType = AuthContext;
   static propTypes = {
     scene: PropTypes.object,
-    selectedEntity: PropTypes.object,
-    visible: PropTypes.bool
+    selectedEntity: PropTypes.object
   };
 
   static defaultProps = {
@@ -462,11 +461,6 @@ export default class SceneGraph extends React.Component {
   };
 
   render() {
-    // To hide the SceneGraph we have to hide its parent too (#left-sidebar).
-    if (!this.props.visible) {
-      return null;
-    }
-
     const isCollapsed = !this.state.panelsVisible;
     const className = classNames({
       'scenegraph-panel': true,

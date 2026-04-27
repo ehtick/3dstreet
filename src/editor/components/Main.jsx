@@ -74,11 +74,7 @@ export default function Main() {
       {isInspectorEnabled && (
         <AIChatProvider firebaseApp={app}>
           <div>
-            <SceneGraph
-              scene={scene}
-              selectedEntity={state.entity}
-              visible={true}
-            />
+            <SceneGraph scene={scene} selectedEntity={state.entity} />
             {panelsVisible && (
               <RightPanel entity={state.entity} visible={true} />
             )}

@@ -56,7 +56,9 @@ function convertDOMElToObject(entity) {
     }
   }
 
-  // Save viewer-mode component data separately
+  // Save viewer-mode component data separately. The Viewer Mode UI was
+  // removed in panels-v2 (PR #1566) but we keep persisting it so existing
+  // scenes round-trip cleanly until viewer mode is restored.
   const cameraRig = document.querySelector('#cameraRig');
   if (cameraRig && cameraRig.hasAttribute('viewer-mode')) {
     // Create a minimal entity with just the viewer-mode component

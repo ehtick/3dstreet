@@ -25,7 +25,9 @@ const useStore = create(
   subscribeWithSelector(
     devtools(
       (set) => ({
-        // Recording state
+        // Recording state. The Recording UI was removed in panels-v2
+        // (PR #1566); these stubs and the canvasRecorder import stay so
+        // we can restore the feature soon without re-wiring the store.
         isRecording: false,
         setIsRecording: (newIsRecording) =>
           set({ isRecording: newIsRecording }),

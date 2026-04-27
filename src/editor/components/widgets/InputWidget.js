@@ -5,31 +5,68 @@ export default class InputWidget extends React.Component {
   static propTypes = {
     id: PropTypes.string,
     name: PropTypes.string.isRequired,
+    onBlur: PropTypes.func,
     onChange: PropTypes.func,
-    value: PropTypes.any,
-    schema: PropTypes.object
+    schema: PropTypes.object,
+    value: PropTypes.any
   };
 
   constructor(props) {
     super(props);
-    this.state = { value: this.props.value || '' };
+    this.state = { value: this.stringifyValue(props.value) };
+    this.input = React.createRef();
   }
 
-  onChange = (e) => {
-    var value = e.target.value;
-    // if this component property is an array, then turn the string into an array
-    if (this.props.schema.type === 'array') {
-      value = value.split(',');
+  stringifyValue = (value) => {
+    // For selector and selectorAll types, getDOMAttribute returns null for
+    // single-property schema and undefined for multi-property schema when the
+    // property is not set.
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'string') return value;
+    // Non-string value (array, custom object like event-set): stringify for display
+    if (this.props.schema) return this.props.schema.stringify(value);
+    return String(value);
+  };
+
+  parseInput = (value) => {
+    // The type array doesn't bailout-on-string in its stringify
+    // (arrayStringify), so we need to parse the input value before calling
+    // onChange. That could potentially happen for a custom property that
+    // implements its own parse/stringify functions.
+    if (this.props.schema) {
+      return this.props.schema.parse(value);
     }
+    return value;
+  };
+
+  onChange = (e) => {
+    const value = e.target.value;
     this.setState({ value: value });
     if (this.props.onChange) {
-      this.props.onChange(this.props.name, value);
+      this.props.onChange(this.props.name, this.parseInput(value));
+    }
+  };
+
+  onBlur = (e) => {
+    if (this.props.onBlur) {
+      const value = e.target.value;
+      this.props.onBlur(this.props.name, this.parseInput(value));
+    }
+  };
+
+  onKeyDown = (e) => {
+    e.stopPropagation();
+
+    // enter
+    if (e.keyCode === 13) {
+      this.input.current.blur();
+      return;
     }
   };
 
   componentDidUpdate(prevProps) {
     if (this.props.value !== prevProps.value) {
-      this.setState({ value: this.props.value });
+      this.setState({ value: this.stringifyValue(this.props.value) });
     }
   }
 
@@ -37,10 +74,13 @@ export default class InputWidget extends React.Component {
     return (
       <input
         id={this.props.id}
+        ref={this.input}
         type="text"
         className="string"
-        value={this.state.value || ''}
+        value={this.state.value}
+        onBlur={this.onBlur}
         onChange={this.onChange}
+        onKeyDown={this.onKeyDown}
         spellCheck="false"
       />
     );

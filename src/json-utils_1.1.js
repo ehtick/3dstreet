@@ -397,6 +397,27 @@ function createEntities(entitiesData, parentEl) {
   const sceneElement = document.querySelector('a-scene');
   const removeEntities = ['environment', 'reference-layers'];
   for (const entityData of entitiesData) {
+    // Legacy migration: the geospatial layer's visibility used to be toggled
+    // via the entity's `visible` attribute. The new sidepanel exposes this
+    // through the map type ("No Map" = off), so convert any hidden geo entity
+    // into the equivalent maps:none state.
+    const components = entityData.components;
+    if (
+      components &&
+      components['street-geo'] &&
+      (components.visible === false || components.visible === 'false')
+    ) {
+      const geoVal = components['street-geo'];
+      if (typeof geoVal === 'string') {
+        const parsed = AFRAME.utils.styleParser.parse(geoVal);
+        parsed.maps = 'none';
+        components['street-geo'] = AFRAME.utils.styleParser.stringify(parsed);
+      } else if (typeof geoVal === 'object' && geoVal !== null) {
+        geoVal.maps = 'none';
+      }
+      delete components.visible;
+    }
+
     if (
       entityData.id === 'street-container' &&
       entityData.children &&

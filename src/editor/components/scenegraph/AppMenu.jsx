@@ -569,12 +569,9 @@ const AppMenu = ({ currentUser }) => {
             <Menubar.Separator className="MenubarSeparator" />
             <Menubar.Item
               className="MenubarItem"
-              onClick={() => {
-                makeScreenshot();
-                setModal('screenshot');
-              }}
+              onClick={() => setModal('share')}
             >
-              Share & Download...
+              Share...
             </Menubar.Item>
             <Menubar.Separator className="MenubarSeparator" />
             <Menubar.Sub>
@@ -658,6 +655,16 @@ const AppMenu = ({ currentUser }) => {
               onClick={() => AFRAME.INSPECTOR.controls.resetZoom()}
             >
               Reset Camera View
+            </Menubar.Item>
+            <Menubar.Separator className="MenubarSeparator" />
+            <Menubar.Item
+              className="MenubarItem"
+              onClick={() => {
+                makeScreenshot();
+                setModal('screenshot');
+              }}
+            >
+              Snapshot & Render...
             </Menubar.Item>
           </Menubar.Content>
         </Menubar.Portal>

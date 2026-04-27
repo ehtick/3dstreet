@@ -483,7 +483,7 @@ export default class SceneGraph extends React.Component {
               {!isCollapsed && <AppMenu currentUser={currentUser} />}
               {isCollapsed && (
                 <>
-                  <div id="scene-title" className="clickable truncate">
+                  <div className="scene-title clickable truncate">
                     <SceneEditTitle />
                   </div>
                   <Save currentUser={currentUser} />
@@ -492,7 +492,7 @@ export default class SceneGraph extends React.Component {
             </div>
             {!isCollapsed && (
               <div className="left-panel-title-row">
-                <div id="scene-title" className="clickable truncate">
+                <div className="scene-title clickable truncate">
                   <SceneEditTitle />
                 </div>
                 <Save currentUser={currentUser} />

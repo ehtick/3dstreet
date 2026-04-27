@@ -75,9 +75,7 @@ export default function Main() {
         <AIChatProvider firebaseApp={app}>
           <div>
             <SceneGraph scene={scene} selectedEntity={state.entity} />
-            {panelsVisible && (
-              <RightPanel entity={state.entity} visible={true} />
-            )}
+            {panelsVisible && <RightPanel entity={state.entity} />}
             <div
               className="clickable"
               style={{

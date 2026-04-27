@@ -35,7 +35,7 @@ const TooltipWrapper = ({ children, content, side = 'bottom' }) => (
   </Tooltip.Root>
 );
 
-export default function RightPanel({ entity, visible }) {
+export default function RightPanel({ entity }) {
   const { currentUser: authUser, isLoading } = useContext(AuthContext) || {};
   const setModal = useStore((s) => s.setModal);
   const activeTab = useStore((s) => s.rightPanelTab);
@@ -122,7 +122,7 @@ export default function RightPanel({ entity, visible }) {
             className={`${styles.tabPane} ${styles.tabPaneScroll}`}
             style={{ display: activeTab === 'properties' ? 'block' : 'none' }}
           >
-            <ComponentsSidebar entity={entity} visible={visible} />
+            <ComponentsSidebar entity={entity} visible={true} />
           </div>
           <div
             className={`${styles.tabPane} ${styles.tabPaneFlex}`}

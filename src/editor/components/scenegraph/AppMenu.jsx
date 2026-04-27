@@ -107,7 +107,8 @@ const AppMenu = ({ currentUser }) => {
     isGridVisible,
     setIsGridVisible,
     saveScene,
-    setGeojsonImportData
+    setGeojsonImportData,
+    setRightPanelTab
   } = useStore();
   const { currentUser: authUser } = useAuthContext();
   const [currentCamera, setCurrentCamera] = useState('perspective');
@@ -162,13 +163,7 @@ const AppMenu = ({ currentUser }) => {
   };
 
   const showAIChatPanel = () => {
-    // Use the global ref to access the AIChatPanel component
-    if (
-      window.aiChatPanelRef &&
-      typeof window.aiChatPanelRef.openPanel === 'function'
-    ) {
-      window.aiChatPanelRef.openPanel();
-    }
+    setRightPanelTab('console');
   };
 
   const exportSceneToGLTF = (arReady) => {

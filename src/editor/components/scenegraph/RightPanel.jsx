@@ -1,4 +1,4 @@
-import { useContext, useRef } from 'react';
+import { useContext } from 'react';
 import { Tooltip } from 'radix-ui';
 import posthog from 'posthog-js';
 import { faLockOpen } from '@fortawesome/free-solid-svg-icons';
@@ -40,7 +40,6 @@ export default function RightPanel({ entity, visible }) {
   const setModal = useStore((s) => s.setModal);
   const activeTab = useStore((s) => s.rightPanelTab);
   const setActiveTab = useStore((s) => s.setRightPanelTab);
-  const aiChatPanelRef = useRef(null);
 
   const planLabel = authUser?.isPro
     ? authUser?.isProTeam
@@ -54,11 +53,7 @@ export default function RightPanel({ entity, visible }) {
     : '3DStreet Free Community Edition';
 
   const handleShare = () => {
-    const currentUser = useStore.getState().currentUser || authUser;
-    if (
-      currentUser &&
-      window.STREET?.utils?.getAuthorId?.() === currentUser.uid
-    ) {
+    if (authUser && window.STREET?.utils?.getAuthorId?.() === authUser.uid) {
       useStore.getState().saveScene(false);
     }
     useStore.getState().setModal('share');
@@ -133,7 +128,7 @@ export default function RightPanel({ entity, visible }) {
             className={`${styles.tabPane} ${styles.tabPaneFlex}`}
             style={{ display: activeTab === 'console' ? 'flex' : 'none' }}
           >
-            <AIChatPanel ref={aiChatPanelRef} />
+            <AIChatPanel />
           </div>
         </div>
       </div>

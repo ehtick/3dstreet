@@ -1,10 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useImperativeHandle,
-  forwardRef
-} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ai } from '@shared/services/firebase';
 import { getGenerativeModel } from 'firebase/ai';
 import {
@@ -306,7 +300,7 @@ const getEnhancedSystemPrompt = () => {
   );
 };
 
-const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
+function AIChatPanel() {
   const [messages, setMessages] = useState([]);
   const isMessages = messages.length > 0;
   const [input, setInput] = useState('');
@@ -316,7 +310,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
   const chatContainerRef = useRef(null);
   const { currentUser } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
-  const setRightPanelTab = useStore((state) => state.setRightPanelTab);
 
   const modelRef = useRef(null);
 
@@ -688,16 +681,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
     await processMessage(currentInput);
   };
 
-  // Assign ref to window object for external access
-  useEffect(() => {
-    window.aiChatPanelRef = ref.current;
-
-    return () => {
-      window.aiChatPanelRef = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Scroll to bottom when new messages are added
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -818,34 +801,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
       )
     );
   };
-
-  // Expose methods to be called from outside components
-  useImperativeHandle(ref, () => ({
-    // Switch the right panel to the Console tab where this chat lives
-    openPanel: () => {
-      setRightPanelTab('console');
-    },
-    // Reset the conversation
-    resetConversation: () => {
-      resetConversation();
-    },
-    // Set a message in the input field
-    setUserMessage: (message) => {
-      setInput(message);
-    },
-    // Submit the current message in the input field
-    submitUserMessage: (directMessage) => {
-      if (directMessage) {
-        // If a direct message is provided, process it
-        processMessage(directMessage);
-      } else {
-        // Otherwise use the current input value
-        const currentInput = input;
-        setInput(''); // Clear the input field immediately
-        processMessage(currentInput);
-      }
-    }
-  }));
 
   return (
     <div className={`${styles.chatContainer} ai-chat-panel-container`}>
@@ -1037,6 +992,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
       </div>
     </div>
   );
-});
+}
 
 export default AIChatPanel;

@@ -21,6 +21,7 @@ export const NewModal = () => {
   const setModal = useStore((state) => state.setModal);
   const isOpen = useStore((state) => state.modal === 'new');
   const saveScene = useStore((state) => state.saveScene);
+  const setRightPanelTab = useStore((state) => state.setRightPanelTab);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -126,12 +127,7 @@ export const NewModal = () => {
           'newScene',
           () => {
             saveScene(true);
-            // Open AI chat panel using the global ref
-            setTimeout(() => {
-              if (window.aiChatPanelRef && window.aiChatPanelRef.openPanel) {
-                window.aiChatPanelRef.openPanel();
-              }
-            }, 100);
+            setRightPanelTab('console');
             posthog.capture('scene_created_from_template', {
               template_type: 'ai_assistant',
               ai_panel_opened: true,

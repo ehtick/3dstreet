@@ -3,43 +3,39 @@
 .wrapper {
   background: variables.$darkgray-200;
   border: 1px solid variables.$gray-700;
-  height: auto;
   border-radius: 8px;
   z-index: 2;
   position: relative;
   align-items: center;
   display: flex;
-  column-gap: 1px;
+  column-gap: 2px;
   padding: 4px;
-  transition: 0.2s ease-in-out;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-
-  .divider {
-    width: 1px;
-    height: 24px;
-    background-color: variables.$gray-700;
-    margin: 0 4px;
-  }
 
   button {
     border-radius: 6px;
-    width: 50px;
     height: 30px;
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 6px;
+    padding: 0 10px;
     transition: background-color 0.2s ease;
     color: variables.$lightgray-300;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
 
     &:hover {
       background-color: variables.$purple-900;
       color: variables.$white;
     }
+  }
 
-    &.active {
-      background-color: variables.$purple-300;
-      color: variables.$white;
-      border: none;
-    }
+  .divider {
+    width: 1px;
+    height: 24px;
+    background-color: variables.$gray-700;
+    margin: 0 2px;
   }
 }

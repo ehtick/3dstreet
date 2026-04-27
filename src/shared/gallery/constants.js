@@ -4,10 +4,16 @@
  */
 
 /**
- * Maximum number of gallery items to load/display
+ * Maximum number of gallery items to load/display (used by legacy one-shot fetch)
  * @type {number}
  */
 export const MAX_GALLERY_ITEMS = 200;
+
+/**
+ * Firestore cursor batch size used by paginated gallery loaders
+ * @type {number}
+ */
+export const GALLERY_FETCH_BATCH_SIZE = 48;
 
 /**
  * Valid asset types for gallery items

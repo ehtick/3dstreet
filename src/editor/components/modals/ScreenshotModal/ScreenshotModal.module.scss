@@ -761,10 +761,8 @@
     opacity: 0.85;
   }
   100% {
-    // Fly to top-right corner where gallery icon is (right: 0, top: 80px)
-    // Move right by ~50vw (half viewport + some extra to reach right edge)
-    // Move up by ~-42.5vh (half viewport to center, then up to top)
-    transform: translate(50vw, -42.5vh) scale(0.05);
+    // Fly to top-left where the Gallery tab sits in the left sidepanel.
+    transform: translate(-50vw, -42.5vh) scale(0.05);
     opacity: 0;
   }
 }
@@ -828,8 +826,8 @@
       opacity: 0.85;
     }
     100% {
-      // On mobile, fly to top-right corner
-      transform: translate(45vw, -45vh) scale(0.05);
+      // On mobile, fly to top-left where the Gallery tab sits
+      transform: translate(-45vw, -45vh) scale(0.05);
       opacity: 0;
     }
   }

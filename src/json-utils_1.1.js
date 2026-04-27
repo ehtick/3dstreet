@@ -56,7 +56,9 @@ function convertDOMElToObject(entity) {
     }
   }
 
-  // Save viewer-mode component data separately
+  // Save viewer-mode component data separately. The Viewer Mode UI was
+  // removed in panels-v2 (PR #1566) but we keep persisting it so existing
+  // scenes round-trip cleanly until viewer mode is restored.
   const cameraRig = document.querySelector('#cameraRig');
   if (cameraRig && cameraRig.hasAttribute('viewer-mode')) {
     // Create a minimal entity with just the viewer-mode component
@@ -74,17 +76,13 @@ function convertDOMElToObject(entity) {
     }
   }
 
-  // Get project info from Zustand store
   const storeState = useStore.getState();
-  const memory = {
-    projectInfo: storeState.projectInfo
-  };
 
   return {
     title: storeState.sceneTitle,
     version: '0.5.6',
     data: data,
-    memory: memory
+    memory: {}
   };
 }
 STREET.utils.convertDOMElToObject = convertDOMElToObject;
@@ -401,6 +399,27 @@ function createEntities(entitiesData, parentEl) {
   const sceneElement = document.querySelector('a-scene');
   const removeEntities = ['environment', 'reference-layers'];
   for (const entityData of entitiesData) {
+    // Legacy migration: the geospatial layer's visibility used to be toggled
+    // via the entity's `visible` attribute. The new sidepanel exposes this
+    // through the map type ("No Map" = off), so convert any hidden geo entity
+    // into the equivalent maps:none state.
+    const components = entityData.components;
+    if (
+      components &&
+      components['street-geo'] &&
+      (components.visible === false || components.visible === 'false')
+    ) {
+      const geoVal = components['street-geo'];
+      if (typeof geoVal === 'string') {
+        const parsed = AFRAME.utils.styleParser.parse(geoVal);
+        parsed.maps = 'none';
+        components['street-geo'] = AFRAME.utils.styleParser.stringify(parsed);
+      } else if (typeof geoVal === 'object' && geoVal !== null) {
+        geoVal.maps = 'none';
+      }
+      delete components.visible;
+    }
+
     if (
       entityData.id === 'street-container' &&
       entityData.children &&
@@ -995,15 +1014,6 @@ function createElementsFromJSON(streetJSON, clearUrlHash) {
   if (sceneTitle) {
     console.log('sceneTitle from createElementsFromJSON', sceneTitle);
     useStore.getState().setSceneTitle(sceneTitle);
-  }
-
-  // Load project info from memory if available
-  if (streetObject.memory && streetObject.memory.projectInfo) {
-    console.log(
-      'Loading project info from memory:',
-      streetObject.memory.projectInfo
-    );
-    useStore.getState().setProjectInfo(streetObject.memory.projectInfo);
   }
 
   const streetContainerEl = document.getElementById('street-container');

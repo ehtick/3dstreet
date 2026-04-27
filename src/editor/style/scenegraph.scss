@@ -4,14 +4,89 @@
   display: flex;
   flex-direction: column;
   overflow: auto;
-  padding-top: 32px;
   width: auto;
 
   // Layers container
   .layers {
-    margin-top: 72px;
     overflow-y: auto;
-    height: 512px; // 584px - 72px
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  // Empty state for the layers panel
+  .layers-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 16px;
+    text-align: center;
+
+    p {
+      margin: 0;
+      color: variables.$lightgray-700;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+
+  .layers-empty-state-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid variables.$gray-700;
+    background: transparent;
+    color: variables.$lightgray-100;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: variables.$purple-900;
+      color: variables.$white;
+      border-color: variables.$purple-900;
+    }
+  }
+
+  // Left panel header (app switcher + app menu + scene title + save)
+  #left-panel-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px 12px 12px;
+    border-bottom: 1px solid variables.$gray-700;
+    flex-shrink: 0;
+
+    .left-panel-header-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+
+      .scene-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .left-panel-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+
+      .scene-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
   }
 
   // Layer block styling
@@ -30,25 +105,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-
-    &:not(.active):hover {
-      outline: 2px solid variables.$purple-900;
-      > div:first-child {
-        background: none;
-      }
-    }
-
-    &.active {
-      background: variables.$purple-300;
-      &:hover {
-        background: variables.$purple-900;
-      }
-    }
-
-    // Remove drag handle space for top-level layer entities only
-    > .entity:first-child .drag-handle {
-      display: none;
-    }
   }
 
   // Entity styling
@@ -90,7 +146,7 @@
       flex-grow: 0;
       height: 40px;
       justify-content: center;
-      padding: 0 16px;
+      padding: 0 16px 0 4px;
       box-sizing: border-box;
 
       > span {
@@ -332,83 +388,124 @@
     }
   }
 
-  // Outliner component
-  .outliner {
+  // Left panel — paired with .properties-panel on the right.
+  .scenegraph-panel {
     color: variables.$lightgray-100;
     cursor: default;
     font-size: 16px;
     outline: none;
     overflow: hidden;
     position: absolute;
-    top: 80px;
-    width: 372px;
-    height: 584px;
-    align-items: center;
+    top: 0;
+    left: 0;
+    width: 370px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
     padding: 0;
-    background: variables.$darkgray-800;
-    border-radius: 0 8px 8px 0;
-    transition: all 0.3s ease-in-out;
-    cursor: pointer;
+    background: variables.$darkgray-200;
+    transition: width 0.3s ease-in-out;
+    z-index: 1;
 
-    // Layers title section
     #layers-title {
       justify-content: flex-start;
-      border-top-right-radius: 8px;
       display: flex;
       align-items: center;
+      flex-shrink: 0;
+      width: 100%;
+      padding: 8px 12px;
 
-      #toggle-leftbar {
-        width: 52px;
-        height: 60px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-
-        .move-icon {
-          translate: 15px 0px;
-        }
-
-        &:hover {
-          background-color: variables.$purple-900;
-          .move-icon {
-            translate: 0px 0px;
-          }
-        }
-
-        &:active {
-          background-color: variables.$darkpurple;
-        }
+      span {
+        font-size: 16px;
+        font-weight: 500;
       }
     }
 
-    // Hidden state
+    .left-panel-tabs-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 12px 8px 12px;
+      flex-shrink: 0;
+
+      #tabsWrapper {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+      }
+    }
+
+    .left-panel-add-layer {
+      all: unset;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      color: variables.$lightgray-200;
+      flex-shrink: 0;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background-color: variables.$purple-900;
+        color: variables.$white;
+      }
+    }
+
+    .left-panel-tab-hint {
+      padding: 12px 16px;
+      color: variables.$lightgray-300;
+      font-size: 13px;
+    }
+
+    .left-panel-geo-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px 0px 16px;
+    }
+
+    // Collapsed state — app switcher + project name + save on one row as a pill
     &.hide {
-      width: 52px;
-      height: 60px;
-      border-radius: 0 12px 12px 0;
+      top: 12px;
+      left: 12px;
+      width: auto;
+      max-width: 420px;
+      height: auto;
+      background: variables.$darkgray-200;
+      border: 1px solid variables.$gray-700;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      overflow: visible;
 
-      #layers-title {
-        width: 52px;
-        height: 60px;
-        display: flex;
-        border-radius: 0 12px 12px 0;
+      #left-panel-header {
+        padding: 4px 12px 4px 4px;
+        border-bottom: none;
+        gap: 0;
 
-        span {
-          display: none;
-        }
+        .left-panel-header-row {
+          gap: 10px;
 
-        .toggle-icon {
-          display: none;
-        }
+          // Compact AppSwitcher inside the collapsed pill
+          > button:first-child {
+            padding: 4px 8px 4px 6px;
+            border-right: 1px solid variables.$gray-700;
+            border-radius: 0;
 
-        &:hover {
-          width: 155px;
-          background-color: variables.$purple-900;
+            img {
+              height: 32px;
+            }
+          }
 
-          span {
-            display: block;
-            font-size: 22px;
+          .scene-title {
+            flex: 0 1 auto;
           }
         }
       }

@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './Gallery.module.scss';
 import { REPLICATE_MODELS } from '@shared/constants/replicateModels.js';
 
@@ -101,7 +102,7 @@ const GalleryModal = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className={styles.modal} onClick={handleBackgroundClick}>
       {/* Navigation Buttons - Outside Modal */}
       {onNavigate && totalItems > 1 && (
@@ -413,7 +414,8 @@ const GalleryModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

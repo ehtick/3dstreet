@@ -1,17 +1,11 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useImperativeHandle,
-  forwardRef
-} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ai } from '@shared/services/firebase';
 import { getGenerativeModel } from 'firebase/ai';
 import {
   Copy32Icon,
   DownloadIcon,
   ChatbotIcon,
-  Cross24Icon
+  ArrowUp24Icon
 } from '@shared/icons';
 import { useAuthContext } from '../../contexts';
 import useStore from '@/store';
@@ -21,7 +15,6 @@ import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { systemPrompt } from './AIChatPrompt.js';
 import AIChatTools, { entityTools } from './AIChatTools.jsx';
-import { PanelToggleButton } from '../../components/elements';
 import { AwesomeIcon } from '../../components/elements/AwesomeIcon';
 import {
   faRotate,
@@ -307,15 +300,13 @@ const getEnhancedSystemPrompt = () => {
   );
 };
 
-const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
+function AIChatPanel() {
   const [messages, setMessages] = useState([]);
   const isMessages = messages.length > 0;
   const [input, setInput] = useState('');
   const [latestResponseId, setLatestResponseId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
   const chatContainerRef = useRef(null);
   const { currentUser } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
@@ -391,8 +382,8 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
       const filteredData = STREET.utils.filterJSONstreet(data);
       const sceneJSON = JSON.parse(filteredData).data;
 
-      // Get project info from zustand store
-      const { projectInfo, sceneTitle } = useStore.getState();
+      // Get scene title from zustand store
+      const { sceneTitle } = useStore.getState();
 
       // Get the enhanced system prompt with mixin information
       const enhancedSystemPrompt = getEnhancedSystemPrompt();
@@ -415,14 +406,8 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
       const prompt = `
       The current scene has the following state:
       ${JSON.stringify(sceneJSON, null, 2)}
-      
-      Current project information:
+
       Scene Title: ${sceneTitle || 'Untitled'}
-      Description: ${projectInfo.description || ''}
-      Project Area: ${projectInfo.projectArea || ''}
-      Current Condition: ${projectInfo.currentCondition || ''}
-      Problem Statement: ${projectInfo.problemStatement || ''}
-      Proposed Solutions: ${projectInfo.proposedSolutions || ''}
 
       Currently selected entity:
       ${selectedEntityInfo}
@@ -696,16 +681,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
     await processMessage(currentInput);
   };
 
-  // Assign ref to window object for external access
-  useEffect(() => {
-    window.aiChatPanelRef = ref.current;
-
-    return () => {
-      window.aiChatPanelRef = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Scroll to bottom when new messages are added
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -713,16 +688,6 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
         chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
-
-  // Restore scroll position when panel is opened
-  useEffect(() => {
-    if (isOpen && chatContainerRef.current && savedScrollPosition > 0) {
-      // Use setTimeout to ensure the DOM has fully rendered
-      setTimeout(() => {
-        chatContainerRef.current.scrollTop = savedScrollPosition;
-      }, 0);
-    }
-  }, [isOpen, savedScrollPosition]);
 
   const resetConversation = () => {
     setMessages([]);
@@ -837,288 +802,196 @@ const AIChatPanel = forwardRef(function AIChatPanel(props, ref) {
     );
   };
 
-  // Expose methods to be called from outside components
-  useImperativeHandle(ref, () => ({
-    // Open the chat panel
-    openPanel: () => {
-      setIsOpen(true);
-      // Scroll position will be restored via useEffect
-    },
-    // Reset the conversation
-    resetConversation: () => {
-      resetConversation();
-    },
-    // Set a message in the input field
-    setUserMessage: (message) => {
-      setInput(message);
-    },
-    // Submit the current message in the input field
-    submitUserMessage: (directMessage) => {
-      if (directMessage) {
-        // If a direct message is provided, process it
-        processMessage(directMessage);
-      } else {
-        // Otherwise use the current input value
-        const currentInput = input;
-        setInput(''); // Clear the input field immediately
-        processMessage(currentInput);
-      }
-    }
-  }));
-
   return (
-    <>
-      <div
-        className={`${styles.aiChatToggle} ${isOpen ? styles.isOpen : ''} ai-chat-toggle-container`}
-      >
-        {!isOpen && (
-          <PanelToggleButton
-            icon={ChatbotIcon}
-            isOpen={isOpen}
-            onClick={() => setIsOpen(!isOpen)}
+    <div className={`${styles.chatContainer} ai-chat-panel-container`}>
+      <div className={styles.proFeaturesWrapper}>
+        <div className={styles['chat-header']}>
+          <div className={styles['chat-title']}>
+            <ChatbotIcon />
+            <span>{!isMessages ? 'What can I help with?' : 'Assistant'}</span>
+          </div>
+          <a
+            href="https://3dstreet.com/blog/2025/05/22/introducing-ai-assistant-beta-your-creative-partner-for-street-design#the-fine-print-beta-status-and-availability"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <span>Assistant</span>
-          </PanelToggleButton>
-        )}
-      </div>
-
-      {isOpen && (
-        <div className={`${styles.chatContainer} ai-chat-panel-container`}>
-          <div className={styles.proFeaturesWrapper}>
-            <div className={styles['chat-header']}>
-              <a
-                href="https://3dstreet.com/blog/2025/05/22/introducing-ai-assistant-beta-your-creative-partner-for-street-design#the-fine-print-beta-status-and-availability"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div className={styles.betaPill}>Free Chat in Beta</div>
-              </a>
-              <div className={styles['chat-title']}>
-                {!isMessages ? 'What can I help with?' : 'Assistant'}{' '}
-                {/* <img
-                            src="../../../ui_assets/cards/icons/dadbot.jpg"
-                            alt="DadBot AI Assistant"
-                          /> */}
-                <ChatbotIcon />
-              </div>
-              <div className={styles['chat-actions']}>
-                <button
-                  className={styles.closeButton}
-                  onClick={() => {
-                    // Save scroll position before closing
-                    if (chatContainerRef.current) {
-                      setSavedScrollPosition(
-                        chatContainerRef.current.scrollTop
-                      );
-                    }
-                    setIsOpen(false);
-                  }}
-                  title="Close assistant"
-                >
-                  <Cross24Icon />
-                </button>
-              </div>
-            </div>
-            {showResetConfirm && (
-              <div className={styles.resetConfirmOverlay}>
-                <div className={styles.resetConfirmModal}>
-                  <div className={styles.resetConfirmContent}>
-                    <p>
-                      Are you sure you want to reset the conversation? This will
-                      delete all messages.
-                    </p>
-                    <div className={styles.resetConfirmButtons}>
-                      <button onClick={resetConversation}>Yes, reset</button>
-                      <button onClick={() => setShowResetConfirm(false)}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {isMessages && (
-              <div ref={chatContainerRef} className={styles.chatMessages}>
-                {messages.map((message, index) => {
-                  if (message.type === 'functionCall') {
-                    return (
-                      <FunctionCallMessage
-                        key={message.id}
-                        functionCall={message}
-                      />
-                    );
-                  } else if (message.type === 'snapshot') {
-                    return (
-                      <SnapshotMessage key={message.id} snapshot={message} />
-                    );
-                  } else if (message.type === 'rating') {
-                    // Only show rating UI if this is the latest response and it's not already rated
-                    const isLatest = message.responseId === latestResponseId;
-
-                    return (
-                      <div key={message.id} className={styles.ratingContainer}>
-                        {isLatest && !message.isRated && (
-                          <div className={styles.ratingButtons}>
-                            <button
-                              className={styles.ratingButton}
-                              onClick={() =>
-                                handleResponseRating(
-                                  message.responseId,
-                                  'thumbs_up'
-                                )
-                              }
-                              title="This response was helpful"
-                            >
-                              <AwesomeIcon icon={faThumbsUp} />
-                            </button>
-                            <button
-                              className={styles.ratingButton}
-                              onClick={() =>
-                                handleResponseRating(
-                                  message.responseId,
-                                  'thumbs_down'
-                                )
-                              }
-                              title="This response was not helpful"
-                            >
-                              <AwesomeIcon icon={faThumbsDown} />
-                            </button>
-                          </div>
-                        )}
-                        {isLatest && message.isRated && (
-                          <div className={styles.ratingFeedback}>
-                            Thank you for your feedback
-                          </div>
-                        )}
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div
-                        key={index}
-                        className={`${styles.chatMessage} ${styles[message.role]}`}
-                      >
-                        {message.role === 'assistant' && (
-                          <div className={styles.assistantAvatar}>
-                            <ChatbotIcon />
-                          </div>
-                        )}
-                        <MessageContent
-                          content={message.content}
-                          isAssistant={message.role === 'assistant'}
-                        />
-                      </div>
-                    );
-                  }
-                })}
-                {isLoading && (
-                  <div className={styles.loadingIndicator}>Thinking...</div>
-                )}
-              </div>
-            )}
-
-            <div className={styles.chatInput}>
-              <textarea
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  adjustTextareaHeight(e.target);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (e.shiftKey) {
-                      // Let the default behavior happen (create a newline)
-                      return;
-                    } else if (currentUser) {
-                      e.preventDefault(); // Prevent default to avoid creating a newline
-                      handleSendMessage();
-                    }
-                  }
-                }}
-                placeholder={
-                  isMessages ? 'Reply to Assistant...' : 'Ask anything'
-                }
-                disabled={!currentUser}
-                rows="1"
-                className={styles.chatTextarea}
-                ref={(el) => {
-                  if (el) adjustTextareaHeight(el);
-                }}
-              />
-              <div className={styles.actionButtons}>
-                <div className={styles.leftButtons}>
-                  {!isMessages && (
-                    <>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() =>
-                          setInput(
-                            'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes'
-                          )
-                        }
-                        disabled={isLoading || !currentUser}
-                      >
-                        🛣️ Create a Street
-                      </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() =>
-                          setInput('take 3 snapshots with different types')
-                        }
-                        disabled={isLoading || !currentUser}
-                      >
-                        📸 Take Snapshots
-                      </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() => setModal('report')}
-                        disabled={isLoading || !currentUser}
-                      >
-                        📋 Generate Report
-                      </button>
-                    </>
-                  )}
-                </div>
-                <div className={styles.rightButtons}>
-                  {isMessages && (
-                    <button
-                      onClick={() => setShowResetConfirm(true)}
-                      className={`${styles.resetButton} ${styles.greenIcon}`}
-                      title="Reset conversation"
-                      disabled={isLoading || !currentUser}
-                    >
-                      <AwesomeIcon icon={faRotate} />
-                    </button>
-                  )}
-                  <button
-                    className={styles.sendButton}
-                    onClick={handleSendMessage}
-                    disabled={isLoading || !currentUser}
-                  >
-                    Send
+            <div className={styles.betaPill}>Free Chat in Beta</div>
+          </a>
+        </div>
+        {showResetConfirm && (
+          <div className={styles.resetConfirmOverlay}>
+            <div className={styles.resetConfirmModal}>
+              <div className={styles.resetConfirmContent}>
+                <p>
+                  Are you sure you want to reset the conversation? This will
+                  delete all messages.
+                </p>
+                <div className={styles.resetConfirmButtons}>
+                  <button onClick={resetConversation}>Yes, reset</button>
+                  <button onClick={() => setShowResetConfirm(false)}>
+                    Cancel
                   </button>
                 </div>
               </div>
             </div>
-
-            {!currentUser && (
-              <div
-                className={styles.proOverlay}
-                onClick={() => setModal('signin')}
-              >
-                <div className={styles.proOverlayContent}>
-                  <span role="img" aria-label="lock">
-                    🔒
-                  </span>
-                  <span>Please log in to use the Assistant</span>
+          </div>
+        )}
+        <div ref={chatContainerRef} className={styles.chatMessages}>
+          {messages.map((message, index) => {
+            if (message.type === 'functionCall') {
+              return (
+                <FunctionCallMessage key={message.id} functionCall={message} />
+              );
+            } else if (message.type === 'snapshot') {
+              return <SnapshotMessage key={message.id} snapshot={message} />;
+            } else if (message.type === 'rating') {
+              const isLatest = message.responseId === latestResponseId;
+              return (
+                <div key={message.id} className={styles.ratingContainer}>
+                  {isLatest && !message.isRated && (
+                    <div className={styles.ratingButtons}>
+                      <button
+                        className={styles.ratingButton}
+                        onClick={() =>
+                          handleResponseRating(message.responseId, 'thumbs_up')
+                        }
+                        title="This response was helpful"
+                      >
+                        <AwesomeIcon icon={faThumbsUp} />
+                      </button>
+                      <button
+                        className={styles.ratingButton}
+                        onClick={() =>
+                          handleResponseRating(
+                            message.responseId,
+                            'thumbs_down'
+                          )
+                        }
+                        title="This response was not helpful"
+                      >
+                        <AwesomeIcon icon={faThumbsDown} />
+                      </button>
+                    </div>
+                  )}
+                  {isLatest && message.isRated && (
+                    <div className={styles.ratingFeedback}>
+                      Thank you for your feedback
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            } else {
+              return (
+                <div
+                  key={index}
+                  className={`${styles.chatMessage} ${styles[message.role]}`}
+                >
+                  {message.role === 'assistant' && (
+                    <div className={styles.assistantAvatar}>
+                      <ChatbotIcon />
+                    </div>
+                  )}
+                  <MessageContent
+                    content={message.content}
+                    isAssistant={message.role === 'assistant'}
+                  />
+                </div>
+              );
+            }
+          })}
+          {isLoading && (
+            <div className={styles.loadingIndicator}>Thinking...</div>
+          )}
+        </div>
+
+        <div className={styles.chatInput}>
+          <textarea
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              adjustTextareaHeight(e.target);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                  return;
+                } else if (currentUser) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }
+            }}
+            placeholder={isMessages ? 'Reply to Assistant...' : 'Ask anything'}
+            disabled={!currentUser}
+            rows="1"
+            className={styles.chatTextarea}
+            ref={(el) => {
+              if (el) adjustTextareaHeight(el);
+            }}
+          />
+          <div className={styles.actionButtons}>
+            <div className={styles.leftButtons}>
+              {!isMessages && (
+                <>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() =>
+                      setInput(
+                        'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes'
+                      )
+                    }
+                    disabled={isLoading || !currentUser}
+                  >
+                    Create a street
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() =>
+                      setInput('take 3 snapshots with different types')
+                    }
+                    disabled={isLoading || !currentUser}
+                  >
+                    Take snapshot
+                  </button>
+                </>
+              )}
+            </div>
+            <div className={styles.rightButtons}>
+              {isMessages && (
+                <button
+                  onClick={() => setShowResetConfirm(true)}
+                  className={`${styles.resetButton} ${styles.greenIcon}`}
+                  title="Reset conversation"
+                  disabled={isLoading || !currentUser}
+                >
+                  <AwesomeIcon icon={faRotate} />
+                </button>
+              )}
+              <button
+                className={styles.sendButton}
+                onClick={handleSendMessage}
+                disabled={isLoading || !currentUser}
+                title="Send"
+              >
+                <ArrowUp24Icon />
+              </button>
+            </div>
           </div>
         </div>
-      )}
-    </>
+
+        {!currentUser && (
+          <div className={styles.proOverlay} onClick={() => setModal('signin')}>
+            <div className={styles.proOverlayContent}>
+              <span role="img" aria-label="lock">
+                🔒
+              </span>
+              <span>Please log in to use the Assistant</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
-});
+}
 
 export default AIChatPanel;

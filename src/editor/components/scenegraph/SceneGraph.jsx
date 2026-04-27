@@ -6,18 +6,26 @@ import React from 'react';
 import Events from '../../lib/Events';
 import Entity, { isContainer } from './Entity';
 import { ToolbarWrapper } from './ToolbarWrapper';
-import { LayersIcon, ArrowLeftIcon } from '@shared/icons';
+import { Plus20Circle } from '@shared/icons';
 import { createUniqueId, getEntityDisplayName } from '../../lib/entity';
 import posthog from 'posthog-js';
-import GeoLayer from './GeoLayer';
+import GalleryPanel from './GalleryPanel';
+import GeoSidebar from '../elements/GeoSidebar';
+import AppMenu from './AppMenu';
+import { AppSwitcher } from '@shared/navigation/components';
+import { SceneEditTitle } from '../elements/SceneEditTitle';
+import { Save } from '../elements/Save';
+import { Tabs } from '../elements';
+import useStore from '@/store';
+import { AuthContext } from '@/editor/contexts';
 const HIDDEN_CLASSES = ['teleportRay', 'hitEntity', 'hideFromSceneGraph'];
 const HIDDEN_IDS = ['dropPlane', 'previewEntity'];
 
 export default class SceneGraph extends React.Component {
+  static contextType = AuthContext;
   static propTypes = {
     scene: PropTypes.object,
-    selectedEntity: PropTypes.object,
-    visible: PropTypes.bool
+    selectedEntity: PropTypes.object
   };
 
   static defaultProps = {
@@ -29,7 +37,8 @@ export default class SceneGraph extends React.Component {
     this.state = {
       entities: [],
       expandedElements: new WeakMap([[props.scene, true]]),
-      leftBarHide: false,
+      panelsVisible: useStore.getState().panelsVisible,
+      activeTab: 'layers',
       selectedIndex: -1,
       // Drag and drop state
       draggedEntity: null,
@@ -66,6 +75,10 @@ export default class SceneGraph extends React.Component {
     Events.on('entityupdate', this.onEntityUpdate);
     document.addEventListener('child-attached', this.onChildAttachedDetached);
     document.addEventListener('child-detached', this.onChildAttachedDetached);
+    this.unsubscribePanels = useStore.subscribe(
+      (state) => state.panelsVisible,
+      (panelsVisible) => this.setState({ panelsVisible })
+    );
   }
 
   componentWillUnmount() {
@@ -78,6 +91,7 @@ export default class SceneGraph extends React.Component {
       'child-detached',
       this.onChildAttachedDetached
     );
+    this.unsubscribePanels?.();
   }
 
   /**
@@ -249,7 +263,7 @@ export default class SceneGraph extends React.Component {
       for (let i = 0; i < element.children.length; i++) {
         let entity = element.children[i];
 
-        if (!this.includeInSceneGraph(entity) || (depth === 1 && !entity.id)) {
+        if (!this.includeInSceneGraph(entity)) {
           continue;
         }
 
@@ -262,39 +276,13 @@ export default class SceneGraph extends React.Component {
         treeIterate(entity, depth);
       }
     };
-    const layers = this.props.scene.children;
-    const orderedLayers = [];
 
-    for (const layer of layers) {
-      if (layer.id === 'reference-layers') {
-        orderedLayers.unshift(layer);
-      } else if (layer.id === 'environment') {
-        orderedLayers.splice(1, 0, layer);
-      } else if (layer.id === 'cameraRig') {
-        orderedLayers.splice(2, 0, layer);
-      } else if (layer.id === 'street-container') {
-        orderedLayers.splice(3, 0, layer);
-      } else {
-        orderedLayers.push(layer);
-      }
+    const streetContainer = this.props.scene.querySelector('#street-container');
+    if (streetContainer) {
+      treeIterate(streetContainer, 0);
     }
 
-    treeIterate({ children: orderedLayers }, 0);
-
-    this.setState({
-      entities: entities,
-      // Expand User Layers by default initially
-      expandedElements: orderedLayers.reduce((expandedElements, layer) => {
-        if (
-          expandedElements.get(layer) === undefined &&
-          layer.id === 'street-container'
-        ) {
-          return expandedElements.set(layer, true);
-        } else {
-          return expandedElements;
-        }
-      }, this.state.expandedElements)
-    });
+    this.setState({ entities });
   };
 
   selectIndex = (index) => {
@@ -343,17 +331,13 @@ export default class SceneGraph extends React.Component {
   };
 
   isVisibleInSceneGraph = (x) => {
-    if (
-      x.id === 'reference-layers' &&
-      !window.location.search.includes('debug=true')
-    ) {
-      return false;
-    }
     let curr = x.parentNode;
     if (!curr) {
       return false;
     }
-    while (curr?.isEntity) {
+    // Stop at street-container — it's the implicit root of the tree and isn't
+    // rendered, so its expanded state shouldn't gate visibility of its children.
+    while (curr?.isEntity && curr.id !== 'street-container') {
       if (!this.isExpanded(curr)) {
         return false;
       }
@@ -404,19 +388,36 @@ export default class SceneGraph extends React.Component {
     return -1;
   };
 
-  toggleLeftBar = () => {
-    this.setState({ leftBarHide: !this.state.leftBarHide });
+  setActiveTab = (tab) => {
+    this.setState({ activeTab: tab });
+  };
+
+  openAddLayer = () => {
+    useStore.getState().setModal('addlayer');
+    posthog.capture('add_layer_panel_opened', { source: 'left_panel_plus' });
+  };
+
+  getEntityById = (id) => document.getElementById(id);
+
+  selectGeoTab = () => {
+    this.setState({ activeTab: 'geo' });
+    posthog.capture('geo_layer_clicked', { source: 'left_panel_tab' });
+    const currentUser = this.context?.currentUser;
+    const entity = this.getEntityById('reference-layers');
+    if (!currentUser) {
+      useStore.getState().setModal('signin');
+      return;
+    }
+    if (!entity?.hasAttribute?.('street-geo')) {
+      useStore.getState().setModal('geo');
+    }
   };
 
   renderEntities = () => {
     const renderedEntities = [];
-    const entityOptions = this.state.entities.filter((entityOption) => {
-      if (!this.isVisibleInSceneGraph(entityOption.entity)) {
-        return false;
-      } else {
-        return true;
-      }
-    });
+    const entityOptions = this.state.entities.filter((entityOption) =>
+      this.isVisibleInSceneGraph(entityOption.entity)
+    );
     let children = [];
     for (let i = 0; i < entityOptions.length; i++) {
       const entityOption = entityOptions[i];
@@ -460,17 +461,13 @@ export default class SceneGraph extends React.Component {
   };
 
   render() {
-    // To hide the SceneGraph we have to hide its parent too (#left-sidebar).
-    if (!this.props.visible) {
-      return null;
-    }
-
-    // Outliner class names.
+    const isCollapsed = !this.state.panelsVisible;
     const className = classNames({
-      outliner: true,
-      hide: this.state.leftBarHide,
-      'mt-16': true
+      'scenegraph-panel': true,
+      hide: isCollapsed
     });
+
+    const currentUser = this.context?.currentUser;
 
     return (
       <div id="scenegraph" className="scenegraph">
@@ -480,29 +477,92 @@ export default class SceneGraph extends React.Component {
           onKeyDown={this.onKeyDown}
           onKeyUp={this.onKeyUp}
         >
-          <div
-            className={'layersBlock'}
-            id="layers-title"
-            onClick={this.toggleLeftBar}
-          >
-            <div id="toggle-leftbar">
-              {this.state.leftBarHide ? (
-                <div className="move-icon">
-                  <LayersIcon />
-                </div>
-              ) : (
-                <ArrowLeftIcon />
+          <div id="left-panel-header">
+            <div className="left-panel-header-row">
+              <AppSwitcher />
+              {!isCollapsed && <AppMenu currentUser={currentUser} />}
+              {isCollapsed && (
+                <>
+                  <div className="scene-title clickable truncate">
+                    <SceneEditTitle />
+                  </div>
+                  <Save currentUser={currentUser} />
+                </>
               )}
             </div>
-            <div className={'layersBlock'}>
-              <LayersIcon className="toggle-icon" />
-              <span>Layers</span>
-            </div>
+            {!isCollapsed && (
+              <div className="left-panel-title-row">
+                <div className="scene-title clickable truncate">
+                  <SceneEditTitle />
+                </div>
+                <Save currentUser={currentUser} />
+              </div>
+            )}
           </div>
-          <div className="layers">
-            <GeoLayer />
-            <div>{this.renderEntities()}</div>
-          </div>
+          {!isCollapsed && (
+            <>
+              <div className="left-panel-tabs-row">
+                <Tabs
+                  tabs={[
+                    {
+                      label: 'Layers',
+                      value: 'layers',
+                      isSelected: this.state.activeTab === 'layers',
+                      onClick: () => this.setActiveTab('layers')
+                    },
+                    {
+                      label: 'Geospatial',
+                      value: 'geo',
+                      isSelected: this.state.activeTab === 'geo',
+                      onClick: this.selectGeoTab
+                    },
+                    {
+                      label: 'Gallery',
+                      value: 'gallery',
+                      isSelected: this.state.activeTab === 'gallery',
+                      onClick: () => this.setActiveTab('gallery')
+                    }
+                  ]}
+                />
+                {this.state.activeTab === 'layers' && (
+                  <button
+                    type="button"
+                    className="left-panel-add-layer"
+                    onClick={this.openAddLayer}
+                    aria-label="Add layer"
+                    title="Add layer"
+                  >
+                    <Plus20Circle />
+                  </button>
+                )}
+              </div>
+              {this.state.activeTab === 'layers' && (
+                <div className="layers">
+                  {this.state.entities.length === 0 ? (
+                    <div className="layers-empty-state">
+                      <p>Add a new layer to get started.</p>
+                      <button
+                        type="button"
+                        className="layers-empty-state-button"
+                        onClick={this.openAddLayer}
+                      >
+                        <Plus20Circle />
+                        <span>Add Layer</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div>{this.renderEntities()}</div>
+                  )}
+                </div>
+              )}
+              {this.state.activeTab === 'gallery' && <GalleryPanel />}
+              {this.state.activeTab === 'geo' && (
+                <div className="left-panel-geo-content">
+                  <GeoSidebar entity={this.getEntityById('reference-layers')} />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     );

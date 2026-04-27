@@ -17,7 +17,7 @@ const shortcuts = [
     { key: ['ctrl | cmd', 'shift', 'z'], description: 'Redo action' }
   ],
   [
-    { key: ['0'], description: 'Toggle panels' },
+    { key: ['`'], description: 'Toggle panels' },
     { key: ['1'], description: 'Perspective view' },
     { key: ['2'], description: 'Left view' },
     { key: ['3'], description: 'Right view' },

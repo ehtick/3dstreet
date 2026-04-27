@@ -66,7 +66,6 @@ export default function Main() {
 
   const scene = state.sceneEl;
   const isInspectorEnabled = useStore((state) => state.isInspectorEnabled);
-  const panelsVisible = useStore((state) => state.panelsVisible);
 
   return (
     <div id="inspectorContainer">
@@ -75,7 +74,7 @@ export default function Main() {
         <AIChatProvider firebaseApp={app}>
           <div>
             <SceneGraph scene={scene} selectedEntity={state.entity} />
-            {panelsVisible && <RightPanel entity={state.entity} />}
+            <RightPanel entity={state.entity} />
             <div
               className="clickable"
               style={{

@@ -40,6 +40,7 @@ export default function RightPanel({ entity }) {
   const setModal = useStore((s) => s.setModal);
   const activeTab = useStore((s) => s.rightPanelTab);
   const setActiveTab = useStore((s) => s.setRightPanelTab);
+  const panelsVisible = useStore((s) => s.panelsVisible);
 
   const planLabel = authUser?.isPro
     ? authUser?.isProTeam
@@ -64,7 +65,11 @@ export default function RightPanel({ entity }) {
 
   return (
     <Tooltip.Provider>
-      <div id="rightPanel" className={styles.rightPanel}>
+      <div
+        id="rightPanel"
+        className={styles.rightPanel}
+        style={{ display: panelsVisible ? 'flex' : 'none' }}
+      >
         <div className={styles.header}>
           <div className={styles.headerRow}>
             <TooltipWrapper content="Share scene">

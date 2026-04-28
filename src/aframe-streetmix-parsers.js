@@ -558,7 +558,7 @@ function createDriveLaneElement(
 
     const reusableObjectEl = document.createElement('a-entity');
 
-    if (!positionZ) {
+    if (positionZ === undefined) {
       positionZ = randomPosition(
         reusableObjectEl,
         'z',

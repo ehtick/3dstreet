@@ -385,13 +385,9 @@ function randomPosition(entity, axis, length, objSizeAttr = undefined) {
   // place randomly an element on a line length='length' on the axis 'axis'
   // Need to call from 'model-loaded' event if objSizeAttr is undefined
   // existEnts - array with existing entities (for prevent intersection)
-  const newObject = entity.object3D;
-  const objSize = objSizeAttr || getDimensions(newObject)[axis];
+  const objSize = objSizeAttr || getDimensions(entity.object3D)[axis];
   const { start, end } = getStartEndPosition(length, objSize);
-  const setFunc = `set${axis.toUpperCase()}`;
-  const newPosition = getRandomArbitrary(start, end);
-  newObject.position[setFunc](newPosition);
-  return newPosition;
+  return getRandomArbitrary(start, end);
 }
 
 function createChooChooElement(
@@ -644,7 +640,7 @@ function createFoodTruckElement(variantList, length) {
     length,
     foodTruckLength
   );
-  reusableObjectEl.setAttribute('positon', '0 0 ' + positionZ);
+  reusableObjectEl.setAttribute('position', '0 0 ' + positionZ);
   foodTruckParentEl.append(reusableObjectEl);
 
   return foodTruckParentEl;

@@ -114,7 +114,7 @@ export default function RightPanel({ entity }) {
                 onClick: openPropertiesTab
               },
               {
-                label: 'Assistant',
+                label: 'Console',
                 value: 'console',
                 isSelected: activeTab === 'console',
                 onClick: openConsoleTab

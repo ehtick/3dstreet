@@ -121,7 +121,7 @@ async function checkStripeSubscriptions(stripe, customerId) {
       subscriptions: subscriptions.data.map(sub => ({
         id: sub.id,
         status: sub.status,
-        currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+        currentPeriodEnd: new Date(sub.items.data[0].current_period_end * 1000).toISOString(),
         priceId: sub.items.data[0]?.price?.id,
         interval: sub.items.data[0]?.price?.recurring?.interval
       }))
@@ -168,7 +168,7 @@ async function getActiveStripeSubscribers(stripe) {
       activeCustomers.get(customerId).subscriptions.push({
         id: sub.id,
         status: sub.status,
-        currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+        currentPeriodEnd: new Date(sub.items.data[0].current_period_end * 1000).toISOString(),
         priceId: sub.items.data[0]?.price?.id
       });
     }
@@ -203,7 +203,7 @@ exports.auditUserSubscriptions = functions
     }
 
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
     const fixDiscrepancies = data?.fixDiscrepancies === true;
     const dryRun = !fixDiscrepancies;
 
@@ -423,7 +423,7 @@ exports.auditUserSubscriptionsHttp = functions
       }
 
       const Stripe = require('stripe');
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
       const fixDiscrepancies = req.body?.fixDiscrepancies === true;
 
       // Run the same audit logic (simplified for HTTP response)

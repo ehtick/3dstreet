@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Tooltip } from 'radix-ui';
 import { ai } from '@shared/services/firebase';
 import { getGenerativeModel } from 'firebase/ai';
 import {
@@ -28,6 +29,36 @@ import Events from '../../lib/Events';
 
 const AI_MODEL_ID = 'gemini-3-flash-preview';
 let AI_CONVERSATION_ID = uuidv4();
+
+const PillTooltip = ({ children, content }) => (
+  <Tooltip.Root delayDuration={0}>
+    <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+    <Tooltip.Portal>
+      <Tooltip.Content
+        side="bottom"
+        align="center"
+        sideOffset={6}
+        collisionPadding={8}
+        style={{
+          backgroundColor: '#2d2d2d',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          lineHeight: 1.45,
+          border: '1px solid #4b4b4b',
+          maxWidth: 360,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          zIndex: 1000
+        }}
+      >
+        {content}
+        <Tooltip.Arrow style={{ fill: '#2d2d2d' }} />
+      </Tooltip.Content>
+    </Tooltip.Portal>
+  </Tooltip.Root>
+);
 
 const HELP_EXAMPLES = [
   'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes',
@@ -508,10 +539,20 @@ function AIChatPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const chatContainerRef = useRef(null);
+  const textareaRef = useRef(null);
   const { currentUser } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
+  const rightPanelTab = useStore((state) => state.rightPanelTab);
 
   const modelRef = useRef(null);
+
+  // Focus the textarea when the console tab becomes active so Enter sends the
+  // command instead of re-clicking the tab button that was just focused.
+  useEffect(() => {
+    if (rightPanelTab === 'console' && currentUser) {
+      textareaRef.current?.focus();
+    }
+  }, [rightPanelTab, currentUser]);
 
   // Click the pill arrow to rewind/replay history up to that command.
   // If the pill is currently active, undo back through it (and everything
@@ -1148,42 +1189,71 @@ function AIChatPanel() {
                 </div>
               );
             } else if (message.type === 'commandPill') {
-              return (
-                <div
-                  key={message.id}
-                  className={`${styles.commandPill} ${
-                    message.undone ? styles.commandPillUndone : ''
-                  }`}
-                >
-                  <button
-                    type="button"
-                    className={styles.commandPillRewind}
-                    onClick={() => handlePillRewind(message)}
-                    title={
-                      message.undone
-                        ? 'Redo to here'
-                        : 'Undo to before this command'
-                    }
-                  >
-                    <AwesomeIcon
-                      icon={message.undone ? faRotateRight : faRotateLeft}
-                    />
-                  </button>
-                  <span className={styles.commandPillName}>{message.name}</span>
+              const tooltipContent = (
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                    {message.name}
+                  </div>
                   {message.target && (
-                    <span className={styles.commandPillTarget}>
-                      {message.target}
-                    </span>
+                    <div style={{ opacity: 0.85 }}>
+                      <strong>target:</strong> {message.target}
+                    </div>
                   )}
                   {message.detail && (
-                    <span className={styles.commandPillDetail}>
+                    <div
+                      style={{
+                        fontFamily:
+                          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                        opacity: 0.85
+                      }}
+                    >
                       {message.detail}
-                    </span>
+                    </div>
                   )}
                   {message.undone && (
-                    <span className={styles.commandPillBadge}>undone</span>
+                    <div style={{ marginTop: 4, opacity: 0.7 }}>(undone)</div>
                   )}
                 </div>
+              );
+              return (
+                <PillTooltip key={message.id} content={tooltipContent}>
+                  <div
+                    className={`${styles.commandPill} ${
+                      message.undone ? styles.commandPillUndone : ''
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className={styles.commandPillRewind}
+                      onClick={() => handlePillRewind(message)}
+                      title={
+                        message.undone
+                          ? 'Redo to here'
+                          : 'Undo to before this command'
+                      }
+                    >
+                      <AwesomeIcon
+                        icon={message.undone ? faRotateRight : faRotateLeft}
+                      />
+                    </button>
+                    <span className={styles.commandPillName}>
+                      {message.name}
+                    </span>
+                    {message.target && (
+                      <span className={styles.commandPillTarget}>
+                        {message.target}
+                      </span>
+                    )}
+                    {message.detail && (
+                      <span className={styles.commandPillDetail}>
+                        {message.detail}
+                      </span>
+                    )}
+                    {message.undone && (
+                      <span className={styles.commandPillBadge}>undone</span>
+                    )}
+                  </div>
+                </PillTooltip>
               );
             } else if (message.type === 'rating') {
               const isLatest = message.responseId === latestResponseId;
@@ -1267,6 +1337,7 @@ function AIChatPanel() {
             rows="1"
             className={styles.chatTextarea}
             ref={(el) => {
+              textareaRef.current = el;
               if (el) adjustTextareaHeight(el);
             }}
           />

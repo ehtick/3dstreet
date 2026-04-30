@@ -44,22 +44,10 @@ const PillTooltip = ({ children, content }) => (
         align="center"
         sideOffset={6}
         collisionPadding={8}
-        style={{
-          backgroundColor: '#2d2d2d',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '12px',
-          lineHeight: 1.45,
-          border: '1px solid #4b4b4b',
-          maxWidth: 360,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          zIndex: 1000
-        }}
+        className={styles.pillTooltipContent}
       >
         {content}
-        <Tooltip.Arrow style={{ fill: '#2d2d2d' }} />
+        <Tooltip.Arrow className={styles.pillTooltipArrow} />
       </Tooltip.Content>
     </Tooltip.Portal>
   </Tooltip.Root>
@@ -599,6 +587,10 @@ function AIChatPanel() {
       if (!cmd || typeof cmd !== 'object') {
         return;
       }
+      // History.execute() assigns a monotonic id to every command, but guard
+      // anyway — without it, dedup falls back to matching `commandId ===
+      // undefined` and would stomp unrelated pills together.
+      if (cmd.id == null) return;
       const history = AFRAME.INSPECTOR?.history;
       if (!history) return;
       const isInUndos = history.undos.includes(cmd);
@@ -1209,27 +1201,19 @@ function AIChatPanel() {
             } else if (message.type === 'commandPill') {
               const tooltipContent = (
                 <div>
-                  <div style={{ fontWeight: 600, marginBottom: 2 }}>
-                    {message.name}
-                  </div>
+                  <div className={styles.pillTooltipName}>{message.name}</div>
                   {message.target && (
-                    <div style={{ opacity: 0.85 }}>
+                    <div className={styles.pillTooltipTarget}>
                       <strong>target:</strong> {message.target}
                     </div>
                   )}
                   {message.detail && (
-                    <div
-                      style={{
-                        fontFamily:
-                          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                        opacity: 0.85
-                      }}
-                    >
+                    <div className={styles.pillTooltipDetail}>
                       {message.detail}
                     </div>
                   )}
                   {message.undone && (
-                    <div style={{ marginTop: 4, opacity: 0.7 }}>(undone)</div>
+                    <div className={styles.pillTooltipUndoneNote}>(undone)</div>
                   )}
                 </div>
               );

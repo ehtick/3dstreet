@@ -717,6 +717,44 @@
   }
 }
 
+.pillTooltipContent {
+  background-color: #2d2d2d;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  border: 1px solid #4b4b4b;
+  max-width: 360px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  z-index: 1000;
+
+  .pillTooltipName {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .pillTooltipTarget,
+  .pillTooltipDetail {
+    opacity: 0.85;
+  }
+
+  .pillTooltipDetail {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .pillTooltipUndoneNote {
+    margin-top: 4px;
+    opacity: 0.7;
+  }
+}
+
+.pillTooltipArrow {
+  fill: #2d2d2d;
+}
+
 /* Snapshot component styles */
 .snapshotContainer {
   margin: 10px 0;

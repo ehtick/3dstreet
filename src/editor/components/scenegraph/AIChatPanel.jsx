@@ -584,9 +584,14 @@ function AIChatPanel() {
   // Stream undo/redo command history into the console as pills.
   useEffect(() => {
     const handleHistoryChanged = (cmd) => {
-      if (!cmd || typeof cmd !== 'object') {
+      // history.clear() emits a null cmd. Drop pills then — their commandIds
+      // no longer exist in any queue, and the idCounter resets to 0 so new
+      // commands could even collide with surviving pills.
+      if (cmd === null) {
+        setMessages((prev) => prev.filter((m) => m.type !== 'commandPill'));
         return;
       }
+      if (typeof cmd !== 'object') return;
       // History.execute() assigns a monotonic id to every command, but guard
       // anyway — without it, dedup falls back to matching `commandId ===
       // undefined` and would stomp unrelated pills together.
@@ -606,9 +611,7 @@ function AIChatPanel() {
           if (!isInUndos) return prev;
           const pill = {
             type: 'commandPill',
-            id: `cmd_${cmd.id}_${Date.now()}_${Math.random()
-              .toString(16)
-              .slice(2)}`,
+            id: `cmd_${cmd.id}`,
             commandId: cmd.id,
             name: cmd.name || cmd.type || 'Command',
             commandType: cmd.type,
@@ -625,8 +628,7 @@ function AIChatPanel() {
           if (pillCount <= MAX_PILLS) return next;
           const oldestPillIdx = next.findIndex((m) => m.type === 'commandPill');
           if (oldestPillIdx === -1) return next;
-          next.splice(oldestPillIdx, 1);
-          return next;
+          return next.filter((_, i) => i !== oldestPillIdx);
         }
 
         // Same id seen again: either a redo (was undone, now back in undos),

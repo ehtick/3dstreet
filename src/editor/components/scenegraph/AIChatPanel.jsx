@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { Tooltip } from 'radix-ui';
 import { ai } from '@shared/services/firebase';
 import { getGenerativeModel } from 'firebase/ai';
 import {
@@ -19,12 +20,47 @@ import { AwesomeIcon } from '../../components/elements/AwesomeIcon';
 import {
   faRotate,
   faThumbsUp,
-  faThumbsDown
+  faThumbsDown,
+  faRotateLeft,
+  faRotateRight
 } from '@fortawesome/free-solid-svg-icons';
 import { getGroupedMixinOptions } from '../../lib/mixinUtils';
+import Events from '../../lib/Events';
 
 const AI_MODEL_ID = 'gemini-3-flash-preview';
 let AI_CONVERSATION_ID = uuidv4();
+
+// Cap pill list growth so a multi-hour session doesn't accumulate thousands
+// of DOM nodes. Drag updates are coalesced by History.execute(), so this only
+// trims after many *distinct* edits.
+const MAX_PILLS = 500;
+
+const PillTooltip = ({ children, content }) => (
+  <Tooltip.Root delayDuration={0}>
+    <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+    <Tooltip.Portal>
+      <Tooltip.Content
+        side="bottom"
+        align="center"
+        sideOffset={6}
+        collisionPadding={8}
+        className={styles.pillTooltipContent}
+      >
+        {content}
+        <Tooltip.Arrow className={styles.pillTooltipArrow} />
+      </Tooltip.Content>
+    </Tooltip.Portal>
+  </Tooltip.Root>
+);
+
+const HELP_EXAMPLES = [
+  'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes',
+  'Add a row of pedestrians to the sidewalk',
+  'Replace the trees with palm trees',
+  'Take 3 snapshots from different angles',
+  'Set the location to 37.7749, -122.4194',
+  'Rename the scene to "Market Street redesign"'
+];
 
 // Helper component for the copy button
 const CopyButton = ({ jsonData, textContent }) => {
@@ -280,6 +316,199 @@ const MessageContent = ({ content, isAssistant = false }) => {
   );
 };
 
+// Build a friendly label for an entity (or entity id) for command pills.
+const getEntityLabel = (idOrEntity) => {
+  if (!idOrEntity) return '';
+  let entity;
+  if (typeof idOrEntity === 'string') {
+    entity = document.getElementById(idOrEntity);
+    if (!entity) return idOrEntity;
+  } else {
+    entity = idOrEntity;
+  }
+  const get = (attr) =>
+    typeof entity.getAttribute === 'function'
+      ? entity.getAttribute(attr)
+      : null;
+  const layerName = get('data-layer-name');
+  if (layerName) return layerName;
+  const mixin = get('mixin');
+  if (mixin) return mixin.split(' ')[0];
+  const cls = get('class');
+  if (cls) return cls.split(' ')[0];
+  return entity.id || entity.tagName?.toLowerCase?.() || 'entity';
+};
+
+const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+
+const formatValue = (v) => {
+  if (v === null || v === undefined) return String(v);
+  if (typeof v === 'number') {
+    return Number.isInteger(v) ? String(v) : Number(v.toFixed(2)).toString();
+  }
+  if (typeof v === 'string') return truncate(v, 24);
+  if (typeof v === 'boolean') return String(v);
+  if (typeof v === 'object') {
+    if ('x' in v && 'y' in v) {
+      const parts = [v.x, v.y];
+      if ('z' in v) parts.push(v.z);
+      return parts.map((n) => formatValue(n)).join(', ');
+    }
+    try {
+      return truncate(JSON.stringify(v), 40);
+    } catch {
+      return '[object]';
+    }
+  }
+  return truncate(String(v), 24);
+};
+
+const VEC_AXES = ['x', 'y', 'z', 'w'];
+
+// Try to parse "0 0 0" / "0 0 0 0" style stringified vec values.
+const parseVecString = (s) => {
+  if (typeof s !== 'string') return null;
+  const parts = s.trim().split(/\s+/).map(Number);
+  if (parts.length < 2 || parts.length > 4) return null;
+  if (parts.some((n) => Number.isNaN(n))) return null;
+  return parts;
+};
+
+// For an entityupdate without an explicit `property`, try to narrow the diff
+// down to the specific axes/keys that actually changed (so a position-x drag
+// shows `position.x` rather than the whole vec3).
+const diffComponentChange = (component, oldValue, newValue) => {
+  // Single-property components stringify vec values; diff them numerically.
+  const oldVec = parseVecString(oldValue);
+  const newVec = parseVecString(newValue);
+  if (oldVec && newVec && oldVec.length === newVec.length) {
+    const changed = [];
+    for (let i = 0; i < newVec.length; i++) {
+      if (oldVec[i] !== newVec[i]) changed.push(i);
+    }
+    if (changed.length === 0) return null;
+    if (changed.length === 1) {
+      const i = changed[0];
+      return {
+        path: `${component}.${VEC_AXES[i]}`,
+        oldV: formatValue(oldVec[i]),
+        newV: formatValue(newVec[i])
+      };
+    }
+    const axes = changed.map((i) => VEC_AXES[i]).join('');
+    return {
+      path: `${component}.${axes}`,
+      oldV: changed.map((i) => formatValue(oldVec[i])).join(', '),
+      newV: changed.map((i) => formatValue(newVec[i])).join(', ')
+    };
+  }
+
+  // Multi-property components store objects; diff by changed keys.
+  if (
+    oldValue &&
+    newValue &&
+    typeof oldValue === 'object' &&
+    typeof newValue === 'object' &&
+    !Array.isArray(oldValue) &&
+    !Array.isArray(newValue)
+  ) {
+    const keys = new Set([...Object.keys(oldValue), ...Object.keys(newValue)]);
+    // Comparing formatted (truncated) values rather than raw ones — two
+    // values that diverge only past formatValue's 24-char cutoff will look
+    // identical here. Acceptable for picking which key to show in the pill;
+    // the underlying command still records the full diff.
+    const changedKeys = [...keys].filter(
+      (k) => formatValue(oldValue[k]) !== formatValue(newValue[k])
+    );
+    if (changedKeys.length === 1) {
+      const k = changedKeys[0];
+      return {
+        path: `${component}.${k}`,
+        oldV: formatValue(oldValue[k]),
+        newV: formatValue(newValue[k])
+      };
+    }
+  }
+
+  return null;
+};
+
+// Returns { target, detail } describing a command beyond its display name.
+const describeCommand = (cmd) => {
+  if (!cmd || typeof cmd !== 'object') return { target: '', detail: '' };
+  switch (cmd.type) {
+    case 'entityupdate': {
+      const target = getEntityLabel(cmd.entityId);
+      let path, oldV, newV;
+      if (cmd.property) {
+        path = `${cmd.component}.${cmd.property}`;
+        oldV = formatValue(cmd.oldValue);
+        newV = formatValue(cmd.newValue);
+      } else {
+        const diff = diffComponentChange(
+          cmd.component,
+          cmd.oldValue,
+          cmd.newValue
+        );
+        if (diff) {
+          ({ path, oldV, newV } = diff);
+        } else {
+          path = cmd.component;
+          oldV = formatValue(cmd.oldValue);
+          newV = formatValue(cmd.newValue);
+        }
+      }
+      return { target, detail: `${path}: ${oldV} → ${newV}` };
+    }
+    case 'entityclone': {
+      const source = getEntityLabel(cmd.entityIdToClone);
+      const cloneLabel = cmd.entityId ? getEntityLabel(cmd.entityId) : null;
+      return {
+        target: source,
+        detail: cloneLabel ? `→ ${cloneLabel}` : ''
+      };
+    }
+    case 'entitycreate': {
+      const target = cmd.entityId ? getEntityLabel(cmd.entityId) : 'entity';
+      const def = cmd.definition || {};
+      const hint =
+        def.mixin?.split?.(' ')[0] ||
+        def['data-layer-name'] ||
+        def.class?.split?.(' ')[0] ||
+        def.element ||
+        '';
+      return { target, detail: hint };
+    }
+    case 'entityremove': {
+      const target = cmd.entity ? getEntityLabel(cmd.entity) : 'entity';
+      return { target, detail: '' };
+    }
+    case 'entityreparent': {
+      const target = getEntityLabel(cmd.entityId);
+      const newParent = getEntityLabel(cmd.newParentEl);
+      return {
+        target,
+        detail: `→ ${newParent}@${cmd.newIndexInParent}`
+      };
+    }
+    case 'componentadd':
+    case 'componentremove': {
+      const target = getEntityLabel(cmd.entityId);
+      const valueStr =
+        cmd.type === 'componentadd' && cmd.value !== undefined
+          ? `: ${formatValue(cmd.value)}`
+          : '';
+      return { target, detail: `${cmd.component}${valueStr}` };
+    }
+    case 'multi': {
+      const count = cmd.commands?.length ?? 0;
+      return { target: '', detail: `${count} change${count === 1 ? '' : 's'}` };
+    }
+    default:
+      return { target: '', detail: '' };
+  }
+};
+
 /**
  * Generates an enhanced system prompt by appending available mixin information
  * @returns {string} The enhanced system prompt with mixin information
@@ -302,16 +531,124 @@ const getEnhancedSystemPrompt = () => {
 
 function AIChatPanel() {
   const [messages, setMessages] = useState([]);
-  const isMessages = messages.length > 0;
   const [input, setInput] = useState('');
   const [latestResponseId, setLatestResponseId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const chatContainerRef = useRef(null);
+  const textareaRef = useRef(null);
   const { currentUser } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
+  const rightPanelTab = useStore((state) => state.rightPanelTab);
 
   const modelRef = useRef(null);
+
+  // Focus the textarea when the console tab becomes active so Enter sends the
+  // command instead of re-clicking the tab button that was just focused.
+  useEffect(() => {
+    if (rightPanelTab === 'console' && currentUser) {
+      textareaRef.current?.focus();
+    }
+  }, [rightPanelTab, currentUser]);
+
+  // Resize the textarea to fit its content. Runs after DOM updates and
+  // before paint so the user never sees a one-frame flash at the wrong size.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  // Click the pill arrow to rewind/replay history up to that command.
+  // If the pill is currently active, undo back through it (and everything
+  // after). If it is undone, redo forward through it.
+  const handlePillRewind = (pill) => {
+    const history = AFRAME.INSPECTOR?.history;
+    if (!history) return;
+    if (!pill.undone) {
+      const idx = history.undos.findIndex((c) => c.id === pill.commandId);
+      if (idx === -1) return;
+      const steps = history.undos.length - idx;
+      for (let i = 0; i < steps; i++) AFRAME.INSPECTOR.undo();
+      posthog.capture('console_pill_undo', { steps });
+    } else {
+      const idx = history.redos.findIndex((c) => c.id === pill.commandId);
+      if (idx === -1) return;
+      const steps = history.redos.length - idx;
+      for (let i = 0; i < steps; i++) AFRAME.INSPECTOR.redo();
+      posthog.capture('console_pill_redo', { steps });
+    }
+  };
+
+  // Stream undo/redo command history into the console as pills.
+  useEffect(() => {
+    const handleHistoryChanged = (cmd) => {
+      // history.clear() emits a null cmd. Drop pills then — their commandIds
+      // no longer exist in any queue, and the idCounter resets to 0 so new
+      // commands could even collide with surviving pills.
+      if (cmd === null) {
+        setMessages((prev) => prev.filter((m) => m.type !== 'commandPill'));
+        return;
+      }
+      if (typeof cmd !== 'object') return;
+      // History.execute() assigns a monotonic id to every command, but guard
+      // anyway — without it, dedup falls back to matching `commandId ===
+      // undefined` and would stomp unrelated pills together.
+      if (cmd.id == null) return;
+      const history = AFRAME.INSPECTOR?.history;
+      if (!history) return;
+      const isInUndos = history.undos.includes(cmd);
+
+      const { target, detail } = describeCommand(cmd);
+
+      setMessages((prev) => {
+        const existingIdx = prev.findIndex(
+          (m) => m.type === 'commandPill' && m.commandId === cmd.id
+        );
+
+        if (existingIdx === -1) {
+          if (!isInUndos) return prev;
+          const pill = {
+            type: 'commandPill',
+            id: `cmd_${cmd.id}`,
+            commandId: cmd.id,
+            name: cmd.name || cmd.type || 'Command',
+            commandType: cmd.type,
+            target,
+            detail,
+            timestamp: new Date(),
+            undone: false
+          };
+          const next = [...prev, pill];
+          // Cap pill count: drop the oldest pill (chat messages are untouched)
+          // so a long editing session can't grow the list without bound.
+          let pillCount = 0;
+          for (const m of next) if (m.type === 'commandPill') pillCount++;
+          if (pillCount <= MAX_PILLS) return next;
+          const oldestPillIdx = next.findIndex((m) => m.type === 'commandPill');
+          if (oldestPillIdx === -1) return next;
+          return next.filter((_, i) => i !== oldestPillIdx);
+        }
+
+        // Same id seen again: either a redo (was undone, now back in undos),
+        // an undo (now in redos), or an updatable update that mutated values.
+        const updated = [...prev];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          target,
+          detail,
+          undone: !isInUndos
+        };
+        return updated;
+      });
+    };
+
+    Events.on('historychanged', handleHistoryChanged);
+    return () => {
+      Events.off('historychanged', handleHistoryChanged);
+    };
+  }, []);
 
   useEffect(() => {
     const initializeAI = async () => {
@@ -357,23 +694,15 @@ function AIChatPanel() {
     };
   }, []);
 
-  // Core function to process a message and get AI response
-  // Add a new function to handle textarea auto-resize
-  const adjustTextareaHeight = (element) => {
-    if (!element) return;
-
-    // Reset height to auto to get the correct scrollHeight
-    element.style.height = 'auto';
-
-    // Set the height to match the content (scrollHeight)
-    element.style.height = `${element.scrollHeight}px`;
-  };
-
   const processMessage = async (messageText) => {
     if (!messageText.trim() || !modelRef.current) return;
 
     setIsLoading(true);
-    const userMessage = { role: 'user', content: messageText };
+    const userMessage = {
+      role: 'user',
+      content: messageText,
+      timestamp: new Date()
+    };
     setMessages((prev) => [...prev, userMessage]);
 
     try {
@@ -674,10 +1003,29 @@ function AIChatPanel() {
     }
   };
 
+  const showHelpMessage = (rawInput) => {
+    const userMessage = {
+      role: 'user',
+      content: rawInput,
+      timestamp: new Date()
+    };
+    const helpMessage = {
+      type: 'help',
+      id: `help_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      timestamp: new Date(),
+      examples: HELP_EXAMPLES
+    };
+    setMessages((prev) => [...prev, userMessage, helpMessage]);
+  };
+
   // Handler for the send button in the chat interface
   const handleSendMessage = async () => {
     const currentInput = input;
     setInput(''); // Clear the input field immediately
+    if (currentInput.trim().toLowerCase().startsWith('/help')) {
+      showHelpMessage(currentInput);
+      return;
+    }
     await processMessage(currentInput);
   };
 
@@ -690,7 +1038,10 @@ function AIChatPanel() {
   }, [messages]);
 
   const resetConversation = () => {
-    setMessages([]);
+    // Preserve command history pills — the underlying A-Frame undo stack
+    // survives the reset, so the visual timeline should too. Only clear
+    // chat-side messages (user/assistant/function calls/snapshots/ratings/help).
+    setMessages((prev) => prev.filter((m) => m.type === 'commandPill'));
     setInput('');
     setShowResetConfirm(false);
 
@@ -805,26 +1156,13 @@ function AIChatPanel() {
   return (
     <div className={`${styles.chatContainer} ai-chat-panel-container`}>
       <div className={styles.proFeaturesWrapper}>
-        <div className={styles['chat-header']}>
-          <div className={styles['chat-title']}>
-            <ChatbotIcon />
-            <span>{!isMessages ? 'What can I help with?' : 'Assistant'}</span>
-          </div>
-          <a
-            href="https://3dstreet.com/blog/2025/05/22/introducing-ai-assistant-beta-your-creative-partner-for-street-design#the-fine-print-beta-status-and-availability"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div className={styles.betaPill}>Free Chat in Beta</div>
-          </a>
-        </div>
         {showResetConfirm && (
           <div className={styles.resetConfirmOverlay}>
             <div className={styles.resetConfirmModal}>
               <div className={styles.resetConfirmContent}>
                 <p>
                   Are you sure you want to reset the conversation? This will
-                  delete all messages.
+                  clear chat messages. Your command history pills will be kept.
                 </p>
                 <div className={styles.resetConfirmButtons}>
                   <button onClick={resetConversation}>Yes, reset</button>
@@ -844,6 +1182,83 @@ function AIChatPanel() {
               );
             } else if (message.type === 'snapshot') {
               return <SnapshotMessage key={message.id} snapshot={message} />;
+            } else if (message.type === 'help') {
+              return (
+                <div key={message.id} className={styles.helpMessage}>
+                  <div className={styles.helpHeader}>Try one of these:</div>
+                  <div className={styles.helpExamples}>
+                    {message.examples.map((ex) => (
+                      <button
+                        key={ex}
+                        type="button"
+                        className={styles.helpExampleButton}
+                        onClick={() => setInput(ex)}
+                      >
+                        {ex}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else if (message.type === 'commandPill') {
+              const tooltipContent = (
+                <div>
+                  <div className={styles.pillTooltipName}>{message.name}</div>
+                  {message.target && (
+                    <div className={styles.pillTooltipTarget}>
+                      <strong>target:</strong> {message.target}
+                    </div>
+                  )}
+                  {message.detail && (
+                    <div className={styles.pillTooltipDetail}>
+                      {message.detail}
+                    </div>
+                  )}
+                  {message.undone && (
+                    <div className={styles.pillTooltipUndoneNote}>(undone)</div>
+                  )}
+                </div>
+              );
+              return (
+                <PillTooltip key={message.id} content={tooltipContent}>
+                  <div
+                    className={`${styles.commandPill} ${
+                      message.undone ? styles.commandPillUndone : ''
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className={styles.commandPillRewind}
+                      onClick={() => handlePillRewind(message)}
+                      title={
+                        message.undone
+                          ? 'Redo to here'
+                          : 'Undo to before this command'
+                      }
+                    >
+                      <AwesomeIcon
+                        icon={message.undone ? faRotateRight : faRotateLeft}
+                      />
+                    </button>
+                    <span className={styles.commandPillName}>
+                      {message.name}
+                    </span>
+                    {message.target && (
+                      <span className={styles.commandPillTarget}>
+                        {message.target}
+                      </span>
+                    )}
+                    {message.detail && (
+                      <span className={styles.commandPillDetail}>
+                        {message.detail}
+                      </span>
+                    )}
+                    {message.undone && (
+                      <span className={styles.commandPillBadge}>undone</span>
+                    )}
+                  </div>
+                </PillTooltip>
+              );
             } else if (message.type === 'rating') {
               const isLatest = message.responseId === latestResponseId;
               return (
@@ -907,10 +1322,7 @@ function AIChatPanel() {
         <div className={styles.chatInput}>
           <textarea
             value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              adjustTextareaHeight(e.target);
-            }}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 if (e.shiftKey) {
@@ -921,47 +1333,19 @@ function AIChatPanel() {
                 }
               }
             }}
-            placeholder={isMessages ? 'Reply to Assistant...' : 'Ask anything'}
+            placeholder="Type a command or type /help for options"
             disabled={!currentUser}
             rows="1"
             className={styles.chatTextarea}
-            ref={(el) => {
-              if (el) adjustTextareaHeight(el);
-            }}
+            ref={textareaRef}
           />
           <div className={styles.actionButtons}>
-            <div className={styles.leftButtons}>
-              {!isMessages && (
-                <>
-                  <button
-                    className={styles.actionButton}
-                    onClick={() =>
-                      setInput(
-                        'Make a basic street with 2 drive lanes, 2 sidewalks, and 2 bike lanes'
-                      )
-                    }
-                    disabled={isLoading || !currentUser}
-                  >
-                    Create a street
-                  </button>
-                  <button
-                    className={styles.actionButton}
-                    onClick={() =>
-                      setInput('take 3 snapshots with different types')
-                    }
-                    disabled={isLoading || !currentUser}
-                  >
-                    Take snapshot
-                  </button>
-                </>
-              )}
-            </div>
             <div className={styles.rightButtons}>
-              {isMessages && (
+              {messages.length > 0 && (
                 <button
                   onClick={() => setShowResetConfirm(true)}
                   className={`${styles.resetButton} ${styles.greenIcon}`}
-                  title="Reset conversation"
+                  title="Reset console"
                   disabled={isLoading || !currentUser}
                 >
                   <AwesomeIcon icon={faRotate} />

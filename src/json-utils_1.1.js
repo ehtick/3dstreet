@@ -563,16 +563,13 @@ function createEntityFromObj(entityData, parentEl, beforeEl) {
     entity.setAttribute('data-layer-name', entityData['data-layer-name']);
   }
 
-  entity.addEventListener('loaded', () => {
-    // load attributes
-    for (const attr in entityData.components) {
-      entity.setAttribute(attr, entityData.components[attr]);
-    }
+  for (const attr in entityData.components) {
+    entity.setAttribute(attr, entityData.components[attr]);
+  }
 
-    if (entityData.mixin) {
-      entity.setAttribute('mixin', entityData.mixin);
-    }
-  });
+  if (entityData.mixin) {
+    entity.setAttribute('mixin', entityData.mixin);
+  }
 
   if (entityData.children) {
     for (const childEntityData of entityData.children) {

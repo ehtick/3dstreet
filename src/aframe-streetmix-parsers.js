@@ -14,15 +14,15 @@ function cloneMixinAsChildren({
 }) {
   for (let j = radius * -1; j <= radius; j = j + step) {
     const placedObjectEl = document.createElement('a-entity');
+    // add the new element to DOM
+    parentEl.append(placedObjectEl);
     placedObjectEl.setAttribute('mixin', objectMixinId);
     placedObjectEl.setAttribute('class', objectMixinId);
     placedObjectEl.setAttribute('position', positionXYString + ' ' + j);
 
     if (length) {
-      placedObjectEl.addEventListener('loaded', (evt) => {
-        evt.target.setAttribute('geometry', 'height', length);
-        evt.target.setAttribute('atlas-uvs', 'c', 1);
-      });
+      placedObjectEl.setAttribute('geometry', 'height', length);
+      placedObjectEl.components['atlas-uvs'].update();
     }
 
     if (randomY) {
@@ -33,8 +33,6 @@ function cloneMixinAsChildren({
     } else {
       placedObjectEl.setAttribute('rotation', rotation);
     }
-    // add the new elmement to DOM
-    parentEl.append(placedObjectEl);
     // could be good to use geometry merger https://github.com/supermedium/superframe/tree/master/components/geometry-merger
   }
 }

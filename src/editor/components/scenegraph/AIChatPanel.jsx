@@ -30,6 +30,11 @@ import Events from '../../lib/Events';
 const AI_MODEL_ID = 'gemini-3-flash-preview';
 let AI_CONVERSATION_ID = uuidv4();
 
+// Cap pill list growth so a multi-hour session doesn't accumulate thousands
+// of DOM nodes. Drag updates are coalesced by History.execute(), so this only
+// trims after many *distinct* edits.
+const MAX_PILLS = 500;
+
 const PillTooltip = ({ children, content }) => (
   <Tooltip.Root delayDuration={0}>
     <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
@@ -607,7 +612,16 @@ function AIChatPanel() {
             timestamp: new Date(),
             undone: false
           };
-          return [...prev, pill];
+          const next = [...prev, pill];
+          // Cap pill count: drop the oldest pill (chat messages are untouched)
+          // so a long editing session can't grow the list without bound.
+          let pillCount = 0;
+          for (const m of next) if (m.type === 'commandPill') pillCount++;
+          if (pillCount <= MAX_PILLS) return next;
+          const oldestPillIdx = next.findIndex((m) => m.type === 'commandPill');
+          if (oldestPillIdx === -1) return next;
+          next.splice(oldestPillIdx, 1);
+          return next;
         }
 
         // Same id seen again: either a redo (was undone, now back in undos),
@@ -1029,7 +1043,10 @@ function AIChatPanel() {
   }, [messages]);
 
   const resetConversation = () => {
-    setMessages([]);
+    // Preserve command history pills — the underlying A-Frame undo stack
+    // survives the reset, so the visual timeline should too. Only clear
+    // chat-side messages (user/assistant/function calls/snapshots/ratings/help).
+    setMessages((prev) => prev.filter((m) => m.type === 'commandPill'));
     setInput('');
     setShowResetConfirm(false);
 
@@ -1150,7 +1167,7 @@ function AIChatPanel() {
               <div className={styles.resetConfirmContent}>
                 <p>
                   Are you sure you want to reset the conversation? This will
-                  delete all messages.
+                  clear chat messages. Your command history pills will be kept.
                 </p>
                 <div className={styles.resetConfirmButtons}>
                   <button onClick={resetConversation}>Yes, reset</button>

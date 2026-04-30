@@ -385,6 +385,22 @@ exports.stripeWebhook = functions
           item.price.id === monthlyPriceId
         );
       }
+
+      // Loud warning if a checkout completed but no plan matched — usually means
+      // STRIPE_MONTHLY_PRICE_ID / STRIPE_YEARLY_PRICE_ID secrets drifted from
+      // the price IDs the frontend is actually selling.
+      if (!isAnnualPlan && !isMonthlyPlan) {
+        const seenPriceIds = sessionWithLineItems.line_items.data
+          .map(item => item.price?.id)
+          .filter(Boolean);
+        console.warn(
+          `checkout completed but no plan matched: session=${checkoutSession.id} ` +
+          `userId=${checkoutSession.metadata?.userId} ` +
+          `seen=[${seenPriceIds.join(',')}] ` +
+          `expected_monthly=${monthlyPriceId || 'unset'} ` +
+          `expected_yearly=${annualPriceId || 'unset'}`
+        );
+      }
     }
 
     const collectionRef = admin.firestore().collection("userProfile");

@@ -153,6 +153,7 @@ AFRAME.registerComponent('street-generated-stencil', {
       // Create each stencil within the group
       stencilsToUse.forEach((stencilName, stencilIndex) => {
         const clone = document.createElement('a-entity');
+        this.el.appendChild(clone);
         clone.setAttribute('mixin', stencilName);
 
         // Calculate stencil position within group
@@ -189,7 +190,6 @@ AFRAME.registerComponent('street-generated-stencil', {
         clone.setAttribute('data-parent-component', this.attrName);
         clone.setAttribute('polygon-offset', { factor: -2, units: -2 });
 
-        this.el.appendChild(clone);
         this.createdEntities.push(clone);
       });
     }

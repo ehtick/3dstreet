@@ -1,6 +1,5 @@
-import { ZoomButtons } from './elements';
-import { useState, useEffect, useRef } from 'react';
-import ComponentsSidebar from './elements/Sidebar';
+import { useState, useEffect } from 'react';
+import RightPanel from './scenegraph/RightPanel';
 import Events from '../lib/Events';
 import ModalTextures from './modals/ModalTextures';
 import SceneGraph from './scenegraph/SceneGraph';
@@ -15,37 +14,23 @@ import { GeoModal } from './modals/GeoModal';
 import { ScenesModal } from './modals/ScenesModal';
 import { PaymentModal } from './modals/PaymentModal';
 import { AddLayerPanel } from './elements/AddLayerPanel';
-import { GeoLocationDisplay } from './elements/GeoLocationDisplay';
 import { NewModal } from './modals/NewModal';
-import { ReportModal } from './modals/ReportModal';
 import { LoadingSceneModal } from './modals/LoadingSceneModal';
 import { ToolbarWrapper } from './scenegraph/ToolbarWrapper.jsx';
+import { ActionBar } from './elements/ActionBar';
+import { PrimaryToolbar } from './elements/PrimaryToolbar';
 import useStore from '@/store';
 import { AIChatProvider } from '../contexts/AIChatContext';
-import AIChatPanel from './scenegraph/AIChatPanel';
+import styles from './Main.module.scss';
 
 // Define the libraries array as a constant outside of the component
 const GOOGLE_MAPS_LIBRARIES = ['places'];
 
 export default function Main() {
-  // Create a ref for the AIChatPanel component
-  const aiChatPanelRef = useRef(null);
-
-  // Expose the ref globally for other components to access
-  useEffect(() => {
-    window.aiChatPanelRef = aiChatPanelRef.current;
-    return () => {
-      window.aiChatPanelRef = null;
-    };
-  }, []);
   const [state, setState] = useState({
     entity: null,
     isModalTexturesOpen: false,
-    sceneEl: AFRAME.scenes[0],
-    visible: {
-      scenegraph: true,
-      attributes: true
-    }
+    sceneEl: AFRAME.scenes[0]
   });
 
   useEffect(() => {
@@ -68,37 +53,6 @@ export default function Main() {
         entity: entity
       }));
     });
-    Events.on('togglesidebar', (event) => {
-      if (event.which === 'all') {
-        setState((prevState) => {
-          const isVisible =
-            prevState.visible.scenegraph || prevState.visible.attributes;
-          return {
-            ...prevState,
-            visible: {
-              scenegraph: !isVisible,
-              attributes: !isVisible
-            }
-          };
-        });
-      } else if (event.which === 'attributes') {
-        setState((prevState) => ({
-          ...prevState,
-          visible: {
-            ...prevState.visible,
-            attributes: !prevState.visible.attributes
-          }
-        }));
-      } else if (event.which === 'scenegraph') {
-        setState((prevState) => ({
-          ...prevState,
-          visible: {
-            ...prevState.visible,
-            scenegraph: !prevState.visible.scenegraph
-          }
-        }));
-      }
-    });
   }, []);
 
   const onModalTextureOnClose = (value) => {
@@ -120,17 +74,13 @@ export default function Main() {
       {isInspectorEnabled && (
         <AIChatProvider firebaseApp={app}>
           <div>
-            <SceneGraph
-              scene={scene}
-              selectedEntity={state.entity}
-              visible={state.visible.scenegraph}
-            />
-            <AIChatPanel ref={aiChatPanelRef} />
-            <div id="rightPanel">
-              <ComponentsSidebar
-                entity={state.entity}
-                visible={state.visible.attributes}
-              />
+            <SceneGraph scene={scene} selectedEntity={state.entity} />
+            <RightPanel entity={state.entity} />
+            <div className={`clickable ${styles.primaryToolbarDock}`}>
+              <PrimaryToolbar />
+            </div>
+            <div className={`clickable ${styles.actionBarDock}`}>
+              <ActionBar selectedEntity={state.entity} />
             </div>
           </div>
         </AIChatProvider>
@@ -142,7 +92,6 @@ export default function Main() {
       <ScenesModal />
       <ProfileModal />
       <NewModal />
-      <ReportModal />
       <LoadingSceneModal />
       <LoadScript
         googleMapsApiKey={firebaseConfig.apiKey}
@@ -157,15 +106,9 @@ export default function Main() {
       />
 
       {isInspectorEnabled && (
-        <>
-          <div id="zoom-help-buttons">
-            <ZoomButtons />
-          </div>
-          <div className="clickable">
-            <AddLayerPanel />
-          </div>
-          <GeoLocationDisplay />
-        </>
+        <div className="clickable">
+          <AddLayerPanel />
+        </div>
       )}
     </div>
   );

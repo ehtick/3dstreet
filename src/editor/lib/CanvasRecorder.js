@@ -1,5 +1,9 @@
 /* global AFRAME */
 
+// The Recording UI (TimeControls) was removed in panels-v2 (PR #1566) but
+// CanvasRecorder is kept because we plan to restore recording soon. Until
+// then it's only referenced from the recording-state stubs in store.js.
+
 // Recorder statuses - simple enum replacement
 const RecorderStatus = {
   Idle: 0,

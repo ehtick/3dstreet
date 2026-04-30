@@ -34,16 +34,26 @@ export class EntityUpdateCommand extends Command {
     if (component) {
       if (payload.property) {
         if (component.schema[payload.property]) {
-          this.newValue = component.schema[payload.property].stringify(
-            payload.value
-          );
-          this.oldValue = component.schema[payload.property].stringify(
-            payload.entity.getAttribute(payload.component)[payload.property]
-          );
+          const schemaProperty = component.schema[payload.property];
+          const isSelectorType =
+            schemaProperty.type === 'selector' ||
+            schemaProperty.type === 'selectorAll';
+          this.newValue =
+            payload.value === null
+              ? null
+              : isSelectorType
+                ? payload.value
+                : schemaProperty.stringify(payload.value);
+          this.oldValue = isSelectorType
+            ? (entity.getDOMAttribute(payload.component)?.[payload.property] ??
+              '')
+            : schemaProperty.stringify(
+                entity.getAttribute(payload.component)[payload.property]
+              );
         } else {
           // Just in case dynamic schema is not properly updated and we set an unknown property. I don't think this should happen.
           this.newValue = payload.value;
-          this.oldValue = payload.entity.getAttribute(payload.component)[
+          this.oldValue = entity.getAttribute(payload.component)[
             payload.property
           ];
         }
@@ -57,14 +67,15 @@ export class EntityUpdateCommand extends Command {
           );
         }
       } else {
-        this.newValue = component.isSingleProperty
-          ? component.schema.stringify(payload.value)
-          : payload.value;
+        this.newValue =
+          payload.value === null
+            ? null
+            : component.isSingleProperty
+              ? component.schema.stringify(payload.value)
+              : payload.value;
         this.oldValue = component.isSingleProperty
-          ? component.schema.stringify(
-              payload.entity.getAttribute(payload.component)
-            )
-          : structuredClone(payload.entity.getDOMAttribute(payload.component));
+          ? component.schema.stringify(entity.getAttribute(payload.component))
+          : structuredClone(entity.getDOMAttribute(payload.component));
         if (this.editor.config.debugUndoRedo) {
           console.log(
             'entityupdate component',
@@ -77,7 +88,7 @@ export class EntityUpdateCommand extends Command {
     } else {
       // id, class, mixin, data attributes
       this.newValue = payload.value;
-      this.oldValue = payload.entity.getAttribute(this.component);
+      this.oldValue = entity.getAttribute(this.component);
       if (this.editor.config.debugUndoRedo) {
         console.log(
           'entityupdate attribute',

@@ -4,7 +4,6 @@ import useStore from '@/store';
 import { makeScreenshot, convertToObject } from '@/editor/lib/SceneUtils';
 import posthog from 'posthog-js';
 import Events from '../../lib/Events.js';
-import canvasRecorder from '../../lib/CanvasRecorder';
 import { useAuthContext } from '@/editor/contexts';
 import { saveBlob } from '../../lib/utils';
 import {
@@ -105,13 +104,11 @@ const filterRiggedEntities = (scene, visible) => {
 const AppMenu = ({ currentUser }) => {
   const {
     setModal,
-    isInspectorEnabled,
-    setIsInspectorEnabled,
     isGridVisible,
     setIsGridVisible,
     saveScene,
-    startCheckout,
-    setGeojsonImportData
+    setGeojsonImportData,
+    setRightPanelTab
   } = useStore();
   const { currentUser: authUser } = useAuthContext();
   const [currentCamera, setCurrentCamera] = useState('perspective');
@@ -166,13 +163,7 @@ const AppMenu = ({ currentUser }) => {
   };
 
   const showAIChatPanel = () => {
-    // Use the global ref to access the AIChatPanel component
-    if (
-      window.aiChatPanelRef &&
-      typeof window.aiChatPanelRef.openPanel === 'function'
-    ) {
-      window.aiChatPanelRef.openPanel();
-    }
+    setRightPanelTab('console');
   };
 
   const exportSceneToGLTF = (arReady) => {
@@ -578,12 +569,9 @@ const AppMenu = ({ currentUser }) => {
             <Menubar.Separator className="MenubarSeparator" />
             <Menubar.Item
               className="MenubarItem"
-              onClick={() => {
-                makeScreenshot();
-                setModal('screenshot');
-              }}
+              onClick={() => setModal('share')}
             >
-              Share & Download...
+              Share...
             </Menubar.Item>
             <Menubar.Separator className="MenubarSeparator" />
             <Menubar.Sub>
@@ -668,66 +656,15 @@ const AppMenu = ({ currentUser }) => {
             >
               Reset Camera View
             </Menubar.Item>
-          </Menubar.Content>
-        </Menubar.Portal>
-      </Menubar.Menu>
-
-      <Menubar.Menu>
-        <Menubar.Trigger className="MenubarTrigger">Run</Menubar.Trigger>
-        <Menubar.Portal>
-          <Menubar.Content
-            className="MenubarContent"
-            align="start"
-            sideOffset={5}
-            alignOffset={-3}
-          >
+            <Menubar.Separator className="MenubarSeparator" />
             <Menubar.Item
               className="MenubarItem"
               onClick={() => {
-                setIsInspectorEnabled(!isInspectorEnabled);
+                makeScreenshot();
+                setModal('screenshot');
               }}
             >
-              Start Viewer
-              <div className="RightSlot">5</div>
-            </Menubar.Item>
-            <Menubar.Item
-              className="MenubarItem"
-              onClick={async () => {
-                if (!authUser) {
-                  setModal('signin');
-                  return;
-                }
-
-                if (!authUser.isPro) {
-                  startCheckout(null);
-                  posthog.capture('recording_feature_paywall_shown');
-                  return;
-                }
-
-                const aframeCanvas = document.querySelector('a-scene').canvas;
-                if (!aframeCanvas) {
-                  console.error('Could not find A-Frame canvas for recording');
-                  return;
-                }
-
-                const success = await canvasRecorder.startRecording(
-                  aframeCanvas,
-                  {
-                    name:
-                      '3DStreet-Recording-' +
-                      new Date().toISOString().slice(0, 10)
-                  }
-                );
-
-                if (success) {
-                  setIsInspectorEnabled(!isInspectorEnabled);
-                }
-              }}
-            >
-              Start and Record{' '}
-              <div className="RightSlot">
-                <span className="pro-badge">Pro</span>
-              </div>
+              Snapshot & Render...
             </Menubar.Item>
           </Menubar.Content>
         </Menubar.Portal>

@@ -6,7 +6,14 @@ import styles from './ActionBar.module.scss';
 import { Button, UnitsPreference, UndoRedo } from '../../elements';
 import { useState, useEffect } from 'react';
 import posthog from 'posthog-js';
-import { Rotate24Icon, Translate24Icon, Ruler24Icon } from '@shared/icons';
+import {
+  Rotate24Icon,
+  Translate24Icon,
+  Ruler24Icon,
+  ZoomIn24Icon,
+  ZoomOut24Icon,
+  CameraReset24Icon
+} from '@shared/icons';
 import {
   fadeInRulerCursorEntity,
   fadeOutRulerCursorEntity,
@@ -135,6 +142,31 @@ const ActionBar = ({ selectedEntity }) => {
       <UnitsPreference />
       <div className={styles.divider} />
       <UndoRedo />
+      <Button
+        variant="toolbtn"
+        onPointerDown={() => AFRAME.INSPECTOR.controls.zoomOutStart()}
+        onPointerUp={() => AFRAME.INSPECTOR.controls.zoomOutStop()}
+        onPointerLeave={() => AFRAME.INSPECTOR.controls.zoomOutStop()}
+        title="Zoom Out"
+      >
+        <ZoomOut24Icon />
+      </Button>
+      <Button
+        variant="toolbtn"
+        onPointerDown={() => AFRAME.INSPECTOR.controls.zoomInStart()}
+        onPointerUp={() => AFRAME.INSPECTOR.controls.zoomInStop()}
+        onPointerLeave={() => AFRAME.INSPECTOR.controls.zoomInStop()}
+        title="Zoom In"
+      >
+        <ZoomIn24Icon />
+      </Button>
+      <Button
+        variant="toolbtn"
+        onPointerDown={() => AFRAME.INSPECTOR.controls.resetZoom()}
+        title="Reset Camera View"
+      >
+        <CameraReset24Icon />
+      </Button>
     </div>
   );
 };

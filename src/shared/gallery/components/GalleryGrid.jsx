@@ -14,11 +14,21 @@ const GalleryGrid = ({
   onDelete,
   onDownload,
   onPageChange,
-  onPageSizeChange
+  onPageSizeChange,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore
 }) => {
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
   const pageItems = items.slice(start, end);
+
+  const canGoNext = page < totalPages || (hasMore && !isLoadingMore);
+  const nextLabel = isLoadingMore
+    ? 'Loading…'
+    : page >= totalPages && hasMore
+      ? 'Load more'
+      : 'Next';
 
   const handlePrevPage = () => {
     if (page > 1) {
@@ -29,6 +39,8 @@ const GalleryGrid = ({
   const handleNextPage = () => {
     if (page < totalPages) {
       onPageChange(page + 1);
+    } else if (hasMore && onLoadMore && !isLoadingMore) {
+      onLoadMore();
     }
   };
 
@@ -92,22 +104,25 @@ const GalleryGrid = ({
               style={{ fontSize: '12px', color: '#d1d5db' }}
             >
               Page <span className="gp-current">{page}</span> /{' '}
-              <span className="gp-total">{totalPages}</span>
+              <span className="gp-total">
+                {totalPages}
+                {hasMore ? '+' : ''}
+              </span>
             </span>
             <button
               className="gallery-next btn"
               onClick={handleNextPage}
-              disabled={page === totalPages}
+              disabled={!canGoNext}
               style={{
                 padding: '6px 10px',
                 border: '1px solid #4b5563',
                 borderRadius: '6px',
                 background: '#374151',
-                color: page === totalPages ? '#6b7280' : '#f3f4f6',
-                cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                color: canGoNext ? '#f3f4f6' : '#6b7280',
+                cursor: canGoNext ? 'pointer' : 'not-allowed'
               }}
             >
-              Next
+              {nextLabel}
             </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

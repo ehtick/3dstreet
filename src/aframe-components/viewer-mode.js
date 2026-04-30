@@ -1,5 +1,10 @@
 /* global AFRAME, THREE */
 
+// The Viewer Mode UI was removed in panels-v2 (PR #1566) but the underlying
+// component is kept so existing scenes still load. Plan is to restore a
+// reworked viewer experience soon — do not delete the component or its
+// save/load wiring in json-utils until that lands.
+
 /**
  * Helper function to get the scene-timer component
  * This provides a more reliable way to access the timer than using global variables

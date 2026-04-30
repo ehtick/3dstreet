@@ -16,8 +16,7 @@ export const isContainer = (entity) => {
     entity.tagName === 'A-SCENE' ||
     entity.id === 'street-container' ||
     entity.id === 'reference-layers' ||
-    entity.id === 'environment' ||
-    entity.id === 'cameraRig'
+    entity.id === 'environment'
   );
 };
 

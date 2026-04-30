@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Tooltip } from 'radix-ui';
 import { ai } from '@shared/services/firebase';
 import { getGenerativeModel } from 'firebase/ai';
@@ -425,6 +425,10 @@ const diffComponentChange = (component, oldValue, newValue) => {
     !Array.isArray(newValue)
   ) {
     const keys = new Set([...Object.keys(oldValue), ...Object.keys(newValue)]);
+    // Comparing formatted (truncated) values rather than raw ones — two
+    // values that diverge only past formatValue's 24-char cutoff will look
+    // identical here. Acceptable for picking which key to show in the pill;
+    // the underlying command still records the full diff.
     const changedKeys = [...keys].filter(
       (k) => formatValue(oldValue[k]) !== formatValue(newValue[k])
     );
@@ -559,6 +563,15 @@ function AIChatPanel() {
     }
   }, [rightPanelTab, currentUser]);
 
+  // Resize the textarea to fit its content. Runs after DOM updates and
+  // before paint so the user never sees a one-frame flash at the wrong size.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
   // Click the pill arrow to rewind/replay history up to that command.
   // If the pill is currently active, undo back through it (and everything
   // after). If it is undone, redo forward through it.
@@ -686,18 +699,6 @@ function AIChatPanel() {
       AFRAME.scenes[0].removeEventListener('newScene', handleNewScene);
     };
   }, []);
-
-  // Core function to process a message and get AI response
-  // Add a new function to handle textarea auto-resize
-  const adjustTextareaHeight = (element) => {
-    if (!element) return;
-
-    // Reset height to auto to get the correct scrollHeight
-    element.style.height = 'auto';
-
-    // Set the height to match the content (scrollHeight)
-    element.style.height = `${element.scrollHeight}px`;
-  };
 
   const processMessage = async (messageText) => {
     if (!messageText.trim() || !modelRef.current) return;
@@ -1335,10 +1336,7 @@ function AIChatPanel() {
         <div className={styles.chatInput}>
           <textarea
             value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              adjustTextareaHeight(e.target);
-            }}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 if (e.shiftKey) {
@@ -1353,13 +1351,9 @@ function AIChatPanel() {
             disabled={!currentUser}
             rows="1"
             className={styles.chatTextarea}
-            ref={(el) => {
-              textareaRef.current = el;
-              if (el) adjustTextareaHeight(el);
-            }}
+            ref={textareaRef}
           />
           <div className={styles.actionButtons}>
-            <div className={styles.leftButtons} />
             <div className={styles.rightButtons}>
               {messages.length > 0 && (
                 <button

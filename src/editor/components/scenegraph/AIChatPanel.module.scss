@@ -416,20 +416,11 @@
 
     .actionButtons {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       gap: 4px;
       padding-top: 6px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-
-      .leftButtons {
-        display: flex;
-        align-items: center;
-        gap: 0;
-        flex-grow: 1;
-        flex-wrap: wrap;
-        min-width: 0;
-      }
 
       .rightButtons {
         display: flex;

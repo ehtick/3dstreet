@@ -19,10 +19,8 @@ function cloneMixinAsChildren({
     placedObjectEl.setAttribute('position', positionXYString + ' ' + j);
 
     if (length) {
-      placedObjectEl.addEventListener('loaded', (evt) => {
-        evt.target.setAttribute('geometry', 'height', length);
-        evt.target.setAttribute('atlas-uvs', 'c', 1);
-      });
+      placedObjectEl.setAttribute('geometry', 'height', length);
+      placedObjectEl.components['atlas-uvs'].update();
     }
 
     if (randomY) {

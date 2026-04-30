@@ -168,10 +168,8 @@ AFRAME.registerComponent('street-generated-stencil', {
 
         // Handle stencil height if specified
         if (data.stencilHeight > 0) {
-          clone.addEventListener('loaded', (evt) => {
-            evt.target.setAttribute('geometry', 'height', data.stencilHeight);
-            evt.target.components['atlas-uvs'].update();
-          });
+          clone.setAttribute('geometry', 'height', data.stencilHeight);
+          clone.components['atlas-uvs'].update();
         }
 
         // Set rotation - either specified facing, or inbound/outbound

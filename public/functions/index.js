@@ -309,7 +309,7 @@ exports.handleSubscriptionWebhook = functions
       );
     } catch (err) {
       console.error('⚠️ Webhook signature verification failed.');
-      return res.send(err).sendStatus(400);
+      return res.status(400).send(err);
     }
 
     const subscription = event.data.object;
@@ -355,7 +355,7 @@ exports.stripeWebhook = functions
       );
     } catch (err) {
       console.error('⚠️ Webhook signature verification failed.');
-      return res.send(err).sendStatus(400);
+      return res.status(400).send(err);
     }
 
     const checkoutSession = event.data.object;

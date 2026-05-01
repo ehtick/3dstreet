@@ -8,7 +8,7 @@ import galleryServiceV2 from '../services/galleryServiceV2.js';
 import {
   ASSET_TYPES,
   ASSET_CATEGORIES,
-  MAX_GALLERY_ITEMS
+  GALLERY_FETCH_BATCH_SIZE
 } from '../constants.js';
 import { AuthContext } from '@shared/contexts';
 import { auth } from '@shared/services/firebase.js';
@@ -27,6 +27,26 @@ const convertTimestamp = (ts) => {
   return new Date().toISOString(); // Fallback
 };
 
+const assetToDisplayItem = (asset) => {
+  const timestamp = convertTimestamp(asset.createdAt);
+  return {
+    id: asset.assetId,
+    type: asset.type,
+    objectURL: asset.thumbnailUrl || asset.storageUrl,
+    fullImageURL: asset.storageUrl,
+    storageUrl: asset.storageUrl,
+    thumbnailUrl: asset.thumbnailUrl,
+    metadata: {
+      ...asset.generationMetadata,
+      ...(asset.width &&
+        !asset.generationMetadata?.width && { width: asset.width }),
+      ...(asset.height &&
+        !asset.generationMetadata?.height && { height: asset.height }),
+      timestamp
+    }
+  };
+};
+
 /**
  * Custom hook for gallery state management
  * @returns {Object} Gallery state and methods
@@ -42,10 +62,17 @@ const useGallery = () => {
   );
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const userId = currentUser?.uid || null;
+
+  // Cursor (QueryDocumentSnapshot) for Firestore startAfter
+  const lastDocRef = useRef(null);
+  // Guard against overlapping loadMore calls
+  const isFetchingMoreRef = useRef(false);
 
   // Use ref to always get current userId in event handlers
   const userIdRef = useRef(userId);
@@ -73,72 +100,92 @@ const useGallery = () => {
   }, [contextUser, currentUser]);
 
   /**
-   * Reload items from Firestore
+   * Reload items from Firestore (reset cursor, fetch first page)
    */
   const reloadItems = useCallback(async () => {
-    // Get the current user directly from Firebase auth or window.authState
     const currentAuthUser = auth.currentUser || window.authState?.currentUser;
     const currentUserId = currentAuthUser?.uid;
 
     if (!currentUserId) {
-      return; // Don't clear items, just skip reload
+      return;
     }
 
     try {
-      const assets = await galleryServiceV2.getAssets(
-        currentUserId,
-        {},
-        MAX_GALLERY_ITEMS
-      );
-
-      // Convert to display format
-      const displayItems = assets.map((asset) => {
-        const timestamp = convertTimestamp(asset.createdAt);
-
-        return {
-          id: asset.assetId,
-          type: asset.type, // Media type (image, video)
-          objectURL: asset.thumbnailUrl || asset.storageUrl, // Thumbnail for grid
-          fullImageURL: asset.storageUrl, // Full image for modal
-          storageUrl: asset.storageUrl,
-          thumbnailUrl: asset.thumbnailUrl,
-          metadata: {
-            ...asset.generationMetadata,
-            // Include top-level dimensions if not in generationMetadata
-            ...(asset.width &&
-              !asset.generationMetadata?.width && { width: asset.width }),
-            ...(asset.height &&
-              !asset.generationMetadata?.height && { height: asset.height }),
-            timestamp
-          }
-        };
+      const {
+        assets,
+        lastDoc,
+        hasMore: nextHasMore
+      } = await galleryServiceV2.getAssetsPage(currentUserId, {
+        pageSize: GALLERY_FETCH_BATCH_SIZE
       });
 
-      setItems(displayItems);
+      setItems(assets.map(assetToDisplayItem));
+      lastDocRef.current = lastDoc;
+      setHasMore(nextHasMore);
     } catch (error) {
       console.error('Failed to reload gallery items:', error);
-      // Don't clear items on error
     }
-  }, []); // No dependencies - always get fresh auth state
+  }, []);
+
+  /**
+   * Load the next batch of items from Firestore, appending to the list
+   */
+  const loadMore = useCallback(async () => {
+    if (isFetchingMoreRef.current) return;
+    const cursor = lastDocRef.current;
+    if (!cursor) return;
+
+    const currentAuthUser = auth.currentUser || window.authState?.currentUser;
+    const currentUserId = currentAuthUser?.uid;
+    if (!currentUserId) return;
+
+    isFetchingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      const {
+        assets,
+        lastDoc,
+        hasMore: nextHasMore
+      } = await galleryServiceV2.getAssetsPage(currentUserId, {
+        pageSize: GALLERY_FETCH_BATCH_SIZE,
+        cursor
+      });
+
+      if (assets.length > 0) {
+        setItems((prev) => {
+          const seen = new Set(prev.map((item) => item.id));
+          const appended = assets
+            .map(assetToDisplayItem)
+            .filter((item) => !seen.has(item.id));
+          return [...prev, ...appended];
+        });
+      }
+      if (lastDoc) lastDocRef.current = lastDoc;
+      setHasMore(nextHasMore);
+    } catch (error) {
+      console.error('Failed to load more gallery items:', error);
+    } finally {
+      isFetchingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, []);
 
   /**
    * Initialize the gallery (V2 only)
    */
   useEffect(() => {
-    // Early return if no userId - don't attach event listeners with null userId
     if (!userId) {
       setIsLoading(false);
+      setItems([]);
+      lastDocRef.current = null;
+      setHasMore(false);
       return;
     }
 
     const initGallery = async () => {
       try {
         setIsLoading(true);
-
-        // Initialize V2 service
         await galleryServiceV2.init();
-
-        // Load items from Firestore
         await reloadItems();
       } catch (error) {
         console.error('Failed to initialize gallery:', error);
@@ -149,62 +196,32 @@ const useGallery = () => {
 
     initGallery();
 
-    // Listen for external item additions
-    // Use function that reads current userId from ref
+    // Optimistic insert when a new asset is added
     const handleAssetAdded = (event) => {
       const currentUserId = userIdRef.current;
       const eventUserId = event.detail?.userId;
 
-      if (!currentUserId) {
-        return;
-      }
+      if (!currentUserId) return;
+      if (eventUserId !== currentUserId) return;
 
-      // Filter: only process events for this user's gallery
-      if (eventUserId !== currentUserId) {
-        return;
-      }
-
-      // Optimistic update: if asset data is provided, add it immediately
       if (event.detail?.asset) {
-        const asset = event.detail.asset;
-        const timestamp = convertTimestamp(asset.createdAt);
-
-        const displayItem = {
-          id: asset.assetId,
-          type: asset.type, // Media type (image, video)
-          objectURL: asset.thumbnailUrl || asset.storageUrl,
-          fullImageURL: asset.storageUrl,
-          storageUrl: asset.storageUrl,
-          thumbnailUrl: asset.thumbnailUrl,
-          metadata: {
-            ...asset.generationMetadata,
-            // Include top-level dimensions if not in generationMetadata
-            ...(asset.width &&
-              !asset.generationMetadata?.width && { width: asset.width }),
-            ...(asset.height &&
-              !asset.generationMetadata?.height && { height: asset.height }),
-            timestamp
+        const displayItem = assetToDisplayItem(event.detail.asset);
+        setItems((prevItems) => {
+          if (prevItems.some((item) => item.id === displayItem.id)) {
+            return prevItems;
           }
-        };
-
-        // Add to beginning of items array
-        setItems((prevItems) => [displayItem, ...prevItems]);
+          return [displayItem, ...prevItems];
+        });
       }
     };
 
-    // Fallback reload handler for when optimistic updates fail
+    // Fallback reload for when optimistic updates fail
     const handleAssetAddedReload = (event) => {
       const currentUserId = userIdRef.current;
       const eventUserId = event.detail?.userId;
 
-      if (!currentUserId) {
-        return;
-      }
-
-      // Filter: only process events for this user's gallery
-      if (eventUserId !== currentUserId) {
-        return;
-      }
+      if (!currentUserId) return;
+      if (eventUserId !== currentUserId) return;
 
       reloadItems();
     };
@@ -225,10 +242,10 @@ const useGallery = () => {
         handleAssetAddedReload
       );
     };
-  }, [userId, reloadItems]); // Include reloadItems since handleAssetAddedReload uses it
+  }, [userId, reloadItems]);
 
-  // Simple window event listener for gallery refresh (works even when userId is null)
-  // This is a fallback for the generator where EventTarget events may not work
+  // Window event listener for gallery refresh (works even when userId is null)
+  // Fallback for the generator where EventTarget events may not fire cross-island
   useEffect(() => {
     const handleWindowRefresh = () => {
       reloadItems();
@@ -240,15 +257,10 @@ const useGallery = () => {
   }, [reloadItems]);
 
   /**
-   * Add a new item to the gallery (V2)
-   * @param {string} imageDataUri - Data URI of the image
-   * @param {object} metadata - Image metadata
-   * @param {string} type - Image type (use ASSET_CATEGORIES constants)
-   * @returns {Promise<string>} - Returns the new asset ID
+   * Add a new item to the gallery
    */
   const addItem = useCallback(
     async (imageDataUri, metadata, type = ASSET_CATEGORIES.AI_RENDER) => {
-      // Get userId directly from Firebase auth (handles generator timing issues)
       const currentUserId =
         auth.currentUser?.uid || window.authState?.currentUser?.uid;
       if (!currentUserId) {
@@ -256,7 +268,6 @@ const useGallery = () => {
       }
 
       try {
-        // Map type to V2 structure
         const assetType =
           type === ASSET_TYPES.VIDEO ? ASSET_TYPES.VIDEO : ASSET_TYPES.IMAGE;
         const category =
@@ -270,16 +281,11 @@ const useGallery = () => {
           currentUserId
         );
 
-        // Track asset added to cloud gallery
         posthog.capture('gallery_asset_added', {
           asset_type: assetType,
           category: category
         });
 
-        // Reload items from Firestore
-        await reloadItems();
-
-        // Jump to first page to show the new item
         setPage(1);
 
         return assetId;
@@ -288,17 +294,14 @@ const useGallery = () => {
         throw error;
       }
     },
-    [reloadItems]
+    []
   );
 
   /**
-   * Remove an item from the gallery (V2 - soft delete)
-   * @param {string} id - Asset ID to remove
-   * @returns {Promise<boolean>}
+   * Remove an item from the gallery (soft delete)
    */
   const removeItem = useCallback(
     async (id) => {
-      // Get userId directly from Firebase auth (handles generator timing issues)
       const currentUserId =
         auth.currentUser?.uid || window.authState?.currentUser?.uid;
       if (!currentUserId) {
@@ -306,13 +309,11 @@ const useGallery = () => {
       }
 
       try {
-        await galleryServiceV2.deleteAsset(id, currentUserId, false); // Soft delete
+        await galleryServiceV2.deleteAsset(id, currentUserId, false);
 
-        // Update local state
         const updatedItems = items.filter((item) => item.id !== id);
         setItems(updatedItems);
 
-        // Adjust page if necessary
         const newTotalPages = Math.max(
           1,
           Math.ceil(updatedItems.length / pageSize)
@@ -332,11 +333,8 @@ const useGallery = () => {
 
   /**
    * Download an item
-   * For cross-origin URLs (Firebase Storage), fetches blob first then downloads
-   * @param {object} item - Gallery item to download
    */
   const downloadItem = useCallback(async (item) => {
-    // Create filename
     const isVideo = item.type === ASSET_TYPES.VIDEO;
     const model = item.metadata?.model || '3dstreet';
     const timestamp = item.metadata?.timestamp
@@ -358,7 +356,6 @@ const useGallery = () => {
     const imageUrl = item.fullImageURL || item.storageUrl || item.objectURL;
 
     try {
-      // Fetch as blob to enable download for cross-origin URLs
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -370,22 +367,18 @@ const useGallery = () => {
       link.click();
       document.body.removeChild(link);
 
-      // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Failed to download, opening in new tab:', error);
-      // Fallback: open in new tab if fetch fails
       window.open(imageUrl, '_blank');
     }
   }, []);
 
   /**
    * Change page size
-   * @param {number} newSize - New page size
    */
   const changePageSize = useCallback(
     (newSize) => {
-      // Recompute page to keep first item visible when possible
       const firstIndex = (page - 1) * pageSize;
       setPageSize(newSize);
       const newPage = Math.floor(firstIndex / newSize) + 1;
@@ -396,7 +389,6 @@ const useGallery = () => {
   );
 
   // Check auth state from multiple sources for isLoggedIn
-  // This handles the generator case where auth.currentUser may be set before state updates
   const isLoggedIn = !!(
     userId ||
     auth.currentUser?.uid ||
@@ -406,7 +398,9 @@ const useGallery = () => {
   return {
     items,
     isLoading,
+    isLoadingMore,
     isLoggedIn,
+    hasMore,
     page,
     pageSize,
     totalPages,
@@ -415,7 +409,8 @@ const useGallery = () => {
     addItem,
     removeItem,
     downloadItem,
-    reloadItems
+    reloadItems,
+    loadMore
   };
 };
 

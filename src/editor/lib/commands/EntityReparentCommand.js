@@ -67,11 +67,6 @@ export class EntityReparentCommand extends Command {
     );
 
     // Apply the new local transform to the entity
-    entity.object3D.position.copy(newLocalPosition);
-    entity.object3D.quaternion.copy(newLocalQuaternion);
-    entity.object3D.scale.copy(newLocalScale);
-
-    // Update A-Frame attributes to reflect the changes
     entity.setAttribute('position', {
       x: newLocalPosition.x,
       y: newLocalPosition.y,
@@ -149,16 +144,14 @@ export class EntityReparentCommand extends Command {
       beforeEl
     );
 
-    // Wait for entity to be loaded before emitting events.
-    // createEntityFromObj also uses 'loaded' to set deferred components;
-    // its handler was registered first so it runs before this one.
+    // Update position/rotation/scale components relative to new parent
+    this.updateLocalTransform(recreatedEntity, newParent);
+
+    // Wait for entity to be loaded before emitting events
     recreatedEntity.addEventListener(
       'loaded',
       () => {
         recreatedEntity.pause();
-
-        // Calculate new local position and quaternion relative to new parent
-        this.updateLocalTransform(recreatedEntity, newParent);
 
         Events.emit('entityremoved', entity);
         Events.emit('entitycreated', recreatedEntity);
@@ -214,9 +207,6 @@ export class EntityReparentCommand extends Command {
       'loaded',
       () => {
         recreatedEntity.pause();
-
-        // For undo, restore the original local transform relative to old parent
-        this.updateLocalTransform(recreatedEntity, oldParent);
 
         Events.emit('entityremoved', entity);
         Events.emit('entitycreated', recreatedEntity);

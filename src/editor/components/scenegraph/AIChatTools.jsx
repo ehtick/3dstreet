@@ -14,19 +14,15 @@ import useStore from '@/store';
 export const entityTools = {
   functionDeclarations: [
     {
-      name: 'updateProjectInfo',
-      description: 'Update project information stored in the global state',
+      name: 'updateSceneTitle',
+      description: 'Update the scene title in the global state',
       parameters: Schema.object({
         properties: {
-          property: Schema.string({
-            description:
-              'The project info property to update (description, projectArea, currentCondition, problemStatement, proposedSolutions, or title)'
-          }),
           value: Schema.string({
-            description: 'The new value to set for the property'
+            description: 'The new scene title'
           })
         },
-        required: ['property', 'value']
+        required: ['value']
       })
     },
     {
@@ -382,47 +378,15 @@ export function executeUpdateCommand(command) {
  */
 const AIChatTools = {
   /**
-   * Handles updateProjectInfo function call
+   * Handles updateSceneTitle function call
    * @param {Object} args - The function arguments
    * @returns {string} Result message
    */
-  updateProjectInfo: (args) => {
-    try {
-      const { property, value } = args;
-
-      // Validate the property
-      const validProperties = [
-        'description',
-        'projectArea',
-        'currentCondition',
-        'problemStatement',
-        'proposedSolutions'
-      ];
-
-      // Special case for title which is handled separately in the store
-      if (property === 'title') {
-        useStore.getState().setSceneTitle(value);
-        // Emit the historychanged event to trigger autosave
-        Events.emit('historychanged', true);
-        return `Updated scene title to: ${value}`;
-      }
-
-      if (!validProperties.includes(property)) {
-        throw new Error(
-          `Invalid property: ${property}. Must be one of: ${validProperties.join(', ')} or title`
-        );
-      }
-
-      // Update the project info in the Zustand store
-      const updatedInfo = {};
-      updatedInfo[property] = value;
-      useStore.getState().setProjectInfo(updatedInfo);
-
-      return `Updated project ${property} to: ${value}`;
-    } catch (error) {
-      console.error('Error updating project info:', error);
-      throw error;
-    }
+  updateSceneTitle: (args) => {
+    const { value } = args;
+    useStore.getState().setSceneTitle(value);
+    Events.emit('historychanged', true);
+    return `Updated scene title to: ${value}`;
   },
   /**
    * Handles entityUpdate function call

@@ -25,7 +25,9 @@ const useStore = create(
   subscribeWithSelector(
     devtools(
       (set) => ({
-        // Recording state
+        // Recording state. The Recording UI was removed in panels-v2
+        // (PR #1566); these stubs and the canvasRecorder import stay so
+        // we can restore the feature soon without re-wiring the store.
         isRecording: false,
         setIsRecording: (newIsRecording) =>
           set({ isRecording: newIsRecording }),
@@ -108,14 +110,7 @@ const useStore = create(
             sceneId: null,
             sceneTitle: null,
             authorId: null,
-            locationString: null,
-            projectInfo: {
-              description: '',
-              projectArea: '',
-              currentCondition: '',
-              problemStatement: '',
-              proposedSolutions: ''
-            }
+            locationString: null
           }),
         authorId: null, // not used anywhere yet, we still use the metadata component
         setAuthorId: (newAuthorId) => set({ authorId: newAuthorId }), // not used anywhere yet
@@ -124,21 +119,6 @@ const useStore = create(
           localStorage.setItem('unitsPreference', newUnitsPreference);
           set({ unitsPreference: newUnitsPreference });
         },
-        // Project info data (replaces project-info component)
-        projectInfo: {
-          description: '',
-          projectArea: '',
-          currentCondition: '',
-          problemStatement: '',
-          proposedSolutions: ''
-        },
-        setProjectInfo: (newProjectInfo) =>
-          set({
-            projectInfo: {
-              ...useStore.getState().projectInfo,
-              ...newProjectInfo
-            }
-          }),
         modal: firstModal(),
         previousModal: null,
         setModal: (newModal, rememberPrevious = false) => {
@@ -181,6 +161,13 @@ const useStore = create(
           Events.emit('gridvisibilitychanged', newIsGridVisible);
           set({ isGridVisible: newIsGridVisible });
         },
+        panelsVisible: true,
+        setPanelsVisible: (newPanelsVisible) =>
+          set({ panelsVisible: newPanelsVisible }),
+        togglePanelsVisible: () =>
+          set((state) => ({ panelsVisible: !state.panelsVisible })),
+        rightPanelTab: 'properties',
+        setRightPanelTab: (newTab) => set({ rightPanelTab: newTab }),
         isInspectorEnabled: true,
         setIsInspectorEnabled: (newIsInspectorEnabled) => {
           const viewerModeUI = document.getElementById('viewer-mode-ui');
@@ -214,19 +201,6 @@ const useStore = create(
       { name: 'MyZustandStore' }
     )
   )
-);
-
-// Subscribe to projectInfo changes and trigger cloud save
-useStore.subscribe(
-  (state) => state.projectInfo,
-  (projectInfo) => {
-    // Don't trigger on initial state (empty values)
-    const hasContent = Object.values(projectInfo).some((value) => value !== '');
-    if (hasContent) {
-      // Emit the same event that triggers autosave
-      Events.emit('historychanged', true);
-    }
-  }
 );
 
 // Add beforeunload warning for unsaved changes

@@ -162,34 +162,37 @@
   margin: 0; /* Ensure no extra margins */
 }
 
-/* Overlay for buttons (appears on hover) */
+/* Overlay for buttons (appears on hover) — bottom row with delete / download in corners */
 .itemOverlay {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0);
+  justify-content: space-between;
+  padding: 0.375rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0));
   opacity: 0;
-  transition:
-    opacity 0.2s ease,
-    background-color 0.2s ease;
+  transition: opacity 0.2s ease;
   z-index: 1;
 }
 
 .item:hover .itemOverlay {
-  background-color: rgba(0, 0, 0, 0.4);
   opacity: 1;
 }
 
-/* Action Buttons */
+/* Action Buttons — desaturated by default, full color on individual hover */
 .itemButton {
-  margin: 0 0.25rem;
   border-radius: 9999px;
-  padding: 0.5rem;
+  padding: 0.375rem;
   color: white;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-  transition: background-color 0.2s ease;
+  background-color: rgba(55, 65, 81, 0.75); /* gray-700 w/ transparency */
+  filter: grayscale(1);
+  transition:
+    background-color 0.15s ease,
+    filter 0.15s ease,
+    transform 0.1s ease;
   border: none;
   cursor: pointer;
   display: flex;
@@ -198,36 +201,32 @@
 }
 
 .itemButton svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
-.downloadBtn {
-  background-color: #2563eb; /* blue-600 */
+.itemButton:hover {
+  filter: grayscale(0);
+  transform: scale(1.05);
 }
 
 .downloadBtn:hover {
-  background-color: #1d4ed8; /* blue-700 */
-}
-
-.deleteBtn {
-  background-color: #dc2626; /* red-600 */
+  background-color: #2563eb; /* blue-600 */
 }
 
 .deleteBtn:hover {
-  background-color: #b91c1c; /* red-700 */
+  background-color: #dc2626; /* red-600 */
 }
 
-/* Item details label (bottom) */
+/* Item details label (top, type/source) */
 .itemDetails {
   pointer-events: none;
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  padding: 0.25rem;
-  font-size: 0.75rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0));
+  padding: 0.375rem 0.5rem;
   color: white;
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -241,8 +240,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: center;
   margin: 0;
+  font-weight: 500;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.01em;
 }
 
 /* Footer Section */

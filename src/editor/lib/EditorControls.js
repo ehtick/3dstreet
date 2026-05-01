@@ -38,6 +38,9 @@ THREE.EditorControls = function (_object, domElement) {
   var pointerOld = new THREE.Vector2();
   var spherical = new THREE.Spherical();
   var sphere = new THREE.Sphere();
+  var focusWorldPos = new THREE.Vector3();
+  var focusWorldQuat = new THREE.Quaternion();
+  var focusWorldScale = new THREE.Vector3();
 
   this.isOrthographic = false;
   this.rotationEnabled = true;
@@ -83,6 +86,14 @@ THREE.EditorControls = function (_object, domElement) {
       localCenterY = target.position.y;
     }
 
+    // Apply only target's world position + rotation, not its scale, to offsets expressed
+    // in world units (localCenterY / distance come from the world-space bbox).
+    target.matrixWorld.decompose(
+      focusWorldPos,
+      focusWorldQuat,
+      focusWorldScale
+    );
+
     const targetEl = target.el;
     let cameraPosition;
     // if focus-camera-pose set on target then use that vec3 as target
@@ -90,14 +101,13 @@ THREE.EditorControls = function (_object, domElement) {
       const poseRelativePosition =
         targetEl.getAttribute('focus-camera-pose')['relativePosition'];
       if (poseRelativePosition) {
-        // Create a vector from the relative position and transform it to world space
-        cameraPosition = target.localToWorld(
-          new THREE.Vector3(
-            poseRelativePosition.x,
-            poseRelativePosition.y,
-            poseRelativePosition.z
-          )
-        );
+        cameraPosition = new THREE.Vector3(
+          poseRelativePosition.x,
+          poseRelativePosition.y,
+          poseRelativePosition.z
+        )
+          .applyQuaternion(focusWorldQuat)
+          .add(focusWorldPos);
       }
     }
     // Fallback to default positioning if no pose relative position
@@ -129,7 +139,9 @@ THREE.EditorControls = function (_object, domElement) {
         defaultOffset.x * Math.sin(baseRotationRad) +
         defaultOffset.z * Math.cos(baseRotationRad);
 
-      cameraPosition = target.localToWorld(rotatedOffset);
+      cameraPosition = rotatedOffset
+        .applyQuaternion(focusWorldQuat)
+        .add(focusWorldPos);
     }
     // Set camera position
     object.position.copy(cameraPosition);
@@ -427,7 +439,7 @@ THREE.EditorControls = function (_object, domElement) {
   domElement.addEventListener('touchstart', touchStart, false);
   domElement.addEventListener('touchmove', touchMove, false);
 
-  // ZoomButtons
+  // ActionBar zoom/reset buttons
   let zoomInInterval;
   let zoomOutInterval;
 

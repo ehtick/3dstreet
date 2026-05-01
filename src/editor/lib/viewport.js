@@ -388,7 +388,7 @@ export function Viewport(inspector) {
 
   // Controls need to be added *after* main logic.
   const controls = new THREE.EditorControls(camera, inspector.container);
-  inspector.controls = controls; // used in ZoomButtons component
+  inspector.controls = controls; // used by ActionBar zoom/reset buttons
   controls.center.set(0, 1.6, 0);
   controls.rotationSpeed = 0.0035;
   controls.zoomSpeed = 0.05;
@@ -472,12 +472,13 @@ export function Viewport(inspector) {
       } else if (object.el.hasAttribute('gltf-model')) {
         const listener = (event) => {
           if (event.target !== object.el) return; // we got an event for a child, ignore
+          object.el.removeEventListener('model-loaded', listener);
           // Some models have a wrong bounding box if we don't wait a bit
           setTimeout(() => {
+            if (object.parent === null) return; // entity was detached before timeout fired
             selectionBox.setFromObject(object);
             selectionBox.visible = true;
           }, 20);
-          object.el.removeEventListener('model-loaded', listener);
         };
         object.el.addEventListener('model-loaded', listener);
       } else if (!object.el.isScene && object.el.id !== 'street-container') {

@@ -63,54 +63,57 @@ export default class PropertyRow extends React.Component {
       type = 'boolean';
     }
 
-    let value =
-      type === 'selector'
-        ? props.entity.getDOMAttribute(props.componentname)?.[props.name]
-        : props.data;
+    const isSelectorType = type === 'selector' || type === 'selectorAll';
 
-    if (type === 'string' && value && typeof value !== 'string') {
-      // Allow editing a custom type like event-set component schema
-      value = props.schema.stringify(value);
-    }
+    const value = isSelectorType
+      ? props.entity.getDOMAttribute(props.componentname)?.[props.name]
+      : props.data;
 
+    const updateProperty = (name, value) => {
+      // Auto-switch to custom variant for building segments when modifying certain properties
+      const shouldSwitchToCustom =
+        // Surface changes on street-segment
+        (props.componentname === 'street-segment' &&
+          props.name === 'surface') ||
+        // Any changes to clone components (building-related)
+        props.componentname.startsWith('street-generated-clones');
+
+      if (shouldSwitchToCustom) {
+        const streetSegment = props.entity.getAttribute('street-segment');
+        if (
+          streetSegment &&
+          streetSegment.type === 'building' &&
+          streetSegment.variant !== 'custom'
+        ) {
+          // First switch to custom variant to prevent overrides
+          AFRAME.INSPECTOR.execute('entityupdate', {
+            entity: props.entity,
+            component: 'street-segment',
+            property: 'variant',
+            value: 'custom',
+            noSelectEntity: true
+          });
+        }
+      }
+
+      AFRAME.INSPECTOR.execute('entityupdate', {
+        entity: props.entity,
+        component: props.componentname,
+        property: !props.isSingle ? props.name : '',
+        value: value,
+        noSelectEntity: props.noSelectEntity,
+        onEntityUpdate: props.onEntityUpdate
+      });
+    };
+
+    // For selector and selectorAll types, commit on blur only (not on each
+    // keystroke): a partial selector is rarely valid and querying the DOM on
+    // every character is wasteful.
     const widgetProps = {
       name: props.name,
-      onChange: function (name, value) {
-        // Auto-switch to custom variant for building segments when modifying certain properties
-        const shouldSwitchToCustom =
-          // Surface changes on street-segment
-          (props.componentname === 'street-segment' &&
-            props.name === 'surface') ||
-          // Any changes to clone components (building-related)
-          props.componentname.startsWith('street-generated-clones');
-
-        if (shouldSwitchToCustom) {
-          const streetSegment = props.entity.getAttribute('street-segment');
-          if (
-            streetSegment &&
-            streetSegment.type === 'building' &&
-            streetSegment.variant !== 'custom'
-          ) {
-            // First switch to custom variant to prevent overrides
-            AFRAME.INSPECTOR.execute('entityupdate', {
-              entity: props.entity,
-              component: 'street-segment',
-              property: 'variant',
-              value: 'custom',
-              noSelectEntity: true
-            });
-          }
-        }
-
-        AFRAME.INSPECTOR.execute('entityupdate', {
-          entity: props.entity,
-          component: props.componentname,
-          property: !props.isSingle ? props.name : '',
-          value: value,
-          noSelectEntity: props.noSelectEntity,
-          onEntityUpdate: props.onEntityUpdate
-        });
-      },
+      ...(isSelectorType
+        ? { onBlur: updateProperty }
+        : { onChange: updateProperty }),
       value: value,
       id: this.id
     };
@@ -157,7 +160,17 @@ export default class PropertyRow extends React.Component {
         return <BooleanWidget {...widgetProps} />;
       }
       default: {
-        return <InputWidget {...widgetProps} schema={props.schema} />;
+        // For selector and selectorAll types, omit the schema so InputWidget
+        // doesn't parse the string into a DOM element / NodeList. We want the
+        // raw selector string to reach setAttribute — A-Frame preserves it
+        // verbatim in attrValue, even when it doesn't resolve, so the UI
+        // shows what the user typed.
+        return (
+          <InputWidget
+            {...widgetProps}
+            schema={isSelectorType ? undefined : props.schema}
+          />
+        );
       }
     }
   }

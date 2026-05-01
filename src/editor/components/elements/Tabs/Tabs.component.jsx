@@ -31,8 +31,7 @@ const Tabs = ({ tabs, selectedTabClassName, className }) => (
             disabled && styles.disabled
           )}
           type={'button'}
-          // tabIndex={disabled ? -1 : 0}
-          onClick={!disabled && onClick}
+          onClick={!disabled ? onClick : undefined}
           key={value}
         >
           {label}
@@ -52,7 +51,8 @@ Tabs.propTypes = {
       hint: string
     })
   ),
-  selectedTabClassName: string
+  selectedTabClassName: string,
+  className: string
 };
 
 export { Tabs };

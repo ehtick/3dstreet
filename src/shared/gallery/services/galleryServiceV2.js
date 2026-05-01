@@ -23,6 +23,7 @@ import {
   where,
   orderBy,
   limit as firestoreLimit,
+  startAfter,
   onSnapshot,
   serverTimestamp
 } from 'firebase/firestore';
@@ -595,6 +596,61 @@ class GalleryServiceV2 {
       console.error('Error getting assets:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get one page of assets for a user, using Firestore cursor pagination
+   * @param {string} userId - User ID
+   * @param {object} options
+   * @param {object} [options.filters] - Query filters (type, category, deleted)
+   * @param {number} [options.pageSize=48] - Batch size
+   * @param {QueryDocumentSnapshot|null} [options.cursor=null] - Cursor doc from previous page
+   * @param {string} [options.orderByField='createdAt']
+   * @returns {Promise<{assets: Array, lastDoc: QueryDocumentSnapshot|null, hasMore: boolean}>}
+   */
+  async getAssetsPage(
+    userId,
+    {
+      filters = {},
+      pageSize = 48,
+      cursor = null,
+      orderByField = 'createdAt'
+    } = {}
+  ) {
+    const assetsRef = collection(db, 'users', userId, 'assets');
+    let q = query(assetsRef);
+
+    if (filters.type) {
+      q = query(q, where('type', '==', filters.type));
+    }
+    if (filters.category) {
+      q = query(q, where('category', '==', filters.category));
+    }
+    if (filters.deleted !== undefined) {
+      q = query(q, where('deleted', '==', filters.deleted));
+    } else {
+      q = query(q, where('deleted', '==', false));
+    }
+
+    q = query(q, orderBy(orderByField, 'desc'));
+    if (cursor) {
+      q = query(q, startAfter(cursor));
+    }
+    q = query(q, firestoreLimit(pageSize));
+
+    const snapshot = await getDocs(q);
+    const assets = [];
+    let lastDoc = null;
+    snapshot.forEach((docSnap) => {
+      assets.push({ id: docSnap.id, ...docSnap.data() });
+      lastDoc = docSnap;
+    });
+
+    return {
+      assets,
+      lastDoc,
+      hasMore: assets.length === pageSize
+    };
   }
 
   /**

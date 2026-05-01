@@ -72,19 +72,6 @@ export const Shortcuts = {
       setIsGridVisible(!isGridVisible);
     }
 
-    // 5: enter viewer mode
-    if (keyCode === 53) {
-      const { isInspectorEnabled, setIsInspectorEnabled } = useStore.getState();
-      setIsInspectorEnabled(!isInspectorEnabled);
-    }
-
-    // F5: enter viewer mode
-    if (keyCode === 116) {
-      event.preventDefault(); // Prevent browser refresh
-      const { isInspectorEnabled, setIsInspectorEnabled } = useStore.getState();
-      setIsInspectorEnabled(!isInspectorEnabled);
-    }
-
     // backspace & delete: remove selected entity
     if (keyCode === 8 || keyCode === 46) {
       removeSelectedEntity();
@@ -166,9 +153,9 @@ export const Shortcuts = {
       }
     }
 
-    // 0: toggle sidebars visibility
-    if (event.keyCode === 48) {
-      Events.emit('togglesidebar', { which: 'all' });
+    // `: toggle panels visibility
+    if (event.keyCode === 192) {
+      useStore.getState().togglePanelsVisible();
       event.preventDefault();
       event.stopPropagation();
     }

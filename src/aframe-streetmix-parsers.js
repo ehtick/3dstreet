@@ -1,5 +1,3 @@
-/* global THREE */
-
 // Orientation - default model orientation is "outbound" (away from camera)
 var streetmixParsersTested = require('./tested/aframe-streetmix-parsers-tested');
 var { segmentVariants } = require('./segments-variants.js');
@@ -16,15 +14,15 @@ function cloneMixinAsChildren({
 }) {
   for (let j = radius * -1; j <= radius; j = j + step) {
     const placedObjectEl = document.createElement('a-entity');
+    // add the new element to DOM
+    parentEl.append(placedObjectEl);
     placedObjectEl.setAttribute('mixin', objectMixinId);
     placedObjectEl.setAttribute('class', objectMixinId);
     placedObjectEl.setAttribute('position', positionXYString + ' ' + j);
 
     if (length) {
-      placedObjectEl.addEventListener('loaded', (evt) => {
-        evt.target.setAttribute('geometry', 'height', length);
-        evt.target.setAttribute('atlas-uvs', 'c', 1);
-      });
+      placedObjectEl.setAttribute('geometry', 'height', length);
+      placedObjectEl.components['atlas-uvs'].update();
     }
 
     if (randomY) {
@@ -35,8 +33,6 @@ function cloneMixinAsChildren({
     } else {
       placedObjectEl.setAttribute('rotation', rotation);
     }
-    // add the new elmement to DOM
-    parentEl.append(placedObjectEl);
     // could be good to use geometry merger https://github.com/supermedium/superframe/tree/master/components/geometry-merger
   }
 }
@@ -364,15 +360,6 @@ function getBusLaneMixin(variant) {
   return 'bus-lane';
 }
 
-function getDimensions(object3d) {
-  var box = new THREE.Box3().setFromObject(object3d);
-  var x = box.max.x - box.min.x;
-  var y = box.max.y - box.min.y;
-  var z = box.max.z - box.min.z;
-
-  return { x, y, z };
-}
-
 function getStartEndPosition(streetLength, objectLength) {
   // get the start and end position for placing an object on a line
   // computed by length of the street and object's length
@@ -381,17 +368,10 @@ function getStartEndPosition(streetLength, objectLength) {
   return { start, end };
 }
 
-function randomPosition(entity, axis, length, objSizeAttr = undefined) {
-  // place randomly an element on a line length='length' on the axis 'axis'
-  // Need to call from 'model-loaded' event if objSizeAttr is undefined
-  // existEnts - array with existing entities (for prevent intersection)
-  const newObject = entity.object3D;
-  const objSize = objSizeAttr || getDimensions(newObject)[axis];
+function randomPosition(length, objSize) {
+  // place randomly an element on a line of length 'length'
   const { start, end } = getStartEndPosition(length, objSize);
-  const setFunc = `set${axis.toUpperCase()}`;
-  const newPosition = getRandomArbitrary(start, end);
-  newObject.position[setFunc](newPosition);
-  return newPosition;
+  return getRandomArbitrary(start, end);
 }
 
 function createChooChooElement(
@@ -409,7 +389,7 @@ function createChooChooElement(
   placedObjectEl.setAttribute('rotation', '0 ' + rotationY + ' 0');
   placedObjectEl.setAttribute('mixin', objectMixinId);
   placedObjectEl.setAttribute('class', objectMixinId);
-  const positionZ = randomPosition(placedObjectEl, 'z', length, tramLength);
+  const positionZ = randomPosition(length, tramLength);
   placedObjectEl.setAttribute('position', '0 0 ' + positionZ);
   return placedObjectEl;
 }
@@ -424,7 +404,7 @@ function createBusElement(variantList, length, showVehicles) {
   const busObjectEl = document.createElement('a-entity');
   busObjectEl.setAttribute('rotation', '0 ' + rotationY + ' 0');
   busObjectEl.setAttribute('mixin', 'bus');
-  const positionZ = randomPosition(busObjectEl, 'z', length, busLength);
+  const positionZ = randomPosition(length, busLength);
   busObjectEl.setAttribute('position', '0 0 ' + positionZ);
   busParentEl.append(busObjectEl);
 
@@ -562,13 +542,8 @@ function createDriveLaneElement(
 
     const reusableObjectEl = document.createElement('a-entity');
 
-    if (!positionZ) {
-      positionZ = randomPosition(
-        reusableObjectEl,
-        'z',
-        streetLength,
-        params['length']
-      );
+    if (positionZ === undefined) {
+      positionZ = randomPosition(streetLength, params['length']);
     }
     reusableObjectEl.setAttribute('position', `0 0 ${positionZ}`);
     reusableObjectEl.setAttribute('mixin', params['mixin']);
@@ -638,13 +613,8 @@ function createFoodTruckElement(variantList, length) {
   reusableObjectEl.setAttribute('rotation', '0 ' + rotationY + ' 0');
   reusableObjectEl.setAttribute('mixin', 'food-trailer-rig');
 
-  const positionZ = randomPosition(
-    reusableObjectEl,
-    'z',
-    length,
-    foodTruckLength
-  );
-  reusableObjectEl.setAttribute('positon', '0 0 ' + positionZ);
+  const positionZ = randomPosition(length, foodTruckLength);
+  reusableObjectEl.setAttribute('position', '0 0 ' + positionZ);
   foodTruckParentEl.append(reusableObjectEl);
 
   return foodTruckParentEl;
@@ -689,7 +659,6 @@ function createOutdoorDining(length, posY) {
     const reusableObjectEl = document.createElement('a-entity');
     reusableObjectEl.setAttribute('mixin', 'outdoor_dining');
 
-    // const positionZ = randomPosition(reusableObjectEl, 'z', length, outdorDiningLength);
     reusableObjectEl.setAttribute('position', { x: 0, y: posY, z: randPosZ });
     outdoorDiningParentEl.append(reusableObjectEl);
   });

@@ -122,8 +122,14 @@ const UpgradeModal = ({
   // before showing pricing — avoids duplicate purchases. Only fire the
   // pricing_page_viewed event once we confirm the user actually sees the
   // pricing UI (otherwise has-subscription users skew the funnel).
+  //
+  // Guard on modalState === 'pricing': after a successful purchase the
+  // webhook flips isPro on currentUser, which retriggers this effect. Without
+  // the guard, the freshly-bought subscription gets detected and we yank the
+  // user out of EmbeddedCheckout's success view into has-subscription.
   useEffect(() => {
     if (!isOpen || !currentUser) return;
+    if (modalState !== 'pricing') return;
 
     const checkSubscriptions = async () => {
       try {
@@ -146,7 +152,7 @@ const UpgradeModal = ({
     };
 
     checkSubscriptions();
-  }, [isOpen, currentUser, source, trigger]);
+  }, [isOpen, currentUser, source, trigger, modalState]);
 
   // Defensive: clear any stray session_id left in the URL.
   useEffect(() => {
@@ -157,14 +163,19 @@ const UpgradeModal = ({
     }
   }, [isOpen]);
 
+  // Listen on keyup (not keydown) to match the shared Modal component used
+  // by other editor modals. If we close on keydown and route the user back
+  // to a previous modal (e.g. geo), the keyup half of the same press would
+  // hit the freshly-mounted shared Modal and close it too — geo flashes for
+  // a frame and disappears. Same-phase listeners avoid the double-close.
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
         handleClose();
       }
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('keyup', handleEscape);
+    return () => document.removeEventListener('keyup', handleEscape);
   }, [isOpen, handleClose]);
 
   useEffect(() => {

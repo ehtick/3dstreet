@@ -178,9 +178,16 @@ const EmbeddedCheckout = ({
     [priceId, mode, metadata, plan, source, startPolling]
   );
 
+  // If a caller provides onSuccess they own the post-success transition
+  // (close, route back to a prior modal, etc.). Calling onClose afterward
+  // would race with that navigation and clobber it, so fall back to onClose
+  // only when no onSuccess handler was supplied.
   const handleSuccessClick = () => {
-    onSuccess?.();
-    onClose?.();
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      onClose?.();
+    }
   };
 
   if (state === 'checkout') {

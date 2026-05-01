@@ -25,6 +25,7 @@ const ProfileModal = () => {
   const { currentUser, setCurrentUser, tokenProfile } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
   const modal = useStore((state) => state.modal);
+  const startCheckout = useStore((state) => state.startCheckout);
 
   const [username, setUsername] = useState(null);
   const [isLoadingUsername, setIsLoadingUsername] = useState(false);
@@ -171,10 +172,7 @@ const ProfileModal = () => {
                   >
                     <span>Plan: Free</span>
                     <Button
-                      onClick={() => {
-                        onClose();
-                        setModal('payment');
-                      }}
+                      onClick={() => startCheckout('profile')}
                       style={{
                         padding: '4px 12px',
                         fontSize: '12px',

@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import UpgradeModal from '@shared/components/UpgradeModal';
 import { useAuthContext } from '../contexts/index.js';
 import { isUserPro } from '@shared/auth/api/user';
+import { auth } from '@shared/services/firebase';
 import useStore from '@/store';
 
 const EditorUpgradeModal = () => {
@@ -14,15 +15,21 @@ const EditorUpgradeModal = () => {
   const modal = useStore((state) => state.modal);
   const setModal = useStore((state) => state.setModal);
   const postCheckout = useStore((state) => state.postCheckout);
+  const returnToPreviousModal = useStore(
+    (state) => state.returnToPreviousModal
+  );
 
   // Force a token refresh and re-check Pro status. Returns true once the
   // webhook flips the plan claim — keeps polling open until then so a
   // delayed webhook lands in the "still finalizing" state, not fake success.
+  // Note: AuthContext's currentUser is a plain spread of the Firebase user,
+  // so prototype methods like getIdToken aren't on it — use auth.currentUser.
   const verifyPurchase = useCallback(async () => {
-    if (!currentUser) return false;
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser || !currentUser) return false;
     try {
-      await currentUser.getIdToken(true);
-      const status = await isUserPro(currentUser);
+      await firebaseUser.getIdToken(true);
+      const status = await isUserPro(firebaseUser);
       if (status?.isPro) {
         setCurrentUser({
           ...currentUser,
@@ -38,17 +45,13 @@ const EditorUpgradeModal = () => {
     return false;
   }, [currentUser, setCurrentUser]);
 
-  const onClose = () => setModal(null);
-
-  // After the user clicks the success CTA, route them back to whatever
-  // they were trying to do that triggered the paywall (geo modal, etc.).
-  const onSuccess = () => {
-    if (postCheckout) {
-      setModal(postCheckout);
-    } else {
-      setModal(null);
-    }
-  };
+  // Both close and success route through previousModal — set by
+  // startCheckout — so bailing out OR completing payment lands the user
+  // back at the modal that triggered the paywall (e.g. geo). Falls through
+  // to modal=null when there's no previous (manual /upgrade entry, or the
+  // signin chain consumed previousModal).
+  const onClose = () => returnToPreviousModal();
+  const onSuccess = () => returnToPreviousModal();
 
   return (
     <UpgradeModal

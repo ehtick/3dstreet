@@ -45,6 +45,12 @@ $green: #10b981;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   padding: 24px;
 
+  // Checkout view needs more horizontal room for the embedded form;
+  // toggled by a state-based className from the JSX, no :has() trickery.
+  &.modalContentWide {
+    max-width: 800px;
+  }
+
   @keyframes slideUp {
     from {
       opacity: 0;
@@ -322,12 +328,6 @@ $green: #10b981;
   }
 }
 
-// ─── Checkout state container ────────────────────────────────────
-
-.checkoutContainer {
-  // Embedded form fills available width; no extra chrome here.
-}
-
 // ─── Status container (has-subscription) ─────────────────────────
 
 .statusContainer {
@@ -370,11 +370,6 @@ $green: #10b981;
   svg {
     color: $green;
   }
-}
-
-// Wider modal for checkout state since the embedded form has a min-width.
-.modalContent:has(.checkoutContainer) {
-  max-width: 800px;
 }
 
 // Responsive

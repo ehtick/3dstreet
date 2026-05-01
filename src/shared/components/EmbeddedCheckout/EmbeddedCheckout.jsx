@@ -5,6 +5,11 @@
  * onComplete polling, and the post-payment loading / success / pending /
  * error / has-subscription states. Caller handles plan selection UI and
  * mounts this component once a price has been chosen.
+ *
+ * IMPORTANT: callers must pass a stable `verifyPurchase` (use `useCallback`).
+ * It feeds into the memoized `checkoutOptions` passed to Stripe's
+ * `EmbeddedCheckoutProvider`. If the reference changes between renders the
+ * provider tears down and re-creates the iframe, which mid-payment is bad.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
@@ -70,16 +75,16 @@ const ErrorIcon = () => (
 
 const EmbeddedCheckout = ({
   priceId,
-  mode,
+  mode = 'subscription',
   source,
   plan,
   metadata,
   verifyPurchase,
   onSuccess,
   onClose,
-  successTitle,
-  successMessage,
-  successCta
+  successTitle = 'Payment Successful!',
+  successMessage = 'Thanks for your purchase. Your account is ready to go.',
+  successCta = 'Done'
 }) => {
   const [state, setState] = useState('checkout');
   // 'checkout' | 'loading' | 'success' | 'pending' | 'error' | 'has-subscription'
@@ -307,13 +312,6 @@ EmbeddedCheckout.propTypes = {
   successTitle: PropTypes.string,
   successMessage: PropTypes.string,
   successCta: PropTypes.string
-};
-
-EmbeddedCheckout.defaultProps = {
-  mode: 'subscription',
-  successTitle: 'Payment Successful!',
-  successMessage: 'Thanks for your purchase. Your account is ready to go.',
-  successCta: 'Done'
 };
 
 export default EmbeddedCheckout;

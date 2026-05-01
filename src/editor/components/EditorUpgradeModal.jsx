@@ -29,6 +29,9 @@ const EditorUpgradeModal = () => {
           isPro: true,
           isProSubscription: status.isProSubscription,
           isProDomain: status.isProDomain,
+          // isProTeam is an alias for isProDomain — the source-of-truth API
+          // (checkUserProStatus) only returns isProDomain. AuthProvider does
+          // the same aliasing in its enrichedUser path; keep them in sync.
           isProTeam: status.isProDomain,
           teamDomain: status.teamDomain
         });

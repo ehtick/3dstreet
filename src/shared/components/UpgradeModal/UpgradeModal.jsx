@@ -76,14 +76,14 @@ const CloseIcon = () => (
 const UpgradeModal = ({
   isOpen,
   onClose,
-  source,
-  trigger,
+  source = 'unknown',
+  trigger = 'manual',
   onCheckoutStart,
   verifyPurchase,
   onSuccess,
-  successTitle,
-  successMessage,
-  successCta
+  successTitle = 'Welcome to Pro!',
+  successMessage = 'Pro features are unlocked on your account.',
+  successCta = 'Continue'
 }) => {
   const { currentUser } = useAuthContext();
   const [modalState, setModalState] = useState('pricing');
@@ -115,11 +115,11 @@ const UpgradeModal = ({
   };
 
   // Pre-check for an existing subscription so we can route to billing portal
-  // before showing pricing — avoids duplicate purchases.
+  // before showing pricing — avoids duplicate purchases. Only fire the
+  // pricing_page_viewed event once we confirm the user actually sees the
+  // pricing UI (otherwise has-subscription users skew the funnel).
   useEffect(() => {
     if (!isOpen || !currentUser) return;
-
-    posthog.capture('pricing_page_viewed', { source, trigger });
 
     const checkSubscriptions = async () => {
       try {
@@ -131,10 +131,14 @@ const UpgradeModal = ({
         if (data.hasActiveSubscription) {
           setSubscriptionInfo(data);
           setModalState('has-subscription');
+          return;
         }
       } catch (error) {
         console.error('Error checking active subscriptions:', error);
+        // Fall through to firing the event — better to over-count by a
+        // failed check than to silently drop valid pricing impressions.
       }
+      posthog.capture('pricing_page_viewed', { source, trigger });
     };
 
     checkSubscriptions();
@@ -275,24 +279,22 @@ const UpgradeModal = ({
         </button>
       </div>
 
-      <div className={styles.checkoutContainer}>
-        <EmbeddedCheckout
-          priceId={
-            selectedPlan === 'monthly'
-              ? process.env.STRIPE_MONTHLY_PRICE_ID
-              : process.env.STRIPE_YEARLY_PRICE_ID
-          }
-          mode="subscription"
-          source={source}
-          plan={selectedPlan}
-          verifyPurchase={verifyPurchase}
-          onSuccess={onSuccess}
-          onClose={handleClose}
-          successTitle={successTitle}
-          successMessage={successMessage}
-          successCta={successCta}
-        />
-      </div>
+      <EmbeddedCheckout
+        priceId={
+          selectedPlan === 'monthly'
+            ? process.env.STRIPE_MONTHLY_PRICE_ID
+            : process.env.STRIPE_YEARLY_PRICE_ID
+        }
+        mode="subscription"
+        source={source}
+        plan={selectedPlan}
+        verifyPurchase={verifyPurchase}
+        onSuccess={onSuccess}
+        onClose={handleClose}
+        successTitle={successTitle}
+        successMessage={successMessage}
+        successCta={successCta}
+      />
     </>
   );
 
@@ -352,7 +354,10 @@ const UpgradeModal = ({
 
   return (
     <div className={styles.modalOverlay} onClick={handleClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`${styles.modalContent} ${modalState === 'checkout' ? styles.modalContentWide : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {modalState === 'pricing' && renderPricing()}
         {modalState === 'checkout' && selectedPlan && renderCheckout()}
         {modalState === 'has-subscription' && renderHasSubscription()}
@@ -372,14 +377,6 @@ UpgradeModal.propTypes = {
   successTitle: PropTypes.string,
   successMessage: PropTypes.string,
   successCta: PropTypes.string
-};
-
-UpgradeModal.defaultProps = {
-  source: 'unknown',
-  trigger: 'manual',
-  successTitle: 'Welcome to Pro!',
-  successMessage: 'Pro features are unlocked on your account.',
-  successCta: 'Continue'
 };
 
 export default UpgradeModal;

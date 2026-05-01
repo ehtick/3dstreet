@@ -23,8 +23,6 @@ const GalleryContent = ({
   loadingState,
   emptyState,
   onCopyParams,
-  onUseForInpaint,
-  onUseForOutpaint,
   onUseForGenerator,
   onUseForVideo,
   onNotification
@@ -134,8 +132,6 @@ const GalleryContent = ({
           onDownload={handleDownload}
           onDelete={handleDelete}
           onCopyParams={onCopyParams}
-          onUseForInpaint={onUseForInpaint}
-          onUseForOutpaint={onUseForOutpaint}
           onUseForGenerator={onUseForGenerator}
           onUseForVideo={onUseForVideo}
         />

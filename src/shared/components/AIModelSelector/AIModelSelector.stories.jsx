@@ -87,9 +87,7 @@ export const BestQualityModel = {
 
 // Versatile model selected
 export const VersatileModel = {
-  render: () => (
-    <InteractiveWrapper initialValue="flux-kontext-pro" mode="image" />
-  ),
+  render: () => <InteractiveWrapper initialValue="nano-banana" mode="image" />,
   parameters: {
     docs: {
       description: {
@@ -149,19 +147,6 @@ export const Disabled = {
       description: {
         story:
           'Disabled state prevents interaction. Useful when generation is in progress.'
-      }
-    }
-  }
-};
-
-// Deprecated model (hidden from dropdown)
-export const DeprecatedModel = {
-  render: () => <InteractiveWrapper initialValue="flux-dev" mode="image" />,
-  parameters: {
-    docs: {
-      description: {
-        story:
-          "Shows a deprecated model (flux-dev) that has group: null. The model name displays but it won't appear in the dropdown options. Used for backwards compatibility with old gallery items."
       }
     }
   }
@@ -311,7 +296,6 @@ export const AllImageModels = {
       <h3 style={{ margin: 0, fontSize: '16px', marginTop: '8px' }}>
         Versatile
       </h3>
-      <InteractiveWrapper initialValue="flux-kontext-pro" mode="image" />
       <InteractiveWrapper initialValue="nano-banana" mode="image" />
     </div>
   ),

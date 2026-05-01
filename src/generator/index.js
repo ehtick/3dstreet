@@ -25,8 +25,6 @@ import { mountGallery } from './mount-gallery.js';
 import FluxUI from './main.js';
 import ModifyTab from './modify.js';
 import CreateTab from './create.js';
-import InpaintTab from './inpaint.js';
-import OutpaintTab from './outpaint.js';
 import VideoTab from './video.js';
 
 // Expose auth for compatibility
@@ -55,8 +53,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize tabs
   ModifyTab.init();
   CreateTab.init();
-  InpaintTab.init();
-  OutpaintTab.init();
   VideoTab.init();
 
   // Hide loading screen once everything is initialized

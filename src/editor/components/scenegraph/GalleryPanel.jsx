@@ -128,8 +128,6 @@ const GalleryPanel = () => {
           }
           onCopyParams={handleCopyParams}
           onUseForGenerator={(item) => openInGenerator(item, 'modify')}
-          onUseForInpaint={(item) => openInGenerator(item, 'inpaint')}
-          onUseForOutpaint={(item) => openInGenerator(item, 'outpaint')}
           onUseForVideo={(item) => openInGenerator(item, 'video')}
         />
         {isLoadingMore && (

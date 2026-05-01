@@ -6,8 +6,6 @@ import { createRoot } from 'react-dom/client';
 import { Gallery, galleryServiceV2 } from '@shared/gallery';
 import FluxUI from './main.js';
 import ModifyTab from './modify.js';
-import InpaintTab from './inpaint.js';
-import OutpaintTab from './outpaint.js';
 import VideoTab from './video.js';
 
 // Use V2 (Firestore + Firebase Storage) exclusively
@@ -61,54 +59,6 @@ const handleCopyParams = (item) => {
         'error'
       )
     );
-};
-
-/**
- * Use image for inpainting
- * @param {object} item - Gallery item
- */
-const handleUseForInpaint = async (item) => {
-  if (InpaintTab && typeof InpaintTab.setInputImage === 'function') {
-    try {
-      const imageUrl = item.storageUrl || item.objectURL;
-      const dataUri = await getBlobDataUri(imageUrl);
-      const inpaintTabButton = document.querySelector(
-        '.tab-button[data-tab="inpaint-tab"]'
-      );
-      if (inpaintTabButton) inpaintTabButton.click();
-      InpaintTab.setInputImage(dataUri);
-      FluxUI.showNotification('Image sent to Inpaint tab!', 'success');
-    } catch (error) {
-      console.error('Error sending to Inpaint:', error);
-      FluxUI.showNotification('Failed to prepare image for Inpaint.', 'error');
-    }
-  } else {
-    FluxUI.showNotification('Inpaint tab is not ready yet', 'warning');
-  }
-};
-
-/**
- * Use image for outpainting
- * @param {object} item - Gallery item
- */
-const handleUseForOutpaint = async (item) => {
-  if (OutpaintTab && typeof OutpaintTab.setInputImage === 'function') {
-    try {
-      const imageUrl = item.storageUrl || item.objectURL;
-      const dataUri = await getBlobDataUri(imageUrl);
-      const outpaintTabButton = document.querySelector(
-        '.tab-button[data-tab="outpaint-tab"]'
-      );
-      if (outpaintTabButton) outpaintTabButton.click();
-      OutpaintTab.setInputImage(dataUri);
-      FluxUI.showNotification('Image sent to Outpaint tab!', 'success');
-    } catch (error) {
-      console.error('Error sending to Outpaint:', error);
-      FluxUI.showNotification('Failed to prepare image for Outpaint.', 'error');
-    }
-  } else {
-    FluxUI.showNotification('Outpaint tab is not ready yet', 'warning');
-  }
 };
 
 /**
@@ -175,8 +125,6 @@ export const mountGallery = async () => {
     <Gallery
       mode="sidebar"
       onCopyParams={handleCopyParams}
-      onUseForInpaint={handleUseForInpaint}
-      onUseForOutpaint={handleUseForOutpaint}
       onUseForGenerator={handleUseForGenerator}
       onUseForVideo={handleUseForVideo}
       onNotification={(message, type) => FluxUI.showNotification(message, type)}

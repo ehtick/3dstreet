@@ -5,12 +5,6 @@
 
 // Global UI utilities object
 const FluxUI = {
-  // Configuration
-  apiConfig: {
-    // baseUrl: 'https://api.us1.bfl.ai/v1', // Removed: Using server proxy now
-    // API key now stored server-side in Firebase Cloud Functions
-  },
-
   // Common elements
   elements: {},
 
@@ -178,8 +172,6 @@ const FluxUI = {
     const buttonIds = [
       'modify-generate-btn',
       'create-generate-btn',
-      'inpaint-generate-btn',
-      'outpaint-generate-btn',
       'video-generate-btn'
     ];
 

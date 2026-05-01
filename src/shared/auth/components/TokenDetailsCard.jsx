@@ -37,7 +37,7 @@ const TokenDetailsCard = ({
   const tokenDescription =
     tokenType === 'geoToken'
       ? 'Used for geospatial features like 3D map tiles and location services.'
-      : 'Used for AI-powered image, video, inpaint, and outpaint generation.';
+      : 'Used for AI-powered image and video generation.';
 
   return (
     <HoverCard.Root open={isOpen} onOpenChange={setIsOpen} openDelay={200}>
@@ -107,8 +107,6 @@ const TokenDetailsCard = ({
                   <>
                     <li>1 token = 1 image generation</li>
                     <li>2 tokens = 1 second of video generation</li>
-                    <li>Inpainting uses 1 token</li>
-                    <li>Outpainting uses 1 token</li>
                   </>
                 ) : (
                   <>

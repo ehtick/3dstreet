@@ -4,7 +4,6 @@
  */
 
 import FluxUI from './main.js';
-import FluxAPI from './api.js';
 import { galleryServiceV2 as galleryService } from '@shared/gallery';
 import useImageGenStore from './store.js';
 import ImageUploadUtils from './image-upload-utils.js';
@@ -20,18 +19,11 @@ import posthog from 'posthog-js';
 const buildEstimatedTimes = () => {
   const times = {};
 
-  // Add all model times from shared constants
   Object.entries(REPLICATE_MODELS).forEach(([key, model]) => {
     times[key] = model.estimatedTime;
   });
 
-  // Add any legacy models not yet migrated
-  const legacyTimes = {
-    'flux-pro': 25, // Legacy BFL model
-    'flux-kontext-max': 25 // Legacy BFL model
-  };
-
-  return { ...times, ...legacyTimes };
+  return times;
 };
 
 /**
@@ -700,13 +692,7 @@ class GeneratorTabBase {
           this.elements.imagePromptName.textContent = fileName;
           this.imagePromptData = dataUrl.split(',')[1];
           this.showImagePromptPreview(dataUrl);
-          if (this.selectedModel === 'flux-pro-1.1-ultra') {
-            this.elements.imagePromptStrengthContainer.classList.remove(
-              'hidden'
-            );
-          } else {
-            this.elements.imagePromptStrengthContainer.classList.add('hidden');
-          }
+          this.elements.imagePromptStrengthContainer.classList.add('hidden');
         }
       );
 
@@ -853,64 +839,12 @@ class GeneratorTabBase {
     let showSafetyTolerance = true;
     let showSeed = true;
 
-    // Show image prompt strength only if there's an image AND it's Ultra model
     if (this.config.showImagePromptUI) {
-      const showImageStrength =
-        this.imagePromptData && model === 'flux-pro-1.1-ultra';
-      this.elements.imagePromptStrengthContainer.classList.toggle(
-        'hidden',
-        !showImageStrength
-      );
+      this.elements.imagePromptStrengthContainer.classList.add('hidden');
     }
 
     // Update slider ranges and visibility based on model
     switch (model) {
-      case 'flux-pro-1.1-ultra':
-        showDimensions = false;
-        showAspectRatio = true;
-        showRaw = true;
-        showSteps = false;
-        showGuidance = false;
-        break;
-
-      case 'flux-pro':
-        this.elements.guidanceSlider.min = '1.5';
-        this.elements.guidanceSlider.max = '5.0';
-        this.elements.guidanceSlider.value = '2.5';
-        this.elements.guidanceValue.textContent = '2.5';
-        this.elements.stepsSlider.min = '1';
-        this.elements.stepsSlider.max = '50';
-        this.elements.stepsSlider.value = '40';
-        this.elements.stepsValue.textContent = '40';
-        showInterval = true;
-        break;
-
-      case 'flux-dev':
-        this.elements.guidanceSlider.min = '1.5';
-        this.elements.guidanceSlider.max = '5.0';
-        this.elements.guidanceSlider.value = '3.0';
-        this.elements.guidanceValue.textContent = '3.0';
-        this.elements.stepsSlider.min = '1';
-        this.elements.stepsSlider.max = '50';
-        this.elements.stepsSlider.value = '28';
-        this.elements.stepsValue.textContent = '28';
-        break;
-
-      case 'flux-pro-1.1':
-        showSteps = false;
-        showGuidance = false;
-        break;
-
-      case 'flux-kontext-pro':
-      case 'flux-kontext-max':
-        showDimensions = false;
-        showAspectRatio = true;
-        showRaw = false;
-        showSteps = false;
-        showGuidance = false;
-        this.elements.promptUpsamplingGroup.classList.remove('hidden');
-        break;
-
       case 'kontext-realearth':
       case 'nano-banana':
       case 'nano-banana-pro':
@@ -1102,12 +1036,7 @@ class GeneratorTabBase {
     reader.onload = (event) => {
       this.imagePromptData = event.target.result.split(',')[1];
       this.showImagePromptPreview(event.target.result);
-
-      if (this.selectedModel === 'flux-pro-1.1-ultra') {
-        this.elements.imagePromptStrengthContainer.classList.remove('hidden');
-      } else {
-        this.elements.imagePromptStrengthContainer.classList.add('hidden');
-      }
+      this.elements.imagePromptStrengthContainer.classList.add('hidden');
     };
     reader.readAsDataURL(file);
   }
@@ -1123,12 +1052,7 @@ class GeneratorTabBase {
 
     this.showImagePromptPreview(imageDataUrl);
 
-    if (
-      this.config.showImagePromptUI &&
-      this.selectedModel === 'flux-pro-1.1-ultra'
-    ) {
-      this.elements.imagePromptStrengthContainer.classList.remove('hidden');
-    } else if (this.config.showImagePromptUI) {
+    if (this.config.showImagePromptUI) {
       this.elements.imagePromptStrengthContainer.classList.add('hidden');
     }
   }
@@ -1250,37 +1174,7 @@ class GeneratorTabBase {
       return;
     }
 
-    // Legacy BFL model handling
-    if (!modelConfig) {
-      const params = this.buildRequestParams(model);
-
-      if (!params) {
-        return;
-      }
-
-      this.currentParams = params;
-      this.toggleLoading(true);
-      this.startTimer(model);
-
-      FluxAPI.makeRequest(model, params)
-        .then((response) => {
-          if (response.id) {
-            this.pollForResult(response.id, model);
-            window.dispatchEvent(new CustomEvent('tokenCountChanged'));
-          } else {
-            throw new Error('No task ID returned from API');
-          }
-        })
-        .catch((error) => {
-          console.error('Generation error:', error);
-          FluxUI.showNotification(
-            error.message || 'Failed to generate image',
-            'error'
-          );
-          this.stopTimer();
-          this.toggleLoading(false);
-        });
-    }
+    FluxUI.showNotification('Invalid model selected', 'error');
   }
 
   /**
@@ -1588,159 +1482,6 @@ class GeneratorTabBase {
   }
 
   /**
-   * Build request parameters
-   */
-  buildRequestParams(model) {
-    const params = {
-      safety_tolerance: parseInt(this.elements.safetySlider.value),
-      output_format: this.elements.formatJpeg.checked ? 'jpeg' : 'png',
-      prompt_upsampling: this.elements.promptUpsampling.checked
-    };
-
-    // Add prompt
-    const prompt = this.elements.promptInput.value.trim();
-    if (prompt) {
-      params.prompt = prompt;
-    } else if (this.config.defaultPrompt) {
-      params.prompt = this.config.defaultPrompt;
-    }
-
-    // Randomize seed if checked
-    if (this.elements.randomizeSeedCheckbox.checked) {
-      this.generateRandomSeed();
-    }
-
-    // Add seed if provided
-    if (this.elements.seedInput.value) {
-      params.seed = parseInt(this.elements.seedInput.value);
-    }
-
-    // Add image prompt if uploaded
-    if (this.imagePromptData) {
-      if (model === 'flux-kontext-pro' || model === 'flux-kontext-max') {
-        params.input_image = this.imagePromptData;
-      } else {
-        params.image_prompt = this.imagePromptData;
-
-        if (model === 'flux-pro-1.1-ultra') {
-          params.image_prompt_strength = parseFloat(
-            this.elements.imagePromptStrength.value
-          );
-        }
-      }
-    }
-
-    // Add model-specific parameters
-    switch (model) {
-      case 'flux-pro-1.1-ultra': {
-        params.aspect_ratio = this.elements.aspectRatioSelector.value;
-        if (this.elements.rawMode.checked) {
-          params.raw = true;
-        }
-        break;
-      }
-
-      case 'flux-pro-1.1': {
-        const [width, height] = this.getSelectedDimension()
-          .split('x')
-          .map(Number);
-        params.width = width;
-        params.height = height;
-        break;
-      }
-
-      case 'flux-pro': {
-        const [proWidth, proHeight] = this.getSelectedDimension()
-          .split('x')
-          .map(Number);
-        params.width = proWidth;
-        params.height = proHeight;
-        params.steps = parseInt(this.elements.stepsSlider.value);
-        params.guidance = parseFloat(this.elements.guidanceSlider.value);
-        params.interval = parseFloat(this.elements.intervalSlider.value);
-        break;
-      }
-
-      case 'flux-dev': {
-        const [devWidth, devHeight] = this.getSelectedDimension()
-          .split('x')
-          .map(Number);
-        params.width = devWidth;
-        params.height = devHeight;
-        params.steps = parseInt(this.elements.stepsSlider.value);
-        params.guidance = parseFloat(this.elements.guidanceSlider.value);
-        break;
-      }
-
-      case 'flux-kontext-pro':
-      case 'flux-kontext-max': {
-        params.aspect_ratio = this.elements.aspectRatioSelector.value;
-        break;
-      }
-
-      case 'kontext-realearth':
-      case 'nano-banana':
-      case 'nano-banana-pro':
-      case 'seedream-4':
-      case 'seedream-4.5': {
-        if (!this.imagePromptData) {
-          FluxUI.showNotification(
-            'Source image is required for this model',
-            'error'
-          );
-          return null;
-        }
-        break;
-      }
-    }
-
-    return params;
-  }
-
-  /**
-   * Poll for task result
-   */
-  pollForResult(taskId, apiEndpoint) {
-    FluxAPI.pollForResult(
-      taskId,
-      (progress) => {
-        // Progress callback - BFL API returns null for progress now
-        // Timer-based progress is used instead via updateTimerDisplay()
-      },
-      (imageUrl, result) => {
-        this.currentImageUrl = imageUrl;
-
-        if (result.details && result.details.request_params) {
-          this.currentParams = {
-            ...this.currentParams,
-            ...result.details.request_params,
-            seed: result.details.request_params.seed ?? this.currentParams.seed
-          };
-        }
-
-        this.currentParams.model = result.details?.model_id || apiEndpoint;
-        this.currentParams.timestamp = new Date().toISOString();
-
-        const proxiedUrl = FluxAPI.getProxiedImageUrl(imageUrl);
-        this.displayImage(proxiedUrl);
-        this.saveToGallery(proxiedUrl);
-        this.stopTimer();
-        this.toggleLoading(false);
-        FluxUI.showNotification('Image generated successfully!', 'success');
-      },
-      (error) => {
-        console.error('Error polling for result:', error);
-        this.stopTimer();
-        this.toggleLoading(false);
-        FluxUI.showNotification(
-          `Failed to get result: ${error.message}`,
-          'error'
-        );
-      }
-    );
-  }
-
-  /**
    * Display the generated image
    */
   displayImage(imageUrl) {
@@ -1848,15 +1589,7 @@ class GeneratorTabBase {
       return;
     }
 
-    const isReplicateImage =
-      this.currentImageUrl.includes('replicate.delivery') ||
-      this.currentImageUrl.includes('pbxt.replicate.delivery');
-
-    const fetchUrl = isReplicateImage
-      ? this.currentImageUrl
-      : FluxAPI.getProxiedImageUrl(this.currentImageUrl);
-
-    fetch(fetchUrl)
+    fetch(this.currentImageUrl)
       .then((response) => response.blob())
       .then((blob) => {
         const blobUrl = URL.createObjectURL(blob);

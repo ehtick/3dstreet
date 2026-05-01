@@ -217,8 +217,6 @@ export const ModalWithFullMetadata = {
     onClose: () => console.log('Modal closed'),
     onDownload: (item) => console.log('Download:', item),
     onCopyParams: (item) => console.log('Copy params:', item),
-    onUseForInpaint: (item) => console.log('Use for inpaint:', item),
-    onUseForOutpaint: (item) => console.log('Use for outpaint:', item),
     onUseForGenerator: (item) => console.log('Use for generator:', item)
   },
   parameters: {
@@ -304,8 +302,6 @@ export const ModalJPEGFormat = {
     onClose: () => console.log('Modal closed'),
     onDownload: (item) => console.log('Download:', item),
     onCopyParams: (item) => console.log('Copy params:', item),
-    onUseForInpaint: (item) => console.log('Use for inpaint:', item),
-    onUseForOutpaint: (item) => console.log('Use for outpaint:', item),
     onUseForGenerator: (item) => console.log('Use for generator:', item)
   },
   parameters: {
@@ -380,16 +376,6 @@ const InteractiveDemoComponent = () => {
           onClose={() => setSelectedItem(null)}
           onDownload={handleDownload}
           onCopyParams={handleCopyParams}
-          onUseForInpaint={(item) => {
-            console.log('Use for inpaint:', item);
-            alert('Sent to Inpaint tab!');
-            setSelectedItem(null);
-          }}
-          onUseForOutpaint={(item) => {
-            console.log('Use for outpaint:', item);
-            alert('Sent to Outpaint tab!');
-            setSelectedItem(null);
-          }}
           onUseForGenerator={(item) => {
             console.log('Use for generator:', item);
             alert('Sent to Generator tab!');

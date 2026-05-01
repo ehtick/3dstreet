@@ -10,8 +10,6 @@ import styles from './Gallery.module.scss';
 
 const GallerySidebar = ({
   onCopyParams,
-  onUseForInpaint,
-  onUseForOutpaint,
   onUseForGenerator,
   onUseForVideo,
   onNotification
@@ -210,8 +208,6 @@ const GallerySidebar = ({
           gallery={gallery}
           variant="paginated"
           onCopyParams={onCopyParams}
-          onUseForInpaint={onUseForInpaint}
-          onUseForOutpaint={onUseForOutpaint}
           onUseForGenerator={onUseForGenerator}
           onUseForVideo={onUseForVideo}
           onNotification={onNotification}

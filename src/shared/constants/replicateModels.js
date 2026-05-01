@@ -1,6 +1,6 @@
 /**
  * AI Model Configurations
- * Central source of truth for all AI model IDs and metadata (BFL + Replicate)
+ * Central source of truth for all AI model IDs and metadata (fal.ai + Replicate)
  */
 
 /**
@@ -135,38 +135,6 @@ export const REPLICATE_MODELS = {
     includeIn4x: false,
     tokenCost: 2,
     requiresSourceImage: true
-  },
-
-  // BFL Models - kept for backwards compatibility but hidden from UI
-  'flux-dev': {
-    name: 'Flux Dev',
-    type: 'bfl',
-    group: null, // null = hidden from UI
-    logo: '/ui_assets/model-black-forest-labs.png',
-    estimatedTime: 10,
-    tokenCost: 1,
-    prompt:
-      'photorealistic street view, professional photography, high detail, natural lighting, clear and sharp'
-  },
-  'flux-pro-1.1': {
-    name: 'Flux Pro 1.1',
-    type: 'bfl',
-    group: null, // null = hidden from UI
-    logo: '/ui_assets/model-black-forest-labs.png',
-    estimatedTime: 20,
-    tokenCost: 2,
-    prompt:
-      'photorealistic street view, professional photography, high detail, natural lighting, clear and sharp'
-  },
-  'flux-pro-1.1-ultra': {
-    name: 'Flux Pro 1.1 Ultra',
-    type: 'bfl',
-    group: null, // null = hidden from UI
-    logo: '/ui_assets/model-black-forest-labs.png',
-    estimatedTime: 30,
-    tokenCost: 3,
-    prompt:
-      'photorealistic street view, professional photography, high detail, natural lighting, clear and sharp'
   }
 };
 

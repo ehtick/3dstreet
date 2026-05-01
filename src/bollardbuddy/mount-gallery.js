@@ -114,8 +114,6 @@ export const mountGallery = async () => {
       onNotification={(message, type) => showNotification(message, type)}
       // No generator-specific handlers needed for Bollard Buddy
       onCopyParams={null}
-      onUseForInpaint={null}
-      onUseForOutpaint={null}
       onUseForGenerator={null}
       onUseForVideo={null}
     />

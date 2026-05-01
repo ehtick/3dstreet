@@ -16,7 +16,7 @@ Multi-application monorepo with shared components:
 
 1. **A-Frame Core** (`/src`) - 3D rendering engine, geometry, WebXR (vanilla JS + A-Frame)
 2. **React Editor** (`/src/editor`) - UI for scene editing, uses `AFRAME.INSPECTOR` to communicate with A-Frame
-3. **Generator** (`/src/generator`) - BFL Flux AI tool for image/video generation, vanilla JS with React islands
+3. **Generator** (`/src/generator`) - AI image/video generation tool (fal.ai + Replicate), vanilla JS with React islands
 4. **Shared Library** (`/src/shared`) - Auth, navigation, Firebase services (imported via `@shared/*`)
 5. **Firebase** (`/public`) - Hosting, cloud functions, Firestore
 
@@ -92,17 +92,15 @@ public/
 
 **Auth:** Google, Email/Password, user claims for plan levels
 
-**Functions:** getScene, createStripeSession, stripeWebhook, serveWebXRVariant, geoid, bfl-proxy
+**Functions:** getScene, createStripeSession, stripeWebhook, serveWebXRVariant, geoid, generateReplicateImage, generateFalImage
 
 ## Generator
 
-**Structure:** Vanilla JS app (generator/inpaint/outpaint/gallery tabs) + React islands (auth, navigation, purchase modal)
-
-**Note:** UI still displays "AI Image Generator" but video generation coming soon
+**Structure:** Vanilla JS app (modify/create/video/gallery tabs) + React islands (auth, navigation, purchase modal)
 
 **Island Architecture:** React components mounted via `mount-*.js` files into specific DOM elements
 
-**Workflow:** User prompt → token check → Firebase Cloud Function → BFL API → poll → display + save to localStorage
+**Workflow:** User prompt → token check → Firebase Cloud Function (fal.ai or Replicate) → display + save to gallery
 
 **Token system:** TokenSync syncs Firestore → Zustand, PurchaseModal for Stripe checkout
 
@@ -153,7 +151,7 @@ public/
 
 **Google 3D Tiles:** Real-world context (`google-maps-aerial` component, `3d-tiles-renderer` library)
 
-**BFL Flux AI:** Image generation via Firebase proxy (models: Flux Pro 1.1, Dev, Schnell) - https://docs.bfl.ai
+**fal.ai / Replicate:** Image and video generation via Firebase proxy (Flux 2, nano-banana, seedream, kontext, etc.)
 
 **Firebase:** Auth, Firestore, Cloud Functions, Hosting
 

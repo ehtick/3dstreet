@@ -19,8 +19,6 @@ const GalleryModal = ({
   onDownload,
   onDelete,
   onCopyParams,
-  onUseForInpaint,
-  onUseForOutpaint,
   onUseForGenerator,
   onUseForVideo
 }) => {
@@ -361,28 +359,6 @@ const GalleryModal = ({
                 }}
               >
                 Modify
-              </button>
-            )}
-            {!isVideo && onUseForOutpaint && (
-              <button
-                className={`${styles.actionButton} ${styles.secondaryButton}`}
-                onClick={() => {
-                  onUseForOutpaint(item);
-                  onClose();
-                }}
-              >
-                Outpaint
-              </button>
-            )}
-            {!isVideo && onUseForInpaint && (
-              <button
-                className={`${styles.actionButton} ${styles.secondaryButton}`}
-                onClick={() => {
-                  onUseForInpaint(item);
-                  onClose();
-                }}
-              >
-                Inpaint
               </button>
             )}
             {!isVideo && onUseForVideo && (

@@ -7,8 +7,6 @@ import GallerySidebar from './GallerySidebar.jsx';
 const Gallery = ({
   mode = 'sidebar',
   onCopyParams,
-  onUseForInpaint,
-  onUseForOutpaint,
   onUseForGenerator,
   onUseForVideo,
   onNotification,
@@ -20,8 +18,6 @@ const Gallery = ({
     return (
       <GallerySidebar
         onCopyParams={onCopyParams}
-        onUseForInpaint={onUseForInpaint}
-        onUseForOutpaint={onUseForOutpaint}
         onUseForGenerator={onUseForGenerator}
         onUseForVideo={onUseForVideo}
         onNotification={onNotification}

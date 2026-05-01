@@ -40,7 +40,9 @@ const GeneratorUpgradeModal = () => {
       source="generator"
       trigger="gen_token_limit"
       onCheckoutStart={handleCheckoutStart}
-      onSignIn={() => setModal('signin')}
+      // rememberPrevious=true so closing/completing sign-in lands the user
+      // back in the upgrade modal where they started.
+      onSignIn={() => setModal('signin', true)}
       verifyPurchase={verifyPurchase}
       successTitle="Welcome to Pro!"
       successMessage="Your tokens are ready — happy generating."

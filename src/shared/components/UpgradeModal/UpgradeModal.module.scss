@@ -11,7 +11,10 @@ $green: #10b981;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  // Matches the dim+blur treatment used by other editor modals
+  // (textureModal.scss / shared Modal) so the upgrade modal feels native.
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;

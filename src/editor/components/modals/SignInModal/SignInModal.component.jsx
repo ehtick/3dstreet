@@ -11,11 +11,17 @@ import { SavingModal } from '../SavingModal';
 import posthog from 'posthog-js';
 
 const SignInModal = () => {
-  const setModal = useStore((state) => state.setModal);
   const modal = useStore((state) => state.modal);
+  const returnToPreviousModal = useStore(
+    (state) => state.returnToPreviousModal
+  );
 
+  // Close → return to whatever modal opened sign-in (e.g. UpgradeModal).
+  // If nothing opened it (the common case — direct profile-button entry),
+  // returnToPreviousModal falls through to setting modal=null. So this is
+  // safe to use across all entry points.
   const onClose = () => {
-    setModal(null);
+    returnToPreviousModal();
   };
 
   const handleNotification = (type, message) => {

@@ -13,7 +13,7 @@ import posthog from 'posthog-js';
 
 const ProfileButton = () => {
   const { currentUser, isLoading } = useAuthContext();
-  const { modal, setModal } = useImageGenStore();
+  const { modal, setModal, returnToPreviousModal } = useImageGenStore();
 
   const onClick = () => {
     if (isLoading) return;
@@ -43,7 +43,7 @@ const ProfileButton = () => {
 
       <SignInModal
         isOpen={modal === 'signin'}
-        onClose={() => setModal(null)}
+        onClose={returnToPreviousModal}
         message="Sign in to use AI image generation."
         firebaseAuth={auth}
         onAnalytics={handleAnalytics}

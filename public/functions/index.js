@@ -156,6 +156,7 @@ exports.createStripeSession = functions
 
     return {
       id: session.id,
+      url: session.url, // For hosted checkout redirect (null in embedded mode)
       clientSecret: session.client_secret // For embedded checkout
     };
   });

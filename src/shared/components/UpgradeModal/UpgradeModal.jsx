@@ -23,6 +23,7 @@ import posthog from 'posthog-js';
 import { functions } from '@shared/services/firebase';
 import { useAuthContext } from '@shared/contexts';
 import EmbeddedCheckout from '@shared/components/EmbeddedCheckout';
+import { openBillingPortal } from '@shared/utils/billing';
 import styles from './UpgradeModal.module.scss';
 
 // Single source of truth for the Pro feature list — shown once, no duplication.
@@ -178,21 +179,6 @@ const UpgradeModal = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleOpenBillingPortal = async () => {
-    try {
-      const createBillingPortal = httpsCallable(
-        functions,
-        'createStripeBillingPortal'
-      );
-      const { data } = await createBillingPortal({
-        return_url: window.location.href
-      });
-      if (data?.url) window.open(data.url, '_blank');
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-    }
-  };
 
   const renderPricing = () => (
     <>
@@ -364,7 +350,10 @@ const UpgradeModal = ({
           To add more tokens, manage your subscription, or upgrade/downgrade,
           please visit the billing portal.
         </p>
-        <button className={styles.ctaButton} onClick={handleOpenBillingPortal}>
+        <button
+          className={styles.ctaButton}
+          onClick={() => openBillingPortal()}
+        >
           Manage Subscription
         </button>
         <button className={styles.ctaButtonSecondary} onClick={handleClose}>

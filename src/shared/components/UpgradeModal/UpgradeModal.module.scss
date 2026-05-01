@@ -1,0 +1,391 @@
+// UpgradeModal.module.scss — shared Pro upgrade / token purchase modal
+
+$purple: #8b5cf6;
+$purple-hover: #7c3aed;
+$purple-soft: rgba(139, 92, 246, 0.18);
+$green: #10b981;
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  padding: 20px;
+  // The editor's #inspectorContainer is pointer-events:none and only
+  // re-enables clicks on a known list of selectors (.modal, .clickable, …).
+  // Our scoped classnames aren't on that list, so we must opt back in here.
+  pointer-events: all;
+  animation: fadeIn 0.2s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+.modalContent {
+  background: #1a1a1a;
+  border-radius: 16px;
+  max-width: 460px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 24px;
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #0a0a0a;
+    border-radius: 0 16px 16px 0;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+    &:hover {
+      background: #444;
+    }
+  }
+}
+
+// ─── Pricing state ───────────────────────────────────────────────
+
+.pricingHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.headerIcon {
+  width: 40px;
+  height: 40px;
+  background: $purple;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.pricingTitleBlock {
+  margin-bottom: 20px;
+}
+
+.pricingTitle {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.pricingSubtitle {
+  font-size: 15px;
+  color: #888;
+  margin: 0;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 0 20px;
+}
+
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: #e5e5e5;
+    line-height: 1.4;
+  }
+}
+
+.checkIcon {
+  flex-shrink: 0;
+}
+
+// Billing toggle (segmented control)
+.billingToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.toggleButton {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #888;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover:not(.toggleActive) {
+    color: #ccc;
+  }
+}
+
+.toggleActive {
+  background: $purple-soft;
+  border-color: $purple;
+  color: #fff;
+}
+
+.savePill {
+  font-size: 11px;
+  font-weight: 700;
+  color: $green;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+// Price display
+.priceDisplay {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.priceLarge {
+  font-size: 44px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.pricePer {
+  font-size: 15px;
+  color: #aaa;
+}
+
+.priceSubtext {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: #777;
+  margin-top: 4px;
+}
+
+// Primary CTA — used by Go Pro and Manage Subscription
+.ctaButton {
+  width: 100%;
+  background: $purple;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+
+  &:hover:not(:disabled) {
+    background: $purple-hover;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.ctaButtonSecondary {
+  width: 100%;
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #2a2a2a;
+    color: #fff;
+  }
+}
+
+.footerNote {
+  text-align: center;
+  font-size: 13px;
+  color: #777;
+  margin: 12px 0 0;
+}
+
+// ─── Header used by checkout + has-subscription states ───────────
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.modalTitle {
+  flex: 1;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #2a2a2a;
+    color: #fff;
+  }
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.backButton {
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  color: #aaa;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #2a2a2a;
+    border-color: #4a4a4a;
+    color: #fff;
+  }
+}
+
+// ─── Checkout state container ────────────────────────────────────
+
+.checkoutContainer {
+  // Embedded form fills available width; no extra chrome here.
+}
+
+// ─── Status container (has-subscription) ─────────────────────────
+
+.statusContainer {
+  padding: 20px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+  }
+
+  p {
+    font-size: 14px;
+    color: #aaa;
+    margin: 0;
+    max-width: 380px;
+  }
+}
+
+.subtext {
+  font-size: 13px !important;
+  color: #777 !important;
+}
+
+.successIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    color: $green;
+  }
+}
+
+// Wider modal for checkout state since the embedded form has a min-width.
+.modalContent:has(.checkoutContainer) {
+  max-width: 800px;
+}
+
+// Responsive
+@media (max-width: 520px) {
+  .modalContent {
+    padding: 20px;
+  }
+  .pricingTitle {
+    font-size: 22px;
+  }
+  .priceLarge {
+    font-size: 36px;
+  }
+}

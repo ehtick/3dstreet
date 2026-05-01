@@ -262,7 +262,10 @@ describe('UpgradeModal', () => {
     it('calls onClose on Escape key', () => {
       const { onClose } = renderModal();
 
-      fireEvent.keyDown(document, { key: 'Escape' });
+      // Listener is on keyup (matches the shared Modal component to avoid
+      // the keydown→close→keyup race that double-closes when the editor
+      // routes back to a previous modal).
+      fireEvent.keyUp(document, { key: 'Escape' });
 
       expect(onClose).toHaveBeenCalled();
     });

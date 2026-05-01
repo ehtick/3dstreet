@@ -76,7 +76,8 @@ exports.createStripeSession = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -159,47 +160,12 @@ exports.createStripeSession = functions
     };
   });
 
-exports.getStripeSessionStatus = functions
-  .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
-  .https
-  .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-    // Verify user is authenticated
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to check session status.');
-    }
-
-    const { sessionId } = data;
-
-    if (!sessionId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Session ID is required.');
-    }
-
-    try {
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-      // Verify this session belongs to the authenticated user
-      if (session.metadata?.userId !== context.auth.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'Session does not belong to authenticated user.');
-      }
-
-      return {
-        status: session.status,
-        customer_email: session.customer_details?.email,
-        payment_status: session.payment_status
-      };
-    } catch (error) {
-      console.error('Error retrieving session:', error);
-      throw new functions.https.HttpsError('internal', 'Failed to retrieve session status.');
-    }
-  });
-
 exports.checkActiveSubscriptions = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -240,7 +206,7 @@ exports.checkActiveSubscriptions = functions
         subscriptions: subscriptions.data.map(sub => ({
           id: sub.id,
           status: sub.status,
-          currentPeriodEnd: sub.current_period_end,
+          currentPeriodEnd: sub.items.data[0]?.current_period_end,
           planId: sub.items.data[0]?.price?.id,
           interval: sub.items.data[0]?.price?.recurring?.interval
         }))
@@ -255,7 +221,8 @@ exports.createStripeBillingPortal = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https
   .onCall(async (data, context) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -293,7 +260,8 @@ exports.handleSubscriptionWebhook = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET_SUBSCRIPTION"] })
   .https
   .onRequest(async (req, res) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
     let event;
 
     try {
@@ -304,7 +272,7 @@ exports.handleSubscriptionWebhook = functions
       );
     } catch (err) {
       console.error('⚠️ Webhook signature verification failed.');
-      return res.send(err).sendStatus(400);
+      return res.status(400).send(err);
     }
 
     const subscription = event.data.object;
@@ -338,7 +306,8 @@ exports.stripeWebhook = functions
   .runWith({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET_CHECKOUT", "STRIPE_YEARLY_PRICE_ID", "STRIPE_MONTHLY_PRICE_ID"] })
   .https
   .onRequest(async (req, res) => {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
     let event;
 
     try {
@@ -349,7 +318,7 @@ exports.stripeWebhook = functions
       );
     } catch (err) {
       console.error('⚠️ Webhook signature verification failed.');
-      return res.send(err).sendStatus(400);
+      return res.status(400).send(err);
     }
 
     const checkoutSession = event.data.object;
@@ -377,6 +346,22 @@ exports.stripeWebhook = functions
       if (monthlyPriceId) {
         isMonthlyPlan = sessionWithLineItems.line_items.data.some(item =>
           item.price.id === monthlyPriceId
+        );
+      }
+
+      // Loud warning if a checkout completed but no plan matched — usually means
+      // STRIPE_MONTHLY_PRICE_ID / STRIPE_YEARLY_PRICE_ID secrets drifted from
+      // the price IDs the frontend is actually selling.
+      if (!isAnnualPlan && !isMonthlyPlan) {
+        const seenPriceIds = sessionWithLineItems.line_items.data
+          .map(item => item.price?.id)
+          .filter(Boolean);
+        console.warn(
+          `checkout completed but no plan matched: session=${checkoutSession.id} ` +
+          `userId=${checkoutSession.metadata?.userId} ` +
+          `seen=[${seenPriceIds.join(',')}] ` +
+          `expected_monthly=${monthlyPriceId || 'unset'} ` +
+          `expected_yearly=${annualPriceId || 'unset'}`
         );
       }
     }

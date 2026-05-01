@@ -57,6 +57,7 @@ const EditorUpgradeModal = () => {
       source={postCheckout || 'editor'}
       trigger={postCheckout ? `${postCheckout}_paywall` : 'manual'}
       verifyPurchase={verifyPurchase}
+      onSignIn={() => setModal('signin')}
       onSuccess={onSuccess}
     />
   );

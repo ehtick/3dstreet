@@ -11,6 +11,8 @@
  *    token bump). Different for each app; fed through to EmbeddedCheckout.
  *  - onCheckoutStart: optional hook for the caller to snapshot state before
  *    payment (e.g. generator captures tokenProfile.genToken to compare against).
+ *  - onSignIn: fired when an unauthenticated user clicks the sign-in CTA.
+ *    Caller routes to its own sign-in modal. If omitted, the button is inert.
  *  - onSuccess: fires when the user clicks the success CTA — editor uses this
  *    to chain into a postCheckout modal (geo / image / etc.).
  */
@@ -79,6 +81,7 @@ const UpgradeModal = ({
   source = 'unknown',
   trigger = 'manual',
   onCheckoutStart,
+  onSignIn,
   verifyPurchase,
   onSuccess,
   successTitle = 'Welcome to Pro!',
@@ -224,42 +227,61 @@ const UpgradeModal = ({
         ))}
       </ul>
 
-      <div className={styles.billingToggle} role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={billingCycle === 'monthly'}
-          className={`${styles.toggleButton} ${billingCycle === 'monthly' ? styles.toggleActive : ''}`}
-          onClick={() => setBillingCycle('monthly')}
-        >
-          Monthly
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={billingCycle === 'yearly'}
-          className={`${styles.toggleButton} ${billingCycle === 'yearly' ? styles.toggleActive : ''}`}
-          onClick={() => setBillingCycle('yearly')}
-        >
-          Yearly <span className={styles.savePill}>Save 30%</span>
-        </button>
-      </div>
+      {currentUser ? (
+        <>
+          <div className={styles.billingToggle} role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={billingCycle === 'monthly'}
+              className={`${styles.toggleButton} ${billingCycle === 'monthly' ? styles.toggleActive : ''}`}
+              onClick={() => setBillingCycle('monthly')}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={billingCycle === 'yearly'}
+              className={`${styles.toggleButton} ${billingCycle === 'yearly' ? styles.toggleActive : ''}`}
+              onClick={() => setBillingCycle('yearly')}
+            >
+              Yearly <span className={styles.savePill}>Save 30%</span>
+            </button>
+          </div>
 
-      <div className={styles.priceDisplay}>
-        <span className={styles.priceLarge}>
-          ${billingCycle === 'yearly' ? '7' : '10'}
-        </span>
-        <span className={styles.pricePer}>/month</span>
-        {billingCycle === 'yearly' && (
-          <div className={styles.priceSubtext}>if billed yearly, $84/year</div>
-        )}
-      </div>
+          <div className={styles.priceDisplay}>
+            <span className={styles.priceLarge}>
+              ${billingCycle === 'yearly' ? '7' : '10'}
+            </span>
+            <span className={styles.pricePer}>/month</span>
+            {billingCycle === 'yearly' && (
+              <div className={styles.priceSubtext}>
+                if billed yearly, $84/year
+              </div>
+            )}
+          </div>
 
-      <button type="button" className={styles.ctaButton} onClick={handleGoPro}>
-        Go Pro
-      </button>
+          <button
+            type="button"
+            className={styles.ctaButton}
+            onClick={handleGoPro}
+          >
+            Go Pro
+          </button>
 
-      <p className={styles.footerNote}>Cancel anytime</p>
+          <p className={styles.footerNote}>Cancel anytime</p>
+        </>
+      ) : (
+        <div className={styles.signInPrompt}>
+          <p className={styles.signInCopy}>
+            Sign in to upgrade — or to access Pro if you already have a plan.
+          </p>
+          <button type="button" className={styles.ctaButton} onClick={onSignIn}>
+            Sign in to 3DStreet Cloud
+          </button>
+        </div>
+      )}
     </>
   );
 
@@ -372,6 +394,7 @@ UpgradeModal.propTypes = {
   source: PropTypes.string,
   trigger: PropTypes.string,
   onCheckoutStart: PropTypes.func,
+  onSignIn: PropTypes.func,
   verifyPurchase: PropTypes.func,
   onSuccess: PropTypes.func,
   successTitle: PropTypes.string,

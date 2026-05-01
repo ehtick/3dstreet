@@ -119,6 +119,44 @@ describe('UpgradeModal', () => {
     });
   });
 
+  describe('Unauthenticated', () => {
+    it('replaces price/CTA with sign-in prompt when no currentUser', () => {
+      renderModal({}, { currentUser: null });
+
+      // Pricing chrome (title + features) still renders so users see what
+      // they would get; the call-to-action shifts to sign-in.
+      expect(screen.getByText('Upgrade to Pro')).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Sign in to 3DStreet Cloud' })
+      ).toBeInTheDocument();
+
+      expect(
+        screen.queryByRole('button', { name: 'Go Pro' })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('tab', { name: 'Monthly' })
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText('$7')).not.toBeInTheDocument();
+    });
+
+    it('calls onSignIn when the sign-in button is clicked', async () => {
+      const user = userEvent.setup();
+      const onSignIn = vi.fn();
+      renderModal({ onSignIn }, { currentUser: null });
+
+      await user.click(
+        screen.getByRole('button', { name: 'Sign in to 3DStreet Cloud' })
+      );
+
+      expect(onSignIn).toHaveBeenCalled();
+    });
+
+    it('mentions existing Pro users in the prompt copy', () => {
+      renderModal({}, { currentUser: null });
+      expect(screen.getByText(/already have a plan/i)).toBeInTheDocument();
+    });
+  });
+
   describe('Plan selection → checkout', () => {
     it('transitions to checkout state when Go Pro is clicked', async () => {
       const user = userEvent.setup();

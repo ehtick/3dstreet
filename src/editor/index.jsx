@@ -13,7 +13,7 @@ import { History } from './lib/history';
 import { Shortcuts } from './lib/shortcuts';
 import { Viewport } from './lib/viewport';
 import './style/index.scss';
-import posthog from 'posthog-js';
+import { initPostHog } from '@shared/analytics/posthog';
 import { commandsByType } from './lib/commands/index.js';
 import useStore from '@/store';
 import { initializeLocationSync } from './lib/location-sync';
@@ -373,10 +373,7 @@ Inspector.prototype = {
 const inspector = (AFRAME.INSPECTOR = new Inspector(
   window.AFRAME_INSPECTOR_CONFIG
 ));
-posthog.init('phc_Yclai3qykyFi8AEFOrZsh6aS78SSooLzpDz9wQ9YAH9', {
-  api_host: 'https://us.i.posthog.com',
-  person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
-});
+initPostHog();
 
 // A-Frame canvas needs to be outside of a-scene for posthog recording to work
 const sceneLoaded = () => {

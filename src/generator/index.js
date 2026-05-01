@@ -12,6 +12,9 @@ import '../styles/tailwind.css';
 // Import styles
 import './styles/styles.css';
 
+// Import PostHog analytics initializer
+import { initPostHog } from '@shared/analytics/posthog';
+
 // Import Firebase auth
 import { auth } from '@shared/services/firebase.js';
 
@@ -26,6 +29,9 @@ import FluxUI from './main.js';
 import ModifyTab from './modify.js';
 import CreateTab from './create.js';
 import VideoTab from './video.js';
+
+// Initialize PostHog so capture() calls in handlers/effects below are not no-ops
+initPostHog();
 
 // Expose auth for compatibility
 window.firebaseAuth = auth;

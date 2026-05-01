@@ -21,6 +21,13 @@ import {
 import { httpsCallable } from 'firebase/functions';
 import posthog from 'posthog-js';
 import { functions } from '@shared/services/firebase';
+import {
+  LoadingView,
+  SuccessView,
+  PendingView,
+  ErrorView,
+  HasSubscriptionView
+} from './StatusViews';
 import styles from './EmbeddedCheckout.module.scss';
 
 let stripePromise;
@@ -35,43 +42,6 @@ const getStripe = () => {
 // switching to the "still finalizing" state instead of claiming success.
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 15;
-
-const SuccessIcon = () => (
-  <div className={styles.successIcon}>
-    <svg
-      width="64"
-      height="64"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-    </svg>
-  </div>
-);
-
-const ErrorIcon = () => (
-  <div className={styles.errorIcon}>
-    <svg
-      width="64"
-      height="64"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="12"></line>
-      <line x1="12" y1="16" x2="12.01" y2="16"></line>
-    </svg>
-  </div>
-);
 
 const EmbeddedCheckout = ({
   priceId,
@@ -216,87 +186,29 @@ const EmbeddedCheckout = ({
     );
   }
 
-  if (state === 'loading') {
-    return (
-      <div className={styles.statusContainer}>
-        <div className={styles.spinner}></div>
-        <p>Processing your payment...</p>
-        <p className={styles.subtext}>This usually takes just a few seconds</p>
-      </div>
-    );
-  }
-
+  if (state === 'loading') return <LoadingView />;
   if (state === 'success') {
     return (
-      <div className={styles.statusContainer}>
-        <SuccessIcon />
-        <h3>{successTitle}</h3>
-        <p>{successMessage}</p>
-        <button
-          className={`${styles.actionButton} ${styles.success}`}
-          onClick={handleSuccessClick}
-        >
-          {successCta}
-        </button>
-      </div>
+      <SuccessView
+        title={successTitle}
+        message={successMessage}
+        ctaLabel={successCta}
+        onCta={handleSuccessClick}
+      />
     );
   }
-
-  if (state === 'pending') {
-    return (
-      <div className={styles.statusContainer}>
-        <SuccessIcon />
-        <h3>Almost there!</h3>
-        <p>
-          Your payment went through and we&apos;re finalizing your account. A
-          confirmation email is on the way. Refresh in a minute to see your
-          updated balance.
-        </p>
-        <button className={styles.actionButton} onClick={onClose}>
-          Close
-        </button>
-      </div>
-    );
-  }
-
+  if (state === 'pending') return <PendingView onClose={onClose} />;
   if (state === 'error') {
-    return (
-      <div className={styles.statusContainer}>
-        <ErrorIcon />
-        <h3>Payment Issue</h3>
-        <p>
-          {errorMessage ||
-            'Something went wrong with your payment. Please try again or contact support.'}
-        </p>
-        <button className={styles.actionButton} onClick={onClose}>
-          Close
-        </button>
-      </div>
-    );
+    return <ErrorView message={errorMessage} onClose={onClose} />;
   }
-
   if (state === 'has-subscription') {
     return (
-      <div className={styles.statusContainer}>
-        <SuccessIcon />
-        <h3>You Already Have an Active Subscription</h3>
-        <p>
-          To add more tokens, manage your subscription, or upgrade/downgrade,
-          please visit the billing portal.
-        </p>
-        <button
-          className={`${styles.actionButton} ${styles.primary}`}
-          onClick={handleOpenBillingPortal}
-        >
-          Manage Subscription
-        </button>
-        <button className={styles.actionButton} onClick={onClose}>
-          Close
-        </button>
-      </div>
+      <HasSubscriptionView
+        onManage={handleOpenBillingPortal}
+        onClose={onClose}
+      />
     );
   }
-
   return null;
 };
 

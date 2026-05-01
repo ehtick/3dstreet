@@ -96,9 +96,11 @@ const AuthProvider = ({ children }) => {
       setCurrentUser({
         ...user,
         isPro: cachedProStatus?.isPro ?? false,
-        isProSubscription: cachedProStatus?.isProSubscription ?? false,
-        isProDomain: cachedProStatus?.isProDomain ?? false,
-        isProTeam: cachedProStatus?.isProDomain ?? false,
+        // Backwards compat: caches written before the isProDomain → isProTeam
+        // rename will still have isProDomain. Fall back to it once, expires
+        // naturally when the cache refreshes.
+        isProTeam:
+          cachedProStatus?.isProTeam ?? cachedProStatus?.isProDomain ?? false,
         teamDomain: cachedProStatus?.teamDomain ?? null
       });
       setIsLoading(false);
@@ -120,12 +122,7 @@ const AuthProvider = ({ children }) => {
       const proStatus =
         proStatusResult.status === 'fulfilled'
           ? proStatusResult.value
-          : {
-              isPro: false,
-              isProSubscription: false,
-              isProDomain: false,
-              teamDomain: null
-            };
+          : { isPro: false, isProTeam: false, teamDomain: null };
 
       // Only cache when the cloud function actually succeeded —
       // avoid overwriting a valid cache with a failure fallback
@@ -136,9 +133,7 @@ const AuthProvider = ({ children }) => {
       const enrichedUser = {
         ...user,
         isPro: proStatus.isPro,
-        isProSubscription: proStatus.isProSubscription,
-        isProDomain: proStatus.isProDomain,
-        isProTeam: proStatus.isProDomain, // Alias for clearer semantics
+        isProTeam: proStatus.isProTeam,
         teamDomain: proStatus.teamDomain
       };
       setCurrentUser(enrichedUser);
@@ -174,8 +169,7 @@ const AuthProvider = ({ children }) => {
         email: user.email,
         name: user.displayName,
         isPro: proStatus.isPro,
-        isProSubscription: proStatus.isProSubscription,
-        isProDomain: proStatus.isProDomain,
+        isProTeam: proStatus.isProTeam,
         teamDomain: proStatus.teamDomain
       });
     };

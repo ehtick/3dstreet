@@ -62,6 +62,16 @@ const EmbeddedCheckout = ({
   const [errorMessage, setErrorMessage] = useState(null);
   const formLoadedRef = useRef(false);
   const pollIntervalRef = useRef(null);
+  // Mirror state and props into refs so the unmount cleanup reads the
+  // latest values — empty deps avoid re-firing on prop churn.
+  const stateRef = useRef(state);
+  const planRef = useRef(plan);
+  const sourceRef = useRef(source);
+  useEffect(() => {
+    stateRef.current = state;
+    planRef.current = plan;
+    sourceRef.current = source;
+  });
 
   const clearPolling = useCallback(() => {
     if (pollIntervalRef.current) {
@@ -71,6 +81,22 @@ const EmbeddedCheckout = ({
   }, []);
 
   useEffect(() => clearPolling, [clearPolling]);
+
+  // Funnel: emit checkout_canceled when the user bails mid-flow (back to
+  // pricing or close while still on the Stripe form). Splits drop-off into
+  // pre_form (createStripeSession failed / Stripe.js latency) vs in_form
+  // (user saw form, didn't complete). Skipped for terminal states
+  // (success / pending / error / has-subscription) — those aren't cancels.
+  useEffect(() => {
+    return () => {
+      if (stateRef.current !== 'checkout') return;
+      posthog.capture('checkout_canceled', {
+        plan: planRef.current,
+        source: sourceRef.current,
+        stage: formLoadedRef.current ? 'in_form' : 'pre_form'
+      });
+    };
+  }, []);
 
   const startPolling = useCallback(() => {
     if (typeof verifyPurchase !== 'function') {

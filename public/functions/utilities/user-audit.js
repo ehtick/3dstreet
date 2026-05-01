@@ -203,7 +203,7 @@ exports.auditUserSubscriptions = functions
     }
 
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
     const fixDiscrepancies = data?.fixDiscrepancies === true;
     const dryRun = !fixDiscrepancies;
 
@@ -423,7 +423,7 @@ exports.auditUserSubscriptionsHttp = functions
       }
 
       const Stripe = require('stripe');
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
       const fixDiscrepancies = req.body?.fixDiscrepancies === true;
 
       // Run the same audit logic (simplified for HTTP response)

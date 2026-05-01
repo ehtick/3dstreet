@@ -77,7 +77,7 @@ exports.createStripeSession = functions
   .https
   .onCall(async (data, context) => {
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -165,7 +165,7 @@ exports.getStripeSessionStatus = functions
   .https
   .onCall(async (data, context) => {
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -202,7 +202,7 @@ exports.checkActiveSubscriptions = functions
   .https
   .onCall(async (data, context) => {
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -259,7 +259,7 @@ exports.createStripeBillingPortal = functions
   .https
   .onCall(async (data, context) => {
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 
     // Verify user is authenticated
     if (!context.auth) {
@@ -298,7 +298,7 @@ exports.handleSubscriptionWebhook = functions
   .https
   .onRequest(async (req, res) => {
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
     let event;
 
     try {
@@ -344,7 +344,7 @@ exports.stripeWebhook = functions
   .https
   .onRequest(async (req, res) => {
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
     let event;
 
     try {

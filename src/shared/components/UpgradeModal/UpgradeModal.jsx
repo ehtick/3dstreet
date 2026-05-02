@@ -24,6 +24,8 @@ import { functions } from '@shared/services/firebase';
 import { useAuthContext } from '@shared/contexts';
 import EmbeddedCheckout from '@shared/components/EmbeddedCheckout';
 import { openBillingPortal } from '@shared/utils/billing';
+import { getPaywallSurface } from './paywallSurfaces';
+import { PRICING, TOKEN_FEATURE_LINE } from './pricing';
 import styles from './UpgradeModal.module.scss';
 
 // Single source of truth for the Pro feature list — shown once, no duplication.
@@ -32,7 +34,7 @@ const PLAN_FEATURES = [
   'Unlimited geospatial maps & location changes',
   'HD renders, AR-ready glTF & video export',
   'Import custom 3D models & SVG / glTF files',
-  '100 AI generation tokens / month'
+  TOKEN_FEATURE_LINE
 ];
 
 const StarIcon = () => (
@@ -81,14 +83,19 @@ const UpgradeModal = ({
   onClose,
   source = 'unknown',
   trigger = 'manual',
+  surface: surfaceKey,
   onCheckoutStart,
   onSignIn,
+  onSecondaryCta,
+  onAlreadyPro,
   verifyPurchase,
   onSuccess,
   successTitle = 'Welcome to Pro!',
   successMessage = 'Pro features are unlocked on your account.',
   successCta = 'Continue'
 }) => {
+  const surface = getPaywallSurface(surfaceKey);
+  const features = surface?.features || PLAN_FEATURES;
   const { currentUser } = useAuthContext();
   const [modalState, setModalState] = useState('pricing');
   // 'pricing' | 'checkout' | 'has-subscription'
@@ -118,6 +125,34 @@ const UpgradeModal = ({
     setSelectedPlan(null);
   };
 
+  // Short-circuit if the auth claim already says they're Pro. Covers the
+  // post-login race: an anonymous user paywall-triggers, signs in, and the
+  // sign-in flow returns them to this modal. By the time AuthContext
+  // enriches currentUser with isPro=true, we should bail out — the Stripe
+  // precheck below also catches subscribers, but Pro can be granted via
+  // team membership / admin override (no Stripe sub), so isPro is the
+  // broader signal. Same modalState=='pricing' guard as the precheck so we
+  // don't yank the user out of the post-purchase success view.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modalState !== 'pricing') return;
+    if (!currentUser?.isPro) return;
+    posthog.capture('upgrade_modal_skipped_already_pro', { source, trigger });
+    if (onAlreadyPro) {
+      onAlreadyPro();
+    } else {
+      handleClose();
+    }
+  }, [
+    isOpen,
+    modalState,
+    currentUser?.isPro,
+    source,
+    trigger,
+    onAlreadyPro,
+    handleClose
+  ]);
+
   // Pre-check for an existing subscription so we can route to billing portal
   // before showing pricing — avoids duplicate purchases. Fires
   // existing_subscription_detected only when the precheck finds one, which
@@ -131,6 +166,9 @@ const UpgradeModal = ({
   useEffect(() => {
     if (!isOpen || !currentUser) return;
     if (modalState !== 'pricing') return;
+    // Already-Pro users are handled by the effect above; skip the Stripe
+    // precheck so we don't race the close.
+    if (currentUser.isPro) return;
 
     const checkSubscriptions = async () => {
       try {
@@ -194,30 +232,58 @@ const UpgradeModal = ({
 
   const renderPricing = () => (
     <>
-      <div className={styles.pricingHeader}>
-        <div className={styles.headerIcon}>
-          <StarIcon />
-        </div>
-        <button
-          className={styles.closeButton}
-          onClick={handleClose}
-          aria-label="Close"
-        >
-          <CloseIcon />
-        </button>
-      </div>
+      {surface ? (
+        <>
+          <div className={styles.pricingHeader}>
+            <div className={styles.surfaceCard}>
+              <div className={styles.surfaceIcon}>{surface.icon}</div>
+              <div className={styles.surfaceText}>
+                <div className={styles.surfaceTitle}>{surface.title}</div>
+                <div className={styles.surfaceSubtitle}>{surface.subtitle}</div>
+              </div>
+            </div>
+            <button
+              className={styles.closeButton}
+              onClick={handleClose}
+              aria-label="Close"
+            >
+              <CloseIcon />
+            </button>
+          </div>
 
-      <div className={styles.pricingTitleBlock}>
-        <h2 className={styles.pricingTitle}>Upgrade to Pro</h2>
-        <p className={styles.pricingSubtitle}>
-          Unlock the full 3DStreet toolkit.
-        </p>
-      </div>
+          <div className={styles.pricingTitleBlock}>
+            <h2 className={styles.pricingTitle}>{surface.headline}</h2>
+            <p className={styles.pricingSubtitle}>{surface.description}</p>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className={styles.pricingHeader}>
+            <div className={styles.headerIcon}>
+              <StarIcon />
+            </div>
+            <button
+              className={styles.closeButton}
+              onClick={handleClose}
+              aria-label="Close"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+
+          <div className={styles.pricingTitleBlock}>
+            <h2 className={styles.pricingTitle}>Upgrade to Pro</h2>
+            <p className={styles.pricingSubtitle}>
+              Unlock the full 3DStreet toolkit.
+            </p>
+          </div>
+        </>
+      )}
 
       <div className={styles.divider} />
 
       <ul className={styles.featureList}>
-        {PLAN_FEATURES.map((f) => (
+        {features.map((f) => (
           <li key={f}>
             <CheckIcon />
             <span>{f}</span>
@@ -250,14 +316,22 @@ const UpgradeModal = ({
 
           <div className={styles.priceDisplay}>
             <span className={styles.priceLarge}>
-              ${billingCycle === 'yearly' ? '7' : '10'}
+              ${PRICING[billingCycle].pricePerMonth}
             </span>
-            <span className={styles.pricePer}>/month</span>
-            {billingCycle === 'yearly' && (
-              <div className={styles.priceSubtext}>
-                if billed yearly, $84/year
-              </div>
-            )}
+            {/* /month sits superscript-style next to the price; the cycle
+                detail ("billed monthly" / "billed yearly, $84/year") stacks
+                directly under it. Always present so toggling cycles doesn't
+                shift the layout. */}
+            <div className={styles.priceUnit}>
+              <span className={styles.pricePer}>/month</span>
+              <span className={styles.priceSubtext}>
+                {PRICING[billingCycle].cycleDetail}
+              </span>
+            </div>
+            <div className={styles.priceTokenGrant}>
+              Includes {PRICING[billingCycle].tokens} AI generation tokens,
+              delivered up front
+            </div>
           </div>
 
           <button
@@ -268,13 +342,21 @@ const UpgradeModal = ({
             Go Pro
           </button>
 
+          {surface?.secondaryCtaLabel && onSecondaryCta && (
+            <button
+              type="button"
+              className={styles.ctaButtonSecondary}
+              onClick={onSecondaryCta}
+            >
+              {surface.secondaryCtaLabel}
+            </button>
+          )}
+
           <p className={styles.footerNote}>Cancel anytime</p>
         </>
       ) : (
         <div className={styles.signInPrompt}>
-          <p className={styles.signInCopy}>
-            Sign in to upgrade — or to access Pro if you already have a plan.
-          </p>
+          <p className={styles.signInCopy}>Sign in to upgrade or access Pro.</p>
           <button type="button" className={styles.ctaButton} onClick={onSignIn}>
             Sign in to 3DStreet Cloud
           </button>
@@ -394,8 +476,11 @@ UpgradeModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   source: PropTypes.string,
   trigger: PropTypes.string,
+  surface: PropTypes.string,
   onCheckoutStart: PropTypes.func,
   onSignIn: PropTypes.func,
+  onSecondaryCta: PropTypes.func,
+  onAlreadyPro: PropTypes.func,
   verifyPurchase: PropTypes.func,
   onSuccess: PropTypes.func,
   successTitle: PropTypes.string,

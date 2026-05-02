@@ -93,9 +93,7 @@ describe('UpgradeModal', () => {
     it('defaults to yearly billing with $7/month and yearly subtext', () => {
       renderModal();
       expect(screen.getByText('$7')).toBeInTheDocument();
-      expect(
-        screen.getByText(/if billed yearly, \$84\/year/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/billed yearly, \$84\/year/)).toBeInTheDocument();
     });
 
     it('switches to monthly when Monthly toggle is clicked', async () => {
@@ -105,7 +103,30 @@ describe('UpgradeModal', () => {
       await user.click(screen.getByRole('tab', { name: 'Monthly' }));
 
       expect(screen.getByText('$10')).toBeInTheDocument();
-      expect(screen.queryByText(/if billed yearly/)).not.toBeInTheDocument();
+      // Cycle detail is always rendered (no row reflow on toggle); only the
+      // text swaps between billed-monthly and billed-yearly variants.
+      expect(screen.queryByText(/billed yearly/)).not.toBeInTheDocument();
+      expect(screen.getByText('billed monthly')).toBeInTheDocument();
+    });
+
+    it('shows up-front token grant matching the billing cycle', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      // Yearly default → 840 tokens up front.
+      expect(
+        screen.getByText(
+          /Includes 840 AI[\s\S]+generation tokens, delivered up front/
+        )
+      ).toBeInTheDocument();
+
+      // Switching to monthly swaps to 100 without reflowing the layout.
+      await user.click(screen.getByRole('tab', { name: 'Monthly' }));
+      expect(
+        screen.getByText(
+          /Includes 100 AI[\s\S]+generation tokens, delivered up front/
+        )
+      ).toBeInTheDocument();
     });
 
     it('shows Save 30% pill on the yearly toggle', () => {
@@ -153,7 +174,7 @@ describe('UpgradeModal', () => {
 
     it('mentions existing Pro users in the prompt copy', () => {
       renderModal({}, { currentUser: null });
-      expect(screen.getByText(/already have a plan/i)).toBeInTheDocument();
+      expect(screen.getByText(/access Pro/i)).toBeInTheDocument();
     });
   });
 
@@ -235,6 +256,49 @@ describe('UpgradeModal', () => {
         expect(
           screen.getByRole('button', { name: 'Manage Subscription' })
         ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Already-Pro short-circuit', () => {
+    // Covers the post-login race where an anonymous user hits the paywall,
+    // signs in, and turns out to already be Pro (claim granted via Stripe,
+    // team membership, or admin override). We want the modal to bail out
+    // rather than re-pitching pricing.
+    it('fires onAlreadyPro when currentUser.isPro is true', async () => {
+      const onAlreadyPro = vi.fn();
+      renderModal(
+        { onAlreadyPro },
+        {
+          currentUser: {
+            uid: 'pro-user',
+            email: 'pro@example.com',
+            isPro: true,
+            getIdToken: () => Promise.resolve('mock-token')
+          }
+        }
+      );
+
+      await waitFor(() => {
+        expect(onAlreadyPro).toHaveBeenCalled();
+      });
+    });
+
+    it('falls back to onClose when onAlreadyPro is not provided', async () => {
+      const { onClose } = renderModal(
+        {},
+        {
+          currentUser: {
+            uid: 'pro-user',
+            email: 'pro@example.com',
+            isPro: true,
+            getIdToken: () => Promise.resolve('mock-token')
+          }
+        }
+      );
+
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalled();
       });
     });
   });

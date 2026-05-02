@@ -101,6 +101,52 @@ $green: #10b981;
   color: #fff;
 }
 
+// Surface card — replaces .headerIcon when the modal is rendered for a
+// specific paywall surface (e.g. GLB export). Carries the trigger's
+// identifying icon + label so the user knows which feature they hit.
+.surfaceCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  background: $purple-soft;
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.surfaceIcon {
+  width: 40px;
+  height: 40px;
+  background: $purple;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.surfaceText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.surfaceTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.surfaceSubtitle {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
 .pricingTitleBlock {
   margin-bottom: 20px;
 }
@@ -198,7 +244,7 @@ $green: #10b981;
 .priceDisplay {
   margin-bottom: 20px;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 6px;
   flex-wrap: wrap;
 }
@@ -210,15 +256,38 @@ $green: #10b981;
   line-height: 1;
 }
 
+// Stacks /month (superscript-style) above the billing-cycle detail line.
+// padding-top nudges the unit column so /month aligns near the cap height
+// of the large price digits rather than sitting at the very top edge.
+.priceUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-top: 4px;
+}
+
 .pricePer {
   font-size: 15px;
   color: #aaa;
+  line-height: 1;
 }
 
 .priceSubtext {
-  flex-basis: 100%;
   font-size: 13px;
   color: #777;
+  line-height: 1.2;
+}
+
+// Up-front token grant note — sits under the price display and tracks the
+// active billing cycle (100 monthly / 840 yearly). Soft purple to tie into
+// the brand and signal "you get this immediately" without overpowering the
+// price.
+.priceTokenGrant {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: #c4b5fd;
+  font-weight: 500;
   margin-top: 4px;
 }
 

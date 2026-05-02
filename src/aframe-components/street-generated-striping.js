@@ -73,10 +73,6 @@ AFRAME.registerComponent('street-generated-striping', {
     if (!this.length || !this.width) {
       return;
     }
-    // Early return if data is not yet initialized
-    if (!this.data) {
-      return;
-    }
     const data = this.data;
 
     // Clean up old entities

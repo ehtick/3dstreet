@@ -93,10 +93,6 @@ AFRAME.registerComponent('street-generated-pedestrians', {
     if (!this.length) {
       return;
     }
-    // Early return if data is not yet initialized
-    if (!this.data) {
-      return;
-    }
 
     // Handle seed initialization
     if (this.data.seed === 0) {

@@ -12,7 +12,7 @@ import { firebaseConfig, app } from '@shared/services/firebase.js';
 import { LoadScript } from '@react-google-maps/api';
 import { GeoModal } from './modals/GeoModal';
 import { ScenesModal } from './modals/ScenesModal';
-import { PaymentModal } from './modals/PaymentModal';
+import EditorUpgradeModal from './EditorUpgradeModal.jsx';
 import { AddLayerPanel } from './elements/AddLayerPanel';
 import { NewModal } from './modals/NewModal';
 import { LoadingSceneModal } from './modals/LoadingSceneModal';
@@ -88,7 +88,7 @@ export default function Main() {
       <ScreenshotModal />
       <ShareModal />
       <SignInModal />
-      <PaymentModal />
+      <EditorUpgradeModal />
       <ScenesModal />
       <ProfileModal />
       <NewModal />

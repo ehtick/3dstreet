@@ -108,7 +108,8 @@ const AppMenu = ({ currentUser }) => {
     setIsGridVisible,
     saveScene,
     setGeojsonImportData,
-    setRightPanelTab
+    setRightPanelTab,
+    startCheckout
   } = useStore();
   const { currentUser: authUser } = useAuthContext();
   const [currentCamera, setCurrentCamera] = useState('perspective');
@@ -249,7 +250,7 @@ const AppMenu = ({ currentUser }) => {
         console.error(error);
       }
     } else {
-      setModal('payment');
+      startCheckout('export');
     }
   };
 

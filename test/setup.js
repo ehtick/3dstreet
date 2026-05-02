@@ -64,8 +64,7 @@ vi.mock('@shared/auth/api/user', () => ({
   isUserPro: vi.fn(() =>
     Promise.resolve({
       isPro: false,
-      isProSubscription: false,
-      isProDomain: false,
+      isProTeam: false,
       teamDomain: null
     })
   )

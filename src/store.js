@@ -138,19 +138,19 @@ const useStore = create(
           }
         },
         startCheckout: (postCheckout) => {
+          // Snapshot the current modal so closing/completing the upgrade
+          // flow lands the user back where they started (e.g. geo modal).
+          // Note: a subsequent setModal('signin', true) will overwrite this,
+          // which is intentional — the signin chain returns to upgrade, and
+          // we accept losing the deeper return in that case rather than
+          // building a multi-level stack.
+          const currentModal = useStore.getState().modal;
           posthog.capture('modal_opened', { modal: 'payment' });
-          // Funnel event: pricing_page_viewed (for conversion funnel analysis)
-          posthog.capture('pricing_page_viewed', {
-            source: postCheckout || 'direct',
-            trigger:
-              postCheckout === 'geo'
-                ? 'geo_token_limit'
-                : postCheckout === 'image'
-                  ? 'gen_token_limit'
-                  : 'manual'
+          set({
+            modal: 'payment',
+            postCheckout,
+            previousModal: currentModal
           });
-          posthog.capture('start_checkout');
-          set({ modal: 'payment', postCheckout });
         },
         postCheckout: null,
         // GeoJSON import data for pre-filling the Geo Modal

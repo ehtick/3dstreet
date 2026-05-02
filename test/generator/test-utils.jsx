@@ -2,6 +2,7 @@
  * Test utilities for generator components
  * Provides wrappers and helpers for rendering components with required providers
  */
+/* eslint-disable react/prop-types -- internal test scaffolding, not production */
 import { render } from '@testing-library/react';
 import { createContext, useContext } from 'react';
 
@@ -47,8 +48,7 @@ export const createMockUser = (overrides = {}) => ({
   email: 'test@example.com',
   displayName: 'Test User',
   isPro: false,
-  isProSubscription: false,
-  isProDomain: false,
+  isProTeam: false,
   teamDomain: null,
   getIdToken: () => Promise.resolve('mock-token'),
   ...overrides

@@ -1,20 +1,58 @@
 /**
- * Mount Purchase Modal - Renders React purchase modal and handles events
+ * Mount the shared UpgradeModal for the generator.
+ * Generator-specific bits (token-bump verification, generator store hookup)
+ * are wired here; the modal UI itself lives in @shared/components/UpgradeModal.
  */
-
+import { useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AuthProvider } from '../editor/contexts';
-import PurchaseModal from './components/PurchaseModal.jsx';
+import { AuthProvider, useAuthContext } from '../editor/contexts';
+import UpgradeModal from '@shared/components/UpgradeModal';
+import { getTokenProfile } from '@shared/utils/tokens';
 import useImageGenStore from './store.js';
 
-/**
- * Mount the Purchase Modal component
- * Creates a portal div if it doesn't exist
- */
-export const mountPurchaseModal = () => {
-  // Create or get the modal root element
-  let modalRoot = document.getElementById('purchase-modal-root');
+const GeneratorUpgradeModal = () => {
+  const { modal, setModal } = useImageGenStore();
+  const { currentUser, tokenProfile } = useAuthContext();
+  // Snapshot of genToken at the moment the user clicked subscribe; the
+  // webhook will bump this once payment lands, which is what we poll for.
+  const initialTokenCount = useRef(0);
 
+  const handleCheckoutStart = useCallback(() => {
+    initialTokenCount.current = tokenProfile?.genToken || 0;
+  }, [tokenProfile]);
+
+  const verifyPurchase = useCallback(async () => {
+    if (!currentUser?.uid) return false;
+    const fresh = await getTokenProfile(currentUser.uid);
+    const current = fresh?.genToken || 0;
+    if (current > initialTokenCount.current) {
+      // Refresh other components (TokenDisplay, etc.).
+      window.dispatchEvent(new Event('tokenCountChanged'));
+      return true;
+    }
+    return false;
+  }, [currentUser]);
+
+  return (
+    <UpgradeModal
+      isOpen={modal === 'purchase'}
+      onClose={() => setModal(null)}
+      source="generator"
+      trigger="gen_token_limit"
+      onCheckoutStart={handleCheckoutStart}
+      // rememberPrevious=true so closing/completing sign-in lands the user
+      // back in the upgrade modal where they started.
+      onSignIn={() => setModal('signin', true)}
+      verifyPurchase={verifyPurchase}
+      successTitle="Welcome to Pro!"
+      successMessage="Your tokens are ready — happy generating."
+      successCta="Start Generating"
+    />
+  );
+};
+
+export const mountPurchaseModal = () => {
+  let modalRoot = document.getElementById('purchase-modal-root');
   if (!modalRoot) {
     modalRoot = document.createElement('div');
     modalRoot.id = 'purchase-modal-root';
@@ -24,12 +62,11 @@ export const mountPurchaseModal = () => {
   const root = createRoot(modalRoot);
   root.render(
     <AuthProvider>
-      <PurchaseModal />
+      <GeneratorUpgradeModal />
     </AuthProvider>
   );
 
-  // Listen for custom events to open the modal
-  window.addEventListener('openPurchaseModal', (event) => {
+  window.addEventListener('openPurchaseModal', () => {
     useImageGenStore.getState().setModal('purchase');
   });
 };

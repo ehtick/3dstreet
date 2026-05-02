@@ -127,3 +127,15 @@ export const ImageSurface = {
     surface: 'image'
   }
 };
+
+// Surface variant — geospatial lookup gate. Triggered from GeoModal save
+// when a free user has used all their geoTokens, and from the inline
+// "Upgrade to Pro for unlimited geo lookups" button in GeoSidebar.
+export const GeoSurface = {
+  args: {
+    isOpen: true,
+    source: 'geo',
+    trigger: 'geo_paywall',
+    surface: 'geo'
+  }
+};

@@ -60,6 +60,22 @@ const SparklesIcon = () => (
   </svg>
 );
 
+const MapPinIcon = () => (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
 export const PAYWALL_SURFACES = {
   // GLB + AR-Ready GLB both flow through postCheckout='export'.
   // AR-Ready is on a deprecation path, so a single shared surface is fine.
@@ -99,6 +115,28 @@ export const PAYWALL_SURFACES = {
       'GLB glTF & AR Ready GLB export',
       'Unlimited geospatial maps & location changes',
       'Import custom 3D models & SVG / glTF files'
+    ]
+  },
+
+  // Geospatial lookups — fired by GeoModal.onSaveHandler when a free user
+  // has burned through their initial geoToken allocation, and by the inline
+  // "Upgrade to Pro for unlimited geo lookups" button in GeoSidebar
+  // (rendered when geoToken === 0). Pro grants unlimited location changes;
+  // the headline frames the uplift rather than "out of tokens" so both
+  // trigger sites read the same way.
+  geo: {
+    icon: <MapPinIcon />,
+    title: 'Geospatial',
+    subtitle: 'Real-world location · 3D map context',
+    headline: 'Unlimited geospatial lookups',
+    description:
+      'Place your scene on a real-world map with 3D context of the surrounding environment. Pro unlocks unlimited location changes.',
+    features: [
+      'Unlimited geospatial maps & location changes',
+      'Download JPEG snapshots without watermark',
+      'GLB glTF & AR Ready GLB export',
+      'Import custom 3D models & SVG / glTF files',
+      '100 AI generation tokens / month'
     ]
   },
 

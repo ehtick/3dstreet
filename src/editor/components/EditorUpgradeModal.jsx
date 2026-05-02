@@ -70,11 +70,18 @@ const EditorUpgradeModal = () => {
   };
   // Soft-decline path. Runs the trigger site's original action (e.g. the
   // watermarked download) so users only need one click to continue free.
-  const onSecondaryCta = () => {
-    pendingPostCheckoutAction?.();
-    setPendingPostCheckoutAction(null);
-    returnToPreviousModal();
-  };
+  // Only wired up when a trigger site queued a pendingPostCheckoutAction —
+  // pure upsell triggers (e.g. the inline "Upgrade to Pro to hide watermark"
+  // button) leave it null, which suppresses the secondary CTA in the modal
+  // since "Download now with watermark" makes no sense without a download
+  // intent.
+  const onSecondaryCta = pendingPostCheckoutAction
+    ? () => {
+        pendingPostCheckoutAction();
+        setPendingPostCheckoutAction(null);
+        returnToPreviousModal();
+      }
+    : undefined;
 
   return (
     <UpgradeModal

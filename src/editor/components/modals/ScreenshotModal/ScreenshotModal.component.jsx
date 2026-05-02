@@ -254,6 +254,17 @@ function ScreenshotModal() {
       return;
     }
 
+    // Pre-flight token check for non-Pro users. Mirrors the 4x path so 1x
+    // users hit the paywall up front instead of round-tripping to the cloud
+    // function and surfacing a toast on rejection. Pro/ProTeam users skip
+    // this gate — canUseImageFeature below handles their monthly auto-refill.
+    const isPro = currentUser?.isPro || currentUser?.isProTeam;
+    const tokenCost = getTokenCost(targetModel);
+    if (!isPro && (tokenProfile?.genToken ?? 0) < tokenCost) {
+      startCheckout('image');
+      return;
+    }
+
     // Clear any previous error state for this model
     setRenderErrors((prev) => {
       const next = { ...prev };
@@ -272,7 +283,8 @@ function ScreenshotModal() {
       setElapsedTime(0);
     }
 
-    // Check if user can use image feature (after setting states so UI shows "Sending...")
+    // Pro/ProTeam path: triggers the monthly token auto-refill side-effect.
+    // Non-Pro users were already gated above against the selected model's cost.
     const canUse = await canUseImageFeature(currentUser);
     if (!canUse) {
       // Reset states before returning
@@ -512,14 +524,17 @@ function ScreenshotModal() {
       ? modelKeys.reduce((sum, key) => sum + getTokenCost(key), 0)
       : getTokenCost(selectedModel) * 4;
 
-    // Check if user has enough tokens for 4x render
+    // Check if user has enough tokens for 4x render. Non-Pro users see the
+    // paywall (custom 'image' surface communicates the gap); Pro/ProTeam users
+    // who've exhausted their monthly allowance get a toast since there's no
+    // further upsell to offer.
     if (!tokenProfile || tokenProfile.genToken < totalTokenCost) {
-      STREET.notify.errorMessage(
-        `You need at least ${totalTokenCost} tokens for 4x render`
-      );
-      // Only prompt checkout for non-pro users
       if (!currentUser?.isPro && !currentUser?.isProTeam) {
         startCheckout('image');
+      } else {
+        STREET.notify.errorMessage(
+          `You need at least ${totalTokenCost} tokens for 4x render`
+        );
       }
       return;
     }

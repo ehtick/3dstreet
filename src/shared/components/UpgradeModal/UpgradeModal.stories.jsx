@@ -115,3 +115,15 @@ export const WatermarkSurface = {
     surface: 'watermark'
   }
 };
+
+// Surface variant — AI generation token gate from the screenshot modal.
+// Triggered when a non-Pro user lacks enough genTokens for the selected
+// model (1x) or for the full 4x batch.
+export const ImageSurface = {
+  args: {
+    isOpen: true,
+    source: 'image',
+    trigger: 'image_paywall',
+    surface: 'image'
+  }
+};

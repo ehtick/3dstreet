@@ -43,6 +43,23 @@ const ImageIcon = () => (
   </svg>
 );
 
+const SparklesIcon = () => (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" />
+    <path d="M19 14l.8 1.9L21.5 16.7l-1.7.8L19 19.4l-.8-1.9L16.5 16.7l1.7-.8L19 14z" />
+    <path d="M5 16l.6 1.4L7 18l-1.4.6L5 20l-.6-1.4L3 18l1.4-.6L5 16z" />
+  </svg>
+);
+
 export const PAYWALL_SURFACES = {
   // GLB + AR-Ready GLB both flow through postCheckout='export'.
   // AR-Ready is on a deprecation path, so a single shared surface is fine.
@@ -62,9 +79,31 @@ export const PAYWALL_SURFACES = {
     ]
   },
 
+  // AI-render generation tokens — fired from the Screenshot modal when a
+  // non-Pro user lacks enough genTokens for the selected model (1x) or for
+  // the full 4x batch. Same surface for both modes; the headline frames the
+  // gap as "more tokens" rather than "out of tokens" since users may have
+  // some balance but not enough for the chosen model.
+  // The plan-specific up-front grant (100 monthly / 840 yearly) lives on the
+  // billing toggle row in UpgradeModal — it tracks the user's plan choice.
+  image: {
+    icon: <SparklesIcon />,
+    title: 'AI Render',
+    subtitle: 'Generation tokens · AI image rendering',
+    headline: 'More AI generation tokens',
+    description:
+      'AI renders use generation tokens. Pro upgrade delivers tokens up front so you can keep generating immediately across every available AI model.',
+    features: [
+      '100 AI generation tokens / month',
+      'Download JPEG snapshots without watermark',
+      'GLB glTF & AR Ready GLB export',
+      'Unlimited geospatial maps & location changes',
+      'Import custom 3D models & SVG / glTF files'
+    ]
+  },
+
   // Watermark removal — fired by the inline upsell button and by the
-  // first-of-session download interceptor in ScreenshotModal. AI-render
-  // token gates use postCheckout='image' and stay on the generic header.
+  // first-of-session download interceptor in ScreenshotModal.
   watermark: {
     icon: <ImageIcon />,
     title: 'Snapshot',
@@ -81,7 +120,9 @@ export const PAYWALL_SURFACES = {
     ],
     // Soft-decline path. Picking this dismisses the paywall and runs the
     // pending action (the watermarked download) without leaving Pro friction.
-    secondaryCtaLabel: 'Continue free with watermark'
+    // Imperative label pairs with the primary "Go Pro" CTA — "free" is
+    // implied by the watermark mention so we don't repeat it.
+    secondaryCtaLabel: 'Download now with watermark'
   }
 };
 

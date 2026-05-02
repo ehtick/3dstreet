@@ -285,12 +285,25 @@ const UpgradeModal = ({
             <span className={styles.priceLarge}>
               ${billingCycle === 'yearly' ? '7' : '10'}
             </span>
-            <span className={styles.pricePer}>/month</span>
-            {billingCycle === 'yearly' && (
-              <div className={styles.priceSubtext}>
-                if billed yearly, $84/year
-              </div>
-            )}
+            {/* /month sits superscript-style next to the price; the cycle
+                detail ("billed monthly" / "billed yearly, $84/year") stacks
+                directly under it. Always present so toggling cycles doesn't
+                shift the layout. */}
+            <div className={styles.priceUnit}>
+              <span className={styles.pricePer}>/month</span>
+              <span className={styles.priceSubtext}>
+                {billingCycle === 'yearly'
+                  ? 'billed yearly, $84/year'
+                  : 'billed monthly'}
+              </span>
+            </div>
+            {/* Token grant amounts match the server-side allotment in
+                public/functions/index.js (isAnnualPlan ? 840 : 100). Keep
+                in sync if those change. */}
+            <div className={styles.priceTokenGrant}>
+              Includes {billingCycle === 'yearly' ? '840' : '100'} AI generation
+              tokens, delivered up front
+            </div>
           </div>
 
           <button

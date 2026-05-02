@@ -244,7 +244,7 @@ $green: #10b981;
 .priceDisplay {
   margin-bottom: 20px;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 6px;
   flex-wrap: wrap;
 }
@@ -256,15 +256,38 @@ $green: #10b981;
   line-height: 1;
 }
 
+// Stacks /month (superscript-style) above the billing-cycle detail line.
+// padding-top nudges the unit column so /month aligns near the cap height
+// of the large price digits rather than sitting at the very top edge.
+.priceUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-top: 4px;
+}
+
 .pricePer {
   font-size: 15px;
   color: #aaa;
+  line-height: 1;
 }
 
 .priceSubtext {
-  flex-basis: 100%;
   font-size: 13px;
   color: #777;
+  line-height: 1.2;
+}
+
+// Up-front token grant note — sits under the price display and tracks the
+// active billing cycle (100 monthly / 840 yearly). Soft purple to tie into
+// the brand and signal "you get this immediately" without overpowering the
+// price.
+.priceTokenGrant {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: #c4b5fd;
+  font-weight: 500;
   margin-top: 4px;
 }
 

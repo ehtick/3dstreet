@@ -83,6 +83,18 @@ const EditorUpgradeModal = () => {
       }
     : undefined;
 
+  // Fired when the modal opens (or returns from sign-in) and finds the user
+  // is already Pro. The paywall-gated action (e.g. GLB export) was dropped
+  // when they hit the paywall, so we can't auto-resume it — just dismiss
+  // the modal and toast a hint to retry. Match the close routing so a
+  // previous modal (geo, screenshot) is restored if there was one.
+  const onAlreadyPro = () => {
+    STREET.notify.successMessage(
+      "You're already a Pro member — try that action again to continue."
+    );
+    returnToPreviousModal();
+  };
+
   return (
     <UpgradeModal
       isOpen={modal === 'payment'}
@@ -95,6 +107,7 @@ const EditorUpgradeModal = () => {
       // back in the upgrade modal where they started.
       onSignIn={() => setModal('signin', true)}
       onSecondaryCta={onSecondaryCta}
+      onAlreadyPro={onAlreadyPro}
       onSuccess={onSuccess}
     />
   );

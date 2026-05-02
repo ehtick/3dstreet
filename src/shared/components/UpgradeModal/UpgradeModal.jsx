@@ -83,6 +83,7 @@ const UpgradeModal = ({
   trigger = 'manual',
   onCheckoutStart,
   onSignIn,
+  onAlreadyPro,
   verifyPurchase,
   onSuccess,
   successTitle = 'Welcome to Pro!',
@@ -118,6 +119,34 @@ const UpgradeModal = ({
     setSelectedPlan(null);
   };
 
+  // Short-circuit if the auth claim already says they're Pro. Covers the
+  // post-login race: an anonymous user paywall-triggers, signs in, and the
+  // sign-in flow returns them to this modal. By the time AuthContext
+  // enriches currentUser with isPro=true, we should bail out — the Stripe
+  // precheck below also catches subscribers, but Pro can be granted via
+  // team membership / admin override (no Stripe sub), so isPro is the
+  // broader signal. Same modalState=='pricing' guard as the precheck so we
+  // don't yank the user out of the post-purchase success view.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modalState !== 'pricing') return;
+    if (!currentUser?.isPro) return;
+    posthog.capture('upgrade_modal_skipped_already_pro', { source, trigger });
+    if (onAlreadyPro) {
+      onAlreadyPro();
+    } else {
+      handleClose();
+    }
+  }, [
+    isOpen,
+    modalState,
+    currentUser?.isPro,
+    source,
+    trigger,
+    onAlreadyPro,
+    handleClose
+  ]);
+
   // Pre-check for an existing subscription so we can route to billing portal
   // before showing pricing — avoids duplicate purchases. Fires
   // existing_subscription_detected only when the precheck finds one, which
@@ -131,6 +160,9 @@ const UpgradeModal = ({
   useEffect(() => {
     if (!isOpen || !currentUser) return;
     if (modalState !== 'pricing') return;
+    // Already-Pro users are handled by the effect above; skip the Stripe
+    // precheck so we don't race the close.
+    if (currentUser.isPro) return;
 
     const checkSubscriptions = async () => {
       try {
@@ -396,6 +428,7 @@ UpgradeModal.propTypes = {
   trigger: PropTypes.string,
   onCheckoutStart: PropTypes.func,
   onSignIn: PropTypes.func,
+  onAlreadyPro: PropTypes.func,
   verifyPurchase: PropTypes.func,
   onSuccess: PropTypes.func,
   successTitle: PropTypes.string,

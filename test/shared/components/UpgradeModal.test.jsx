@@ -239,6 +239,49 @@ describe('UpgradeModal', () => {
     });
   });
 
+  describe('Already-Pro short-circuit', () => {
+    // Covers the post-login race where an anonymous user hits the paywall,
+    // signs in, and turns out to already be Pro (claim granted via Stripe,
+    // team membership, or admin override). We want the modal to bail out
+    // rather than re-pitching pricing.
+    it('fires onAlreadyPro when currentUser.isPro is true', async () => {
+      const onAlreadyPro = vi.fn();
+      renderModal(
+        { onAlreadyPro },
+        {
+          currentUser: {
+            uid: 'pro-user',
+            email: 'pro@example.com',
+            isPro: true,
+            getIdToken: () => Promise.resolve('mock-token')
+          }
+        }
+      );
+
+      await waitFor(() => {
+        expect(onAlreadyPro).toHaveBeenCalled();
+      });
+    });
+
+    it('falls back to onClose when onAlreadyPro is not provided', async () => {
+      const { onClose } = renderModal(
+        {},
+        {
+          currentUser: {
+            uid: 'pro-user',
+            email: 'pro@example.com',
+            isPro: true,
+            getIdToken: () => Promise.resolve('mock-token')
+          }
+        }
+      );
+
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalled();
+      });
+    });
+  });
+
   describe('Close behavior', () => {
     it('calls onClose when close button is clicked', async () => {
       const user = userEvent.setup();

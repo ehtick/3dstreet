@@ -37,6 +37,10 @@ function ScreenshotModal() {
     (state) => state.setPendingPostCheckoutAction
   );
   const { currentUser, tokenProfile, refreshTokenProfile } = useAuthContext();
+  // Pro entitlement for feature gating — true for both subscription Pro and
+  // ProTeam (team membership). Analytics fields elsewhere intentionally use
+  // currentUser.isPro alone to distinguish the two.
+  const isPro = currentUser?.isPro || currentUser?.isProTeam;
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [originalImageUrl, setOriginalImageUrl] = useState(null);
   const [aiImageUrl, setAiImageUrl] = useState(null);
@@ -173,9 +177,6 @@ function ScreenshotModal() {
     // per page load before their first download. The "Continue free with
     // watermark" CTA reuses pendingPostCheckoutAction to run this exact
     // download in one click. Subsequent downloads bypass the modal.
-    // ProTeam members are Pro via team membership, not their own subscription —
-    // exempt them too so they don't get pitched an upgrade they already have.
-    const isPro = currentUser?.isPro || currentUser?.isProTeam;
     if (!isPro && !watermarkUpsellShown) {
       setWatermarkUpsellShown(true);
       setPendingPostCheckoutAction(() =>
@@ -261,7 +262,6 @@ function ScreenshotModal() {
     // users hit the paywall up front instead of round-tripping to the cloud
     // function and surfacing a toast on rejection. Pro/ProTeam users skip
     // this gate — canUseImageFeature below handles their monthly auto-refill.
-    const isPro = currentUser?.isPro || currentUser?.isProTeam;
     const tokenCost = getTokenCost(targetModel);
     if (!isPro && (tokenProfile?.genToken ?? 0) < tokenCost) {
       startCheckout('image');
@@ -320,7 +320,6 @@ function ScreenshotModal() {
       }
 
       // Only allow custom prompts for Pro users (subscription or team).
-      const isPro = currentUser?.isPro || currentUser?.isProTeam;
       const aiPrompt =
         (isPro && customPrompt.trim()) || selectedModelConfig.prompt;
 
@@ -532,7 +531,7 @@ function ScreenshotModal() {
     // who've exhausted their monthly allowance get a toast since there's no
     // further upsell to offer.
     if (!tokenProfile || tokenProfile.genToken < totalTokenCost) {
-      if (!currentUser?.isPro && !currentUser?.isProTeam) {
+      if (!isPro) {
         startCheckout('image');
       } else {
         STREET.notify.errorMessage(
@@ -639,9 +638,6 @@ function ScreenshotModal() {
 
   useEffect(() => {
     if (modal === 'screenshot') {
-      // ProTeam members are Pro via team membership — exempt them from the
-      // watermark/logo burn-in alongside subscription Pro users.
-      const isPro = currentUser?.isPro || currentUser?.isProTeam;
       takeScreenshotWithOptions({
         type: 'img',
         showLogo: !isPro,
@@ -709,7 +705,7 @@ function ScreenshotModal() {
         }
       });
     }
-  }, [modal, currentUser?.isPro, currentUser?.isProTeam, currentUser?.uid]);
+  }, [modal, isPro, currentUser?.uid]);
 
   return (
     <Modal
@@ -796,7 +792,7 @@ function ScreenshotModal() {
             )}
 
             {/* Custom Prompt Input - Only show for Pro users (subscription or team) */}
-            {(currentUser?.isPro || currentUser?.isProTeam) && (
+            {isPro && (
               <div className={styles.promptSection}>
                 <label htmlFor="custom-prompt" className={styles.promptLabel}>
                   Custom Prompt (optional):
@@ -963,7 +959,7 @@ function ScreenshotModal() {
             </div>
           )}
 
-          {!currentUser?.isPro && !currentUser?.isProTeam && (
+          {!isPro && (
             <div className={styles.upsellSection}>
               <Button
                 variant="toolbtn"

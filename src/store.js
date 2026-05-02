@@ -146,7 +146,6 @@ const useStore = create(
           // building a multi-level stack.
           const currentModal = useStore.getState().modal;
           posthog.capture('modal_opened', { modal: 'payment' });
-          posthog.capture('start_checkout');
           set({
             modal: 'payment',
             postCheckout,

@@ -119,9 +119,10 @@ const UpgradeModal = ({
   };
 
   // Pre-check for an existing subscription so we can route to billing portal
-  // before showing pricing — avoids duplicate purchases. Only fire the
-  // pricing_page_viewed event once we confirm the user actually sees the
-  // pricing UI (otherwise has-subscription users skew the funnel).
+  // before showing pricing — avoids duplicate purchases. Fires
+  // existing_subscription_detected only when the precheck finds one, which
+  // lets the funnel separate "routed away as existing subscriber" from
+  // "saw pricing, didn't click".
   //
   // Guard on modalState === 'pricing': after a successful purchase the
   // webhook flips isPro on currentUser, which retriggers this effect. Without
@@ -139,16 +140,16 @@ const UpgradeModal = ({
         );
         const { data } = await checkActiveSubscriptions();
         if (data.hasActiveSubscription) {
+          posthog.capture('existing_subscription_detected', {
+            source,
+            trigger
+          });
           setSubscriptionInfo(data);
           setModalState('has-subscription');
-          return;
         }
       } catch (error) {
         console.error('Error checking active subscriptions:', error);
-        // Fall through to firing the event — better to over-count by a
-        // failed check than to silently drop valid pricing impressions.
       }
-      posthog.capture('pricing_page_viewed', { source, trigger });
     };
 
     checkSubscriptions();

@@ -154,8 +154,10 @@ const EmbeddedCheckout = ({
 
           if (!formLoadedRef.current) {
             formLoadedRef.current = true;
-            // Inline-load timing event — measures time from mount to form ready.
-            posthog.capture('checkout_form_loaded', { plan, source, mode });
+            // Fires when our backend returns clientSecret — i.e. the Stripe
+            // session exists and Stripe.js is about to mount the iframe.
+            // Not the same as iframe-ready (which we don't track).
+            posthog.capture('checkout_session_created', { plan, source, mode });
           }
 
           return data.clientSecret;

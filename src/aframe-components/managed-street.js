@@ -76,8 +76,12 @@ AFRAME.registerComponent('managed-street', {
       this.el.setAttribute('street-label', '');
     }
 
-    // Watch DOM child mutations to attach/detach segment-changed listeners
-    // and notify siblings (street-align, street-label, street-ground).
+    // segment-changed bubbles, so a single listener on managed-street
+    // catches every descendant segment without per-segment bookkeeping.
+    this.el.addEventListener('segment-changed', this.onSegmentChanged);
+
+    // Watch DOM child mutations to notify siblings (street-align,
+    // street-label, street-ground) when segments are added or removed.
     this.observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type !== 'childList') return;
@@ -87,14 +91,6 @@ AFRAME.registerComponent('managed-street', {
         const removedSegments = Array.from(mutation.removedNodes).filter(
           (node) => node.hasAttribute && node.hasAttribute('street-segment')
         );
-
-        addedSegments.forEach((segment) => {
-          segment.addEventListener('segment-changed', this.onSegmentChanged);
-        });
-        removedSegments.forEach((segment) => {
-          segment.removeEventListener('segment-changed', this.onSegmentChanged);
-        });
-
         if (addedSegments.length || removedSegments.length) {
           this.el.emit('segments-changed', {
             changeType: 'structure',
@@ -105,15 +101,6 @@ AFRAME.registerComponent('managed-street', {
       });
     });
     this.observer.observe(this.el, { childList: true });
-
-    // Attach to any segments already in the DOM at init time. Deferred to
-    // a microtask so children that A-Frame mounts before the parent's init
-    // are picked up.
-    setTimeout(() => {
-      this.el.querySelectorAll('[street-segment]').forEach((segment) => {
-        segment.addEventListener('segment-changed', this.onSegmentChanged);
-      });
-    }, 0);
   },
   /**
    * Inserts a new street segment at the specified index
@@ -619,7 +606,6 @@ AFRAME.registerComponent('managed-street', {
   },
   clearManagedEntities: function () {
     this.managedEntities.forEach((segment) => {
-      segment.removeEventListener('segment-changed', this.onSegmentChanged);
       if (segment.parentNode) segment.remove();
     });
     this.managedEntities.length = 0;
@@ -628,6 +614,7 @@ AFRAME.registerComponent('managed-street', {
     if (this.observer) {
       this.observer.disconnect();
     }
+    this.el.removeEventListener('segment-changed', this.onSegmentChanged);
     this.clearManagedEntities();
   }
 });

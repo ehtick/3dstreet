@@ -94,3 +94,48 @@ export const Closed = {
     isOpen: false
   }
 };
+
+// Surface variant — mimics the GLB export paywall: surface card header,
+// "Export requires Pro" headline, and surface-specific feature list.
+export const ExportSurface = {
+  args: {
+    isOpen: true,
+    source: 'export',
+    trigger: 'export_paywall',
+    surface: 'export'
+  }
+};
+
+// Surface variant — watermark removal flow from the screenshot modal.
+export const WatermarkSurface = {
+  args: {
+    isOpen: true,
+    source: 'watermark',
+    trigger: 'watermark_paywall',
+    surface: 'watermark'
+  }
+};
+
+// Surface variant — AI generation token gate from the screenshot modal.
+// Triggered when a non-Pro user lacks enough genTokens for the selected
+// model (1x) or for the full 4x batch.
+export const ImageSurface = {
+  args: {
+    isOpen: true,
+    source: 'image',
+    trigger: 'image_paywall',
+    surface: 'image'
+  }
+};
+
+// Surface variant — geospatial lookup gate. Triggered from GeoModal save
+// when a free user has used all their geoTokens, and from the inline
+// "Upgrade to Pro for unlimited geo lookups" button in GeoSidebar.
+export const GeoSurface = {
+  args: {
+    isOpen: true,
+    source: 'geo',
+    trigger: 'geo_paywall',
+    surface: 'geo'
+  }
+};

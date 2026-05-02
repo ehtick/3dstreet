@@ -153,6 +153,19 @@ const useStore = create(
           });
         },
         postCheckout: null,
+        // In-memory session flag — true after the watermark paywall has been
+        // shown once this page load. Resets on reload. Throttles the
+        // download-time upsell so non-Pro users only see it once per sitting.
+        watermarkUpsellShown: false,
+        setWatermarkUpsellShown: (value) =>
+          set({ watermarkUpsellShown: value }),
+        // Optional callback set by the trigger site before opening the paywall.
+        // Invoked by the modal's secondary CTA (e.g. "Continue free with
+        // watermark") so the user's original action — like the watermarked
+        // download — runs after a soft decline. Cleared on any modal exit.
+        pendingPostCheckoutAction: null,
+        setPendingPostCheckoutAction: (fn) =>
+          set({ pendingPostCheckoutAction: fn }),
         // GeoJSON import data for pre-filling the Geo Modal
         geojsonImportData: null,
         setGeojsonImportData: (data) => set({ geojsonImportData: data }),

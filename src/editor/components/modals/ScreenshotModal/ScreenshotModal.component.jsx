@@ -173,7 +173,10 @@ function ScreenshotModal() {
     // per page load before their first download. The "Continue free with
     // watermark" CTA reuses pendingPostCheckoutAction to run this exact
     // download in one click. Subsequent downloads bypass the modal.
-    if (!currentUser?.isPro && !watermarkUpsellShown) {
+    // ProTeam members are Pro via team membership, not their own subscription —
+    // exempt them too so they don't get pitched an upgrade they already have.
+    const isPro = currentUser?.isPro || currentUser?.isProTeam;
+    if (!isPro && !watermarkUpsellShown) {
       setWatermarkUpsellShown(true);
       setPendingPostCheckoutAction(() =>
         performDownloadScreenshot(targetImageUrl, modelKey)
@@ -316,10 +319,10 @@ function ScreenshotModal() {
         throw new Error(`Model configuration not found for: ${baseModelKey}`);
       }
 
-      // Only allow custom prompts for Pro users
+      // Only allow custom prompts for Pro users (subscription or team).
+      const isPro = currentUser?.isPro || currentUser?.isProTeam;
       const aiPrompt =
-        (currentUser?.isPro && customPrompt.trim()) ||
-        selectedModelConfig.prompt;
+        (isPro && customPrompt.trim()) || selectedModelConfig.prompt;
 
       const screentockImgElement = document.getElementById(
         'screentock-destination'
@@ -636,7 +639,9 @@ function ScreenshotModal() {
 
   useEffect(() => {
     if (modal === 'screenshot') {
-      const isPro = currentUser?.isPro;
+      // ProTeam members are Pro via team membership — exempt them from the
+      // watermark/logo burn-in alongside subscription Pro users.
+      const isPro = currentUser?.isPro || currentUser?.isProTeam;
       takeScreenshotWithOptions({
         type: 'img',
         showLogo: !isPro,
@@ -704,7 +709,7 @@ function ScreenshotModal() {
         }
       });
     }
-  }, [modal, currentUser?.isPro, currentUser?.uid]);
+  }, [modal, currentUser?.isPro, currentUser?.isProTeam, currentUser?.uid]);
 
   return (
     <Modal
@@ -790,8 +795,8 @@ function ScreenshotModal() {
               </div>
             )}
 
-            {/* Custom Prompt Input - Only show for Pro users */}
-            {currentUser?.isPro && (
+            {/* Custom Prompt Input - Only show for Pro users (subscription or team) */}
+            {(currentUser?.isPro || currentUser?.isProTeam) && (
               <div className={styles.promptSection}>
                 <label htmlFor="custom-prompt" className={styles.promptLabel}>
                   Custom Prompt (optional):
@@ -958,7 +963,7 @@ function ScreenshotModal() {
             </div>
           )}
 
-          {!currentUser?.isPro && (
+          {!currentUser?.isPro && !currentUser?.isProTeam && (
             <div className={styles.upsellSection}>
               <Button
                 variant="toolbtn"

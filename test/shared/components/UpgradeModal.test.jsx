@@ -93,9 +93,7 @@ describe('UpgradeModal', () => {
     it('defaults to yearly billing with $7/month and yearly subtext', () => {
       renderModal();
       expect(screen.getByText('$7')).toBeInTheDocument();
-      expect(
-        screen.getByText(/if billed yearly, \$84\/year/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/billed yearly, \$84\/year/)).toBeInTheDocument();
     });
 
     it('switches to monthly when Monthly toggle is clicked', async () => {
@@ -105,7 +103,30 @@ describe('UpgradeModal', () => {
       await user.click(screen.getByRole('tab', { name: 'Monthly' }));
 
       expect(screen.getByText('$10')).toBeInTheDocument();
-      expect(screen.queryByText(/if billed yearly/)).not.toBeInTheDocument();
+      // Cycle detail is always rendered (no row reflow on toggle); only the
+      // text swaps between billed-monthly and billed-yearly variants.
+      expect(screen.queryByText(/billed yearly/)).not.toBeInTheDocument();
+      expect(screen.getByText('billed monthly')).toBeInTheDocument();
+    });
+
+    it('shows up-front token grant matching the billing cycle', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      // Yearly default → 840 tokens up front.
+      expect(
+        screen.getByText(
+          /Includes 840 AI[\s\S]+generation tokens, delivered up front/
+        )
+      ).toBeInTheDocument();
+
+      // Switching to monthly swaps to 100 without reflowing the layout.
+      await user.click(screen.getByRole('tab', { name: 'Monthly' }));
+      expect(
+        screen.getByText(
+          /Includes 100 AI[\s\S]+generation tokens, delivered up front/
+        )
+      ).toBeInTheDocument();
     });
 
     it('shows Save 30% pill on the yearly toggle', () => {

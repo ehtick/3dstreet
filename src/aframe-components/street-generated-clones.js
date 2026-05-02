@@ -123,10 +123,7 @@ AFRAME.registerComponent('street-generated-clones', {
   },
 
   update: function (oldData) {
-    // Always get the current width from the segment
-    this.width = this.el.getAttribute('street-segment')?.width || 0;
-
-    if (!this.length) {
+    if (!this.length || !this.width) {
       return;
     }
     // Early return if data is not yet initialized
@@ -280,7 +277,7 @@ AFRAME.registerComponent('street-generated-clones', {
     };
 
     // Use stored segment width to calculate justified X position
-    const segmentWidth = this.width || 0;
+    const segmentWidth = this.width;
 
     while (cumulativeZ > -this.length / 2) {
       const mixinId = models[modelIndex % models.length];

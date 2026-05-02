@@ -25,6 +25,7 @@ import { useAuthContext } from '@shared/contexts';
 import EmbeddedCheckout from '@shared/components/EmbeddedCheckout';
 import { openBillingPortal } from '@shared/utils/billing';
 import { getPaywallSurface } from './paywallSurfaces';
+import { PRICING, TOKEN_FEATURE_LINE } from './pricing';
 import styles from './UpgradeModal.module.scss';
 
 // Single source of truth for the Pro feature list — shown once, no duplication.
@@ -33,7 +34,7 @@ const PLAN_FEATURES = [
   'Unlimited geospatial maps & location changes',
   'HD renders, AR-ready glTF & video export',
   'Import custom 3D models & SVG / glTF files',
-  '100 AI generation tokens / month'
+  TOKEN_FEATURE_LINE
 ];
 
 const StarIcon = () => (
@@ -315,7 +316,7 @@ const UpgradeModal = ({
 
           <div className={styles.priceDisplay}>
             <span className={styles.priceLarge}>
-              ${billingCycle === 'yearly' ? '7' : '10'}
+              ${PRICING[billingCycle].pricePerMonth}
             </span>
             {/* /month sits superscript-style next to the price; the cycle
                 detail ("billed monthly" / "billed yearly, $84/year") stacks
@@ -324,17 +325,12 @@ const UpgradeModal = ({
             <div className={styles.priceUnit}>
               <span className={styles.pricePer}>/month</span>
               <span className={styles.priceSubtext}>
-                {billingCycle === 'yearly'
-                  ? 'billed yearly, $84/year'
-                  : 'billed monthly'}
+                {PRICING[billingCycle].cycleDetail}
               </span>
             </div>
-            {/* Token grant amounts match the server-side allotment in
-                public/functions/index.js (isAnnualPlan ? 840 : 100). Keep
-                in sync if those change. */}
             <div className={styles.priceTokenGrant}>
-              Includes {billingCycle === 'yearly' ? '840' : '100'} AI generation
-              tokens, delivered up front
+              Includes {PRICING[billingCycle].tokens} AI generation tokens,
+              delivered up front
             </div>
           </div>
 

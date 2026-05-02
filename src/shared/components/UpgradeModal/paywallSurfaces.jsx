@@ -9,6 +9,8 @@
  * Omit entries to keep generic copy.
  */
 
+import { TOKEN_FEATURE_LINE } from './pricing';
+
 const CubeIcon = () => (
   <svg
     width="22"
@@ -91,7 +93,7 @@ export const PAYWALL_SURFACES = {
       'Download JPEG snapshots without watermark',
       'Unlimited geospatial maps & location changes',
       'Import custom 3D models & SVG / glTF files',
-      '100 AI generation tokens / month'
+      TOKEN_FEATURE_LINE
     ]
   },
 
@@ -110,7 +112,7 @@ export const PAYWALL_SURFACES = {
     description:
       'AI renders use generation tokens. Pro upgrade delivers tokens up front so you can keep generating immediately across every available AI model.',
     features: [
-      '100 AI generation tokens / month',
+      TOKEN_FEATURE_LINE,
       'Download JPEG snapshots without watermark',
       'GLB glTF & AR Ready GLB export',
       'Unlimited geospatial maps & location changes',
@@ -136,7 +138,7 @@ export const PAYWALL_SURFACES = {
       'Download JPEG snapshots without watermark',
       'GLB glTF & AR Ready GLB export',
       'Import custom 3D models & SVG / glTF files',
-      '100 AI generation tokens / month'
+      TOKEN_FEATURE_LINE
     ]
   },
 
@@ -154,7 +156,7 @@ export const PAYWALL_SURFACES = {
       'GLB glTF & AR Ready GLB export',
       'Unlimited geospatial maps & location changes',
       'Import custom 3D models & SVG / glTF files',
-      '100 AI generation tokens / month'
+      TOKEN_FEATURE_LINE
     ],
     // Soft-decline path. Picking this dismisses the paywall and runs the
     // pending action (the watermarked download) without leaving Pro friction.

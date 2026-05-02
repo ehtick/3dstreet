@@ -13,12 +13,20 @@ AFRAME.registerComponent('street-generated-rail', {
   init: function () {
     this.createdEntities = [];
     this.length = this.el.getAttribute('street-segment')?.length;
-    this.el.addEventListener('segment-length-changed', (event) => {
+    this.onSegmentLengthChanged = (event) => {
       this.length = event.detail.newLength;
       this.update();
-    });
+    };
+    this.el.addEventListener(
+      'segment-length-changed',
+      this.onSegmentLengthChanged
+    );
   },
   remove: function () {
+    this.el.removeEventListener(
+      'segment-length-changed',
+      this.onSegmentLengthChanged
+    );
     this.createdEntities.forEach((entity) => entity.remove());
     this.createdEntities.length = 0; // Clear the array
   },

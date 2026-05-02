@@ -58,18 +58,33 @@ AFRAME.registerComponent('street-generated-clones', {
     this.length = this.el.getAttribute('street-segment')?.length;
     this.width = this.el.getAttribute('street-segment')?.width;
 
-    this.el.addEventListener('segment-length-changed', (event) => {
+    this.onSegmentLengthChanged = (event) => {
       this.length = event.detail.newLength;
       this.update();
-    });
-
-    this.el.addEventListener('segment-width-changed', (event) => {
+    };
+    this.onSegmentWidthChanged = (event) => {
       this.width = event.detail.newWidth;
       this.update();
-    });
+    };
+    this.el.addEventListener(
+      'segment-length-changed',
+      this.onSegmentLengthChanged
+    );
+    this.el.addEventListener(
+      'segment-width-changed',
+      this.onSegmentWidthChanged
+    );
   },
 
   remove: function () {
+    this.el.removeEventListener(
+      'segment-length-changed',
+      this.onSegmentLengthChanged
+    );
+    this.el.removeEventListener(
+      'segment-width-changed',
+      this.onSegmentWidthChanged
+    );
     this.createdEntities.forEach((entity) => entity.remove());
     this.createdEntities.length = 0; // Clear the array
   },

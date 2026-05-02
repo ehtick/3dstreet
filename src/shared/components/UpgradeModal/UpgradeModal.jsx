@@ -85,6 +85,7 @@ const UpgradeModal = ({
   surface: surfaceKey,
   onCheckoutStart,
   onSignIn,
+  onSecondaryCta,
   verifyPurchase,
   onSuccess,
   successTitle = 'Welcome to Pro!',
@@ -300,6 +301,16 @@ const UpgradeModal = ({
             Go Pro
           </button>
 
+          {surface?.secondaryCtaLabel && onSecondaryCta && (
+            <button
+              type="button"
+              className={styles.ctaButtonSecondary}
+              onClick={onSecondaryCta}
+            >
+              {surface.secondaryCtaLabel}
+            </button>
+          )}
+
           <p className={styles.footerNote}>Cancel anytime</p>
         </>
       ) : (
@@ -427,6 +438,7 @@ UpgradeModal.propTypes = {
   surface: PropTypes.string,
   onCheckoutStart: PropTypes.func,
   onSignIn: PropTypes.func,
+  onSecondaryCta: PropTypes.func,
   verifyPurchase: PropTypes.func,
   onSuccess: PropTypes.func,
   successTitle: PropTypes.string,

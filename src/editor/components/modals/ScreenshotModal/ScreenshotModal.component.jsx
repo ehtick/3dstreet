@@ -29,6 +29,13 @@ function ScreenshotModal() {
   const setModal = useStore((state) => state.setModal);
   const modal = useStore((state) => state.modal);
   const startCheckout = useStore((state) => state.startCheckout);
+  const watermarkUpsellShown = useStore((state) => state.watermarkUpsellShown);
+  const setWatermarkUpsellShown = useStore(
+    (state) => state.setWatermarkUpsellShown
+  );
+  const setPendingPostCheckoutAction = useStore(
+    (state) => state.setPendingPostCheckoutAction
+  );
   const { currentUser, tokenProfile, refreshTokenProfile } = useAuthContext();
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [originalImageUrl, setOriginalImageUrl] = useState(null);
@@ -127,14 +134,7 @@ function ScreenshotModal() {
     }, 600); // Match animation duration
   };
 
-  const handleDownloadScreenshot = async (imageUrl = null, modelKey = null) => {
-    const targetImageUrl =
-      imageUrl || (showOriginal ? originalImageUrl : aiImageUrl);
-    if (!targetImageUrl) {
-      STREET.notify.errorMessage('No image available to download');
-      return;
-    }
-
+  const performDownloadScreenshot = (targetImageUrl, modelKey) => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const isOriginal = targetImageUrl === originalImageUrl;
     const modelName = modelKey
@@ -159,6 +159,30 @@ function ScreenshotModal() {
       model: modelKey || selectedModel,
       render_mode: renderMode
     });
+  };
+
+  const handleDownloadScreenshot = async (imageUrl = null, modelKey = null) => {
+    const targetImageUrl =
+      imageUrl || (showOriginal ? originalImageUrl : aiImageUrl);
+    if (!targetImageUrl) {
+      STREET.notify.errorMessage('No image available to download');
+      return;
+    }
+
+    // First-of-session watermark paywall: non-Pro users see the upsell once
+    // per page load before their first download. The "Continue free with
+    // watermark" CTA reuses pendingPostCheckoutAction to run this exact
+    // download in one click. Subsequent downloads bypass the modal.
+    if (!currentUser?.isPro && !watermarkUpsellShown) {
+      setWatermarkUpsellShown(true);
+      setPendingPostCheckoutAction(() =>
+        performDownloadScreenshot(targetImageUrl, modelKey)
+      );
+      startCheckout('watermark');
+      return;
+    }
+
+    performDownloadScreenshot(targetImageUrl, modelKey);
   };
 
   const handleSetAsSceneThumbnail = async () => {

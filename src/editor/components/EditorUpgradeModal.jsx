@@ -18,6 +18,12 @@ const EditorUpgradeModal = () => {
   const returnToPreviousModal = useStore(
     (state) => state.returnToPreviousModal
   );
+  const pendingPostCheckoutAction = useStore(
+    (state) => state.pendingPostCheckoutAction
+  );
+  const setPendingPostCheckoutAction = useStore(
+    (state) => state.setPendingPostCheckoutAction
+  );
 
   // Force a token refresh and re-check Pro status. Returns true once the
   // webhook flips the plan claim — keeps polling open until then so a
@@ -50,8 +56,25 @@ const EditorUpgradeModal = () => {
   // back at the modal that triggered the paywall (e.g. geo). Falls through
   // to modal=null when there's no previous (manual /upgrade entry, or the
   // signin chain consumed previousModal).
-  const onClose = () => returnToPreviousModal();
-  const onSuccess = () => returnToPreviousModal();
+  // Any pendingPostCheckoutAction is dropped here: the user dismissed
+  // without choosing the soft-decline path, so we don't run their original
+  // action automatically (e.g. they X'd out of the watermark paywall —
+  // they'll click Download again, and the session flag lets it through).
+  const onClose = () => {
+    setPendingPostCheckoutAction(null);
+    returnToPreviousModal();
+  };
+  const onSuccess = () => {
+    setPendingPostCheckoutAction(null);
+    returnToPreviousModal();
+  };
+  // Soft-decline path. Runs the trigger site's original action (e.g. the
+  // watermarked download) so users only need one click to continue free.
+  const onSecondaryCta = () => {
+    pendingPostCheckoutAction?.();
+    setPendingPostCheckoutAction(null);
+    returnToPreviousModal();
+  };
 
   return (
     <UpgradeModal
@@ -64,6 +87,7 @@ const EditorUpgradeModal = () => {
       // rememberPrevious=true so closing/completing sign-in lands the user
       // back in the upgrade modal where they started.
       onSignIn={() => setModal('signin', true)}
+      onSecondaryCta={onSecondaryCta}
       onSuccess={onSuccess}
     />
   );

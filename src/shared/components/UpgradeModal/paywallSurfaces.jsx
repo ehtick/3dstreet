@@ -62,8 +62,8 @@ export const PAYWALL_SURFACES = {
     ]
   },
 
-  // Watermark removal — fired only by the explicit "Upgrade to Pro to hide
-  // 3DStreet Free watermark" button in the screenshot modal. AI-render
+  // Watermark removal — fired by the inline upsell button and by the
+  // first-of-session download interceptor in ScreenshotModal. AI-render
   // token gates use postCheckout='image' and stay on the generic header.
   watermark: {
     icon: <ImageIcon />,
@@ -78,7 +78,10 @@ export const PAYWALL_SURFACES = {
       'Unlimited geospatial maps & location changes',
       'Import custom 3D models & SVG / glTF files',
       '100 AI generation tokens / month'
-    ]
+    ],
+    // Soft-decline path. Picking this dismisses the paywall and runs the
+    // pending action (the watermarked download) without leaving Pro friction.
+    secondaryCtaLabel: 'Continue free with watermark'
   }
 };
 

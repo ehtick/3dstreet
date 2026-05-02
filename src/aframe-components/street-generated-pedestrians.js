@@ -4,10 +4,6 @@ import { createRNG } from '../lib/rng';
 AFRAME.registerComponent('street-generated-pedestrians', {
   multiple: true,
   schema: {
-    segmentWidth: {
-      type: 'number',
-      default: 3
-    },
     density: {
       type: 'string',
       default: 'normal',
@@ -36,24 +32,17 @@ AFRAME.registerComponent('street-generated-pedestrians', {
       normal: 0.125,
       dense: 0.25
     };
-    this.length = this.el.getAttribute('street-segment')?.length;
-    this.onSegmentLengthChanged = (event) => {
-      this.length = event.detail.newLength;
-      this.update();
-    };
-    this.el.addEventListener(
-      'segment-length-changed',
-      this.onSegmentLengthChanged
-    );
+    this.onSegmentChanged = () => this.update();
+    this.el.addEventListener('segment-changed', this.onSegmentChanged);
   },
 
-  remove: function () {
-    this.el.removeEventListener(
-      'segment-length-changed',
-      this.onSegmentLengthChanged
-    );
+  clearEntities: function () {
     this.createdEntities.forEach((entity) => entity.remove());
     this.createdEntities.length = 0;
+  },
+  remove: function () {
+    this.el.removeEventListener('segment-changed', this.onSegmentChanged);
+    this.clearEntities();
   },
   detach: function () {
     const commands = [];
@@ -89,10 +78,13 @@ AFRAME.registerComponent('street-generated-pedestrians', {
   },
 
   update: function (oldData) {
-    const data = this.data;
-    if (!this.length) {
+    const segment = this.el.components['street-segment']?.data;
+    if (!segment?.length || !segment?.width) {
       return;
     }
+    this.length = segment.length;
+    this.width = segment.width;
+    const data = this.data;
 
     // Handle seed initialization
     if (this.data.seed === 0) {
@@ -105,12 +97,12 @@ AFRAME.registerComponent('street-generated-pedestrians', {
     this.rng = createRNG(this.data.seed);
 
     // Clean up old entities
-    this.remove();
+    this.clearEntities();
 
     // Calculate x position range based on segment width
     const xRange = {
-      min: -(0.37 * data.segmentWidth),
-      max: 0.37 * data.segmentWidth
+      min: -(0.37 * this.width),
+      max: 0.37 * this.width
     };
 
     // Calculate total number of pedestrians based on density and street length

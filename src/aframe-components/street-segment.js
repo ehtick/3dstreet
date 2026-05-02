@@ -407,7 +407,6 @@ AFRAME.registerComponent('street-segment', {
     if (componentsToGenerate?.pedestrians?.length > 0) {
       componentsToGenerate.pedestrians.forEach((pedestrian, index) => {
         this.el.setAttribute(`street-generated-pedestrians__${index + 1}`, {
-          segmentWidth: this.data.width,
           density: pedestrian.density,
           direction: this.data.direction
         });
@@ -418,7 +417,6 @@ AFRAME.registerComponent('street-segment', {
       componentsToGenerate.striping.forEach((stripe, index) => {
         this.el.setAttribute(`street-generated-striping__${index + 1}`, {
           striping: stripe.striping,
-          segmentWidth: this.data.width,
           positionY: stripe.positionY ?? 0.05, // Default to 0.05 if not specified
           side: stripe.side ?? 'left', // Default to left if not specified
           facing: stripe.facing ?? 0 // Default to 0 if not specified
@@ -524,16 +522,15 @@ AFRAME.registerComponent('street-segment', {
       z: this.tempZPosition
     });
     this.generateMesh(data);
-    // if width was changed, trigger re-justification of all street-segments by the managed-street
-    if (changedProps.includes('width')) {
-      this.el.emit('segment-width-changed', {
+    // notify children and managed-street of width/length changes in a single event
+    const widthChanged = changedProps.includes('width');
+    const lengthChanged = changedProps.includes('length');
+    if (widthChanged || lengthChanged) {
+      this.el.emit('segment-changed', {
+        widthChanged,
+        lengthChanged,
         oldWidth: oldData.width,
-        newWidth: data.width
-      });
-    }
-    // if length was changed, trigger re-justification of all street-segments by the managed-street
-    if (changedProps.includes('length')) {
-      this.el.emit('segment-length-changed', {
+        newWidth: data.width,
         oldLength: oldData.length,
         newLength: data.length
       });

@@ -55,38 +55,18 @@ AFRAME.registerComponent('street-generated-clones', {
 
   init: function () {
     this.createdEntities = [];
-    this.length = this.el.getAttribute('street-segment')?.length;
-    this.width = this.el.getAttribute('street-segment')?.width;
+    this.onSegmentChanged = () => this.update();
+    this.el.addEventListener('segment-changed', this.onSegmentChanged);
+  },
 
-    this.onSegmentLengthChanged = (event) => {
-      this.length = event.detail.newLength;
-      this.update();
-    };
-    this.onSegmentWidthChanged = (event) => {
-      this.width = event.detail.newWidth;
-      this.update();
-    };
-    this.el.addEventListener(
-      'segment-length-changed',
-      this.onSegmentLengthChanged
-    );
-    this.el.addEventListener(
-      'segment-width-changed',
-      this.onSegmentWidthChanged
-    );
+  clearEntities: function () {
+    this.createdEntities.forEach((entity) => entity.remove());
+    this.createdEntities.length = 0;
   },
 
   remove: function () {
-    this.el.removeEventListener(
-      'segment-length-changed',
-      this.onSegmentLengthChanged
-    );
-    this.el.removeEventListener(
-      'segment-width-changed',
-      this.onSegmentWidthChanged
-    );
-    this.createdEntities.forEach((entity) => entity.remove());
-    this.createdEntities.length = 0; // Clear the array
+    this.el.removeEventListener('segment-changed', this.onSegmentChanged);
+    this.clearEntities();
   },
 
   detach: function () {
@@ -123,9 +103,12 @@ AFRAME.registerComponent('street-generated-clones', {
   },
 
   update: function (oldData) {
-    if (!this.length || !this.width) {
+    const segment = this.el.components['street-segment']?.data;
+    if (!segment?.length || !segment?.width) {
       return;
     }
+    this.length = segment.length;
+    this.width = segment.width;
     // If mode is random or randomFacing and seed is 0, generate a random seed and return,
     // the update will be called again because of the setAttribute.
     if (this.data.mode === 'random' || this.data.randomFacing) {
@@ -139,7 +122,7 @@ AFRAME.registerComponent('street-generated-clones', {
     }
 
     // Clear existing entities
-    this.remove();
+    this.clearEntities();
 
     // Generate new entities based on mode
     switch (this.data.mode) {

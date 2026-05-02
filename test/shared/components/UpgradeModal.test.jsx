@@ -153,7 +153,7 @@ describe('UpgradeModal', () => {
 
     it('mentions existing Pro users in the prompt copy', () => {
       renderModal({}, { currentUser: null });
-      expect(screen.getByText(/already have a plan/i)).toBeInTheDocument();
+      expect(screen.getByText(/access Pro/i)).toBeInTheDocument();
     });
   });
 

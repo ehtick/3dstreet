@@ -26,6 +26,23 @@ const CubeIcon = () => (
   </svg>
 );
 
+const ImageIcon = () => (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
 export const PAYWALL_SURFACES = {
   // GLB + AR-Ready GLB both flow through postCheckout='export'.
   // AR-Ready is on a deprecation path, so a single shared surface is fine.
@@ -39,6 +56,25 @@ export const PAYWALL_SURFACES = {
     features: [
       'GLB glTF & AR Ready GLB export',
       'Download JPEG snapshots without watermark',
+      'Unlimited geospatial maps & location changes',
+      'Import custom 3D models & SVG / glTF files',
+      '100 AI generation tokens / month'
+    ]
+  },
+
+  // Watermark removal — fired only by the explicit "Upgrade to Pro to hide
+  // 3DStreet Free watermark" button in the screenshot modal. AI-render
+  // token gates use postCheckout='image' and stay on the generic header.
+  watermark: {
+    icon: <ImageIcon />,
+    title: 'Snapshot',
+    subtitle: '.jpg / .png · 2D image export',
+    headline: 'Remove the watermark',
+    description:
+      'Share polished snapshots in client presentations, planning reports, and social posts.',
+    features: [
+      'Download JPEG snapshots without watermark',
+      'GLB glTF & AR Ready GLB export',
       'Unlimited geospatial maps & location changes',
       'Import custom 3D models & SVG / glTF files',
       '100 AI generation tokens / month'

@@ -105,3 +105,13 @@ export const ExportSurface = {
     surface: 'export'
   }
 };
+
+// Surface variant — watermark removal flow from the screenshot modal.
+export const WatermarkSurface = {
+  args: {
+    isOpen: true,
+    source: 'watermark',
+    trigger: 'watermark_paywall',
+    surface: 'watermark'
+  }
+};

@@ -924,7 +924,7 @@ function ScreenshotModal() {
               <Button
                 variant="toolbtn"
                 className={styles.upsellButton}
-                onClick={() => startCheckout('image')}
+                onClick={() => startCheckout('watermark')}
               >
                 Upgrade to Pro to hide 3DStreet Free watermark
               </Button>

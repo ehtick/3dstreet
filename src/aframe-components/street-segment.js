@@ -381,7 +381,6 @@ AFRAME.registerComponent('street-segment', {
         this.el.setAttribute(`street-generated-clones__${index + 1}`, {
           mode: clone.mode,
           modelsArray: clone.modelsArray,
-          length: this.data.length,
           spacing: clone.spacing,
           direction: this.data.direction,
           count: clone.count,
@@ -397,7 +396,6 @@ AFRAME.registerComponent('street-segment', {
       componentsToGenerate.stencil.forEach((clone, index) => {
         this.el.setAttribute(`street-generated-stencil__${index + 1}`, {
           modelsArray: clone.modelsArray,
-          length: this.data.length,
           spacing: clone.spacing,
           direction: clone.direction ?? this.data.direction,
           padding: clone.padding,
@@ -411,7 +409,6 @@ AFRAME.registerComponent('street-segment', {
         this.el.setAttribute(`street-generated-pedestrians__${index + 1}`, {
           segmentWidth: this.data.width,
           density: pedestrian.density,
-          length: this.data.length,
           direction: this.data.direction
         });
       });
@@ -422,7 +419,6 @@ AFRAME.registerComponent('street-segment', {
         this.el.setAttribute(`street-generated-striping__${index + 1}`, {
           striping: stripe.striping,
           segmentWidth: this.data.width,
-          length: this.data.length,
           positionY: stripe.positionY ?? 0.05, // Default to 0.05 if not specified
           side: stripe.side ?? 'left', // Default to left if not specified
           facing: stripe.facing ?? 0 // Default to 0 if not specified
@@ -433,8 +429,7 @@ AFRAME.registerComponent('street-segment', {
     if (componentsToGenerate?.rail?.length > 0) {
       componentsToGenerate.rail.forEach((rail, index) => {
         this.el.setAttribute(`street-generated-rail__${index + 1}`, {
-          gauge: rail.gauge,
-          length: this.data.length
+          gauge: rail.gauge
         });
       });
     }
@@ -517,13 +512,6 @@ AFRAME.registerComponent('street-segment', {
         this.updateGeneratedComponentsList();
         this.remove();
         this.generateComponentsFromSegmentObject(typeObject);
-      }
-    }
-    // propagate change of length to generated components is solo changed
-    if (changedProps.includes('length')) {
-      this.updateGeneratedComponentsList(); // if components were created through streetmix or streetplan import
-      for (const componentName of this.generatedComponents) {
-        this.el.setAttribute(componentName, 'length', this.data.length);
       }
     }
     this.clearMesh();

@@ -22,7 +22,10 @@ function cloneMixinAsChildren({
 
     if (length) {
       placedObjectEl.setAttribute('geometry', 'height', length);
-      placedObjectEl.components['atlas-uvs'].update();
+      // If parentEl is not yet mounted, atlas-uvs hasn't init'd; its init
+      // will read the new geometry.height once mounted. Only call update()
+      // if it's already initialized.
+      placedObjectEl.components['atlas-uvs']?.update();
     }
 
     if (randomY) {

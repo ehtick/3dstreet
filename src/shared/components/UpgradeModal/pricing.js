@@ -6,6 +6,9 @@
  * so any change here means a matching change there.
  */
 
+// Local so cycleDetail and the exposed yearlyTotal field can't drift.
+const yearlyTotal = 84;
+
 export const PRICING = {
   monthly: {
     pricePerMonth: 10,
@@ -14,9 +17,9 @@ export const PRICING = {
   },
   yearly: {
     pricePerMonth: 7,
-    yearlyTotal: 84,
+    yearlyTotal,
     tokens: 840,
-    cycleDetail: 'billed yearly, $84/year'
+    cycleDetail: `billed yearly, $${yearlyTotal}/year`
   }
 };
 

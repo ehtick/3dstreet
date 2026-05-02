@@ -76,17 +76,44 @@ AFRAME.registerComponent('managed-street', {
       this.el.setAttribute('street-label', '');
     }
 
-    this.setupEventDispatcher();
+    // Watch DOM child mutations to attach/detach segment-changed listeners
+    // and notify siblings (street-align, street-label, street-ground).
+    this.observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type !== 'childList') return;
+        const addedSegments = Array.from(mutation.addedNodes).filter(
+          (node) => node.hasAttribute && node.hasAttribute('street-segment')
+        );
+        const removedSegments = Array.from(mutation.removedNodes).filter(
+          (node) => node.hasAttribute && node.hasAttribute('street-segment')
+        );
 
-    setTimeout(() => {
-      this.attachListenersToExistingSegments();
-    }, 0);
-  },
-  attachListenersToExistingSegments: function () {
-    const segments = this.el.querySelectorAll('[street-segment]');
-    segments.forEach((segment) => {
-      segment.addEventListener('segment-changed', this.onSegmentChanged);
+        addedSegments.forEach((segment) => {
+          segment.addEventListener('segment-changed', this.onSegmentChanged);
+        });
+        removedSegments.forEach((segment) => {
+          segment.removeEventListener('segment-changed', this.onSegmentChanged);
+        });
+
+        if (addedSegments.length || removedSegments.length) {
+          this.el.emit('segments-changed', {
+            changeType: 'structure',
+            added: addedSegments,
+            removed: removedSegments
+          });
+        }
+      });
     });
+    this.observer.observe(this.el, { childList: true });
+
+    // Attach to any segments already in the DOM at init time. Deferred to
+    // a microtask so children that A-Frame mounts before the parent's init
+    // are picked up.
+    setTimeout(() => {
+      this.el.querySelectorAll('[street-segment]').forEach((segment) => {
+        segment.addEventListener('segment-changed', this.onSegmentChanged);
+      });
+    }, 0);
   },
   /**
    * Inserts a new street segment at the specified index
@@ -164,49 +191,6 @@ AFRAME.registerComponent('managed-street', {
 
     return segmentEl;
   },
-  setupEventDispatcher: function () {
-    // Remove if existing mutation observer
-    if (this.observer) {
-      this.observer.disconnect();
-    }
-
-    // Mutation observer for add/remove
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-          const addedSegments = Array.from(mutation.addedNodes).filter(
-            (node) => node.hasAttribute && node.hasAttribute('street-segment')
-          );
-          const removedSegments = Array.from(mutation.removedNodes).filter(
-            (node) => node.hasAttribute && node.hasAttribute('street-segment')
-          );
-
-          // Add listeners to new segments
-          addedSegments.forEach((segment) => {
-            segment.addEventListener('segment-changed', this.onSegmentChanged);
-          });
-
-          // Remove listeners from removed segments
-          removedSegments.forEach((segment) => {
-            segment.removeEventListener(
-              'segment-changed',
-              this.onSegmentChanged
-            );
-          });
-
-          if (addedSegments.length || removedSegments.length) {
-            this.el.emit('segments-changed', {
-              changeType: 'structure',
-              added: addedSegments,
-              removed: removedSegments
-            });
-          }
-        }
-      });
-    });
-
-    observer.observe(this.el, { childList: true });
-  },
   onSegmentChanged: function (event) {
     if (!event.detail.widthChanged) {
       return;
@@ -242,8 +226,6 @@ AFRAME.registerComponent('managed-street', {
         newValue: data.length
       });
     }
-
-    this.setupEventDispatcher();
   },
   refreshFromSource: function () {
     const data = this.data;
@@ -284,7 +266,7 @@ AFRAME.registerComponent('managed-street', {
   },
   parseStreetObject: function (streetObject) {
     // reset and delete all existing entities
-    this.remove();
+    this.clearManagedEntities();
 
     // given an object streetObject, create child entities with 'street-segment' component
     this.el.setAttribute(
@@ -572,7 +554,7 @@ AFRAME.registerComponent('managed-street', {
 
       const streetmixResponseObject = await response.json();
       this.refreshManagedEntities();
-      this.remove();
+      this.clearManagedEntities();
 
       // convert units of measurement if necessary
       const streetData = streetmixUtils.convertStreetValues(
@@ -635,14 +617,18 @@ AFRAME.registerComponent('managed-street', {
       this.resolveAllLoaded();
     }
   },
+  clearManagedEntities: function () {
+    this.managedEntities.forEach((segment) => {
+      segment.removeEventListener('segment-changed', this.onSegmentChanged);
+      if (segment.parentNode) segment.remove();
+    });
+    this.managedEntities.length = 0;
+  },
   remove: function () {
     if (this.observer) {
       this.observer.disconnect();
     }
-    this.managedEntities.forEach(
-      (entity) => entity.parentNode && entity.remove()
-    );
-    this.managedEntities.length = 0; // Clear the array
+    this.clearManagedEntities();
   }
 });
 

@@ -24,7 +24,6 @@ import { functions } from '@shared/services/firebase';
 import { useAuthContext } from '@shared/contexts';
 import EmbeddedCheckout from '@shared/components/EmbeddedCheckout';
 import { openBillingPortal } from '@shared/utils/billing';
-import { getPaywallSurface } from './paywallSurfaces';
 import styles from './UpgradeModal.module.scss';
 
 // Single source of truth for the Pro feature list — shown once, no duplication.
@@ -82,7 +81,6 @@ const UpgradeModal = ({
   onClose,
   source = 'unknown',
   trigger = 'manual',
-  surface: surfaceKey,
   onCheckoutStart,
   onSignIn,
   verifyPurchase,
@@ -91,8 +89,6 @@ const UpgradeModal = ({
   successMessage = 'Pro features are unlocked on your account.',
   successCta = 'Continue'
 }) => {
-  const surface = getPaywallSurface(surfaceKey);
-  const features = surface?.features || PLAN_FEATURES;
   const { currentUser } = useAuthContext();
   const [modalState, setModalState] = useState('pricing');
   // 'pricing' | 'checkout' | 'has-subscription'
@@ -198,58 +194,30 @@ const UpgradeModal = ({
 
   const renderPricing = () => (
     <>
-      {surface ? (
-        <>
-          <div className={styles.pricingHeader}>
-            <div className={styles.surfaceCard}>
-              <div className={styles.surfaceIcon}>{surface.icon}</div>
-              <div className={styles.surfaceText}>
-                <div className={styles.surfaceTitle}>{surface.title}</div>
-                <div className={styles.surfaceSubtitle}>{surface.subtitle}</div>
-              </div>
-            </div>
-            <button
-              className={styles.closeButton}
-              onClick={handleClose}
-              aria-label="Close"
-            >
-              <CloseIcon />
-            </button>
-          </div>
+      <div className={styles.pricingHeader}>
+        <div className={styles.headerIcon}>
+          <StarIcon />
+        </div>
+        <button
+          className={styles.closeButton}
+          onClick={handleClose}
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
 
-          <div className={styles.pricingTitleBlock}>
-            <h2 className={styles.pricingTitle}>{surface.headline}</h2>
-            <p className={styles.pricingSubtitle}>{surface.description}</p>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className={styles.pricingHeader}>
-            <div className={styles.headerIcon}>
-              <StarIcon />
-            </div>
-            <button
-              className={styles.closeButton}
-              onClick={handleClose}
-              aria-label="Close"
-            >
-              <CloseIcon />
-            </button>
-          </div>
-
-          <div className={styles.pricingTitleBlock}>
-            <h2 className={styles.pricingTitle}>Upgrade to Pro</h2>
-            <p className={styles.pricingSubtitle}>
-              Unlock the full 3DStreet toolkit.
-            </p>
-          </div>
-        </>
-      )}
+      <div className={styles.pricingTitleBlock}>
+        <h2 className={styles.pricingTitle}>Upgrade to Pro</h2>
+        <p className={styles.pricingSubtitle}>
+          Unlock the full 3DStreet toolkit.
+        </p>
+      </div>
 
       <div className={styles.divider} />
 
       <ul className={styles.featureList}>
-        {features.map((f) => (
+        {PLAN_FEATURES.map((f) => (
           <li key={f}>
             <CheckIcon />
             <span>{f}</span>
@@ -304,7 +272,9 @@ const UpgradeModal = ({
         </>
       ) : (
         <div className={styles.signInPrompt}>
-          <p className={styles.signInCopy}>Sign in to upgrade or access Pro.</p>
+          <p className={styles.signInCopy}>
+            Sign in to upgrade — or to access Pro if you already have a plan.
+          </p>
           <button type="button" className={styles.ctaButton} onClick={onSignIn}>
             Sign in to 3DStreet Cloud
           </button>
@@ -424,7 +394,6 @@ UpgradeModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   source: PropTypes.string,
   trigger: PropTypes.string,
-  surface: PropTypes.string,
   onCheckoutStart: PropTypes.func,
   onSignIn: PropTypes.func,
   verifyPurchase: PropTypes.func,

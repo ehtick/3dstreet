@@ -94,14 +94,3 @@ export const Closed = {
     isOpen: false
   }
 };
-
-// Surface variant — mimics the GLB export paywall: surface card header,
-// "Export requires Pro" headline, and surface-specific feature list.
-export const ExportSurface = {
-  args: {
-    isOpen: true,
-    source: 'export',
-    trigger: 'export_paywall',
-    surface: 'export'
-  }
-};

@@ -59,7 +59,6 @@ const EditorUpgradeModal = () => {
       onClose={onClose}
       source={postCheckout || 'editor'}
       trigger={postCheckout ? `${postCheckout}_paywall` : 'manual'}
-      surface={postCheckout}
       verifyPurchase={verifyPurchase}
       // rememberPrevious=true so closing/completing sign-in lands the user
       // back in the upgrade modal where they started.

@@ -78,7 +78,6 @@ AFRAME.registerComponent('street-generated-rail', {
     placedObjectEl.setAttribute('data-ignore-raycaster', '');
     placedObjectEl.setAttribute('position', railsPosX + ' 0.2 0'); // position="1.043 0.100 -3.463"
     placedObjectEl.classList.add('autocreated');
-    this.createdEntities.push(placedObjectEl);
 
     return placedObjectEl;
   }

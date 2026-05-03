@@ -1319,60 +1319,65 @@ function AIChatPanel() {
           )}
         </div>
 
-        <div className={styles.chatInput}>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                if (e.shiftKey) {
-                  return;
-                } else if (currentUser) {
-                  e.preventDefault();
-                  handleSendMessage();
+        <div className={styles.chatInputContainer}>
+          <div className={styles.chatInput}>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (e.shiftKey) {
+                    return;
+                  } else if (currentUser) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
                 }
-              }
-            }}
-            placeholder="Type a command or type /help for options"
-            disabled={!currentUser}
-            rows="1"
-            className={styles.chatTextarea}
-            ref={textareaRef}
-          />
-          <div className={styles.actionButtons}>
-            <div className={styles.rightButtons}>
-              {messages.length > 0 && (
+              }}
+              placeholder="Type a command or type /help for options"
+              disabled={!currentUser}
+              rows="1"
+              className={styles.chatTextarea}
+              ref={textareaRef}
+            />
+            <div className={styles.actionButtons}>
+              <div className={styles.rightButtons}>
+                {messages.length > 0 && (
+                  <button
+                    onClick={() => setShowResetConfirm(true)}
+                    className={`${styles.resetButton} ${styles.greenIcon}`}
+                    title="Reset console"
+                    disabled={isLoading || !currentUser}
+                  >
+                    <AwesomeIcon icon={faRotate} />
+                  </button>
+                )}
                 <button
-                  onClick={() => setShowResetConfirm(true)}
-                  className={`${styles.resetButton} ${styles.greenIcon}`}
-                  title="Reset console"
+                  className={styles.sendButton}
+                  onClick={handleSendMessage}
                   disabled={isLoading || !currentUser}
+                  title="Send"
                 >
-                  <AwesomeIcon icon={faRotate} />
+                  <ArrowUp24Icon />
                 </button>
-              )}
-              <button
-                className={styles.sendButton}
-                onClick={handleSendMessage}
-                disabled={isLoading || !currentUser}
-                title="Send"
-              >
-                <ArrowUp24Icon />
-              </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {!currentUser && (
-          <div className={styles.proOverlay} onClick={() => setModal('signin')}>
-            <div className={styles.proOverlayContent}>
-              <span role="img" aria-label="lock">
-                🔒
-              </span>
-              <span>Please log in to use the Assistant</span>
+          {!currentUser && (
+            <div
+              className={styles.proOverlay}
+              onClick={() => setModal('signin')}
+            >
+              <div className={styles.proOverlayContent}>
+                <span role="img" aria-label="lock">
+                  🔒
+                </span>
+                <span>Please log in to send commands</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

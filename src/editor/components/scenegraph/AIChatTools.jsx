@@ -8,7 +8,6 @@ import { Parser } from 'expr-eval';
 import Events from '../../lib/Events.js';
 import * as THREE from 'three';
 import { Schema } from 'firebase/ai';
-import useStore from '@/store';
 
 // Define the function declarations for entity operations
 export const entityTools = {
@@ -26,7 +25,7 @@ export const entityTools = {
       })
     },
     {
-      name: 'entityCreateMixin',
+      name: 'entityCreate',
       description:
         'Create a new entity in the A-Frame scene with specified components and transforms',
       parameters: Schema.object({
@@ -48,7 +47,7 @@ export const entityTools = {
               'Scale as space-separated x y z values (e.g., "2 2 2") default 1 1 1'
           })
         },
-        optionalProperties: ['position', 'rotation', 'scale']
+        optionalProperties: ['mixin', 'position', 'rotation', 'scale']
       })
     },
     {
@@ -384,8 +383,11 @@ const AIChatTools = {
    */
   updateSceneTitle: (args) => {
     const { value } = args;
-    useStore.getState().setSceneTitle(value);
-    Events.emit('historychanged', true);
+    AFRAME.INSPECTOR.execute(
+      'scenetitle',
+      { value },
+      `Set scene title to "${value}"`
+    );
     return `Updated scene title to: ${value}`;
   },
   /**
@@ -443,19 +445,21 @@ const AIChatTools = {
   },
 
   /**
-   * Handles entityCreateMixin function call
+   * Handles entityCreate function call
    * @param {Object} args - The function arguments
    * @returns {string} Result message
    */
-  entityCreateMixin: (args) => {
+  entityCreate: (args) => {
     const newCommandPayload = {
-      mixin: args.mixin,
       components: {
         position: args.position || '0 0 0',
         rotation: args.rotation || '0 0 0',
         scale: args.scale || '1 1 1'
       }
     };
+    if (args.mixin) {
+      newCommandPayload.mixin = args.mixin;
+    }
     AFRAME.INSPECTOR.execute('entitycreate', newCommandPayload);
     return 'Entity created successfully';
   },
@@ -526,6 +530,8 @@ const AIChatTools = {
 
   /**
    * Handles managedStreetUpdate function call
+   * Dispatches to segmentadd / segmentupdate / segmentremove commands so each
+   * mutation is a single undoable history entry.
    * @param {Object} args - The function arguments
    * @returns {string} Result message
    */
@@ -538,205 +544,76 @@ const AIChatTools = {
       throw new Error(`Entity with ID ${entityId} not found`);
     }
 
-    // Get all segment entities (direct children with street-segment component)
     const segmentEntities = Array.from(entity.children).filter((child) =>
       child.hasAttribute('street-segment')
     );
 
     if (operation === 'add-segment') {
-      // Add a new segment
       const segment = args.segment;
-      const segmentIndex = args.segmentIndex;
-
       if (!segment || !segment.type) {
         throw new Error('Segment must have at least a type property');
       }
+      const label = segment.name || `${segment.type} • default`;
+      AFRAME.INSPECTOR.execute(
+        'segmentadd',
+        {
+          streetId: entityId,
+          segment,
+          segmentIndex: args.segmentIndex
+        },
+        `Add ${label}`
+      );
+      return `Added segment: ${label}`;
+    }
 
-      // Create a new segment entity
-      const segmentEl = document.createElement('a-entity');
-
-      // Set default values for any missing properties
-      const segmentData = {
-        type: segment.type,
-        width: typeof segment.width === 'number' ? segment.width : 3,
-        length: entity.components['managed-street'].data.length || 60,
-        level: typeof segment.level === 'number' ? segment.level : 0,
-        direction: segment.direction || 'none',
-        color: segment.color || '#888888',
-        surface: segment.surface || 'asphalt'
-      };
-
-      // Set the segment component with properties
-      segmentEl.setAttribute('street-segment', segmentData);
-
-      // Set the layer name for the segment
-      const layerName = segment.name || `${segment.type} • default`;
-      segmentEl.setAttribute('data-layer-name', layerName);
-
-      // Add the segment to the managed street entity at the specified index or at the end if no index
-      if (segmentIndex !== undefined) {
-        // Validate the segment index
-        if (segmentIndex < 0 || segmentIndex > segmentEntities.length) {
-          throw new Error(
-            `Invalid segmentIndex: ${segmentIndex}. Must be between 0 and ${segmentEntities.length}`
-          );
-        }
-
-        // If we have a valid index, insert at that position
-        if (segmentIndex < segmentEntities.length) {
-          // Insert before the segment at the specified index
-          entity.insertBefore(segmentEl, segmentEntities[segmentIndex]);
-        } else {
-          // If the index is equal to the length, append to the end
-          entity.appendChild(segmentEl);
-        }
-      } else {
-        // Default behavior: append to the end
-        entity.appendChild(segmentEl);
-      }
-
-      // If segment has generated content, add it after the segment is loaded
-      if (segment.generated) {
-        segmentEl.addEventListener('loaded', () => {
-          segmentEl.components[
-            'street-segment'
-          ].generateComponentsFromSegmentObject(segment);
-        });
-      }
-    } else if (operation === 'update-segment') {
-      // Update an existing segment
-      const segmentIndex = args.segmentIndex;
-      const segment = args.segment;
-
+    if (operation === 'update-segment') {
+      const { segmentIndex, segment } = args;
       if (segmentIndex === undefined || !segment) {
         throw new Error(
           'segmentIndex and segment are required for update-segment operation'
         );
       }
-
       if (segmentIndex < 0 || segmentIndex >= segmentEntities.length) {
         throw new Error(`Invalid segmentIndex: ${segmentIndex}`);
       }
-
-      // Get the segment entity to update
       const segmentEl = segmentEntities[segmentIndex];
+      const label =
+        segment.name ||
+        segmentEl.getAttribute('data-layer-name') ||
+        `segment ${segmentIndex}`;
+      AFRAME.INSPECTOR.execute(
+        'segmentupdate',
+        {
+          entity: segmentEl,
+          segment
+        },
+        `Update ${label}`
+      );
+      return `Updated segment: ${label}`;
+    }
 
-      // Get current segment data
-      const currentData = segmentEl.getAttribute('street-segment');
-
-      // Update only the properties that were provided
-      const updatedData = { ...currentData };
-
-      // Update properties
-      Object.keys(segment).forEach((key) => {
-        if (key !== 'generated') {
-          // Handle generated separately
-          updatedData[key] = segment[key];
-        }
-      });
-
-      // Update the street-segment component
-      segmentEl.setAttribute('street-segment', updatedData);
-
-      // Update the layer name if provided
-      if (segment.name) {
-        segmentEl.setAttribute('data-layer-name', segment.name);
-      }
-
-      // If generated content is provided, update it
-      if (segment.generated) {
-        // Check if we need to remove any generated components
-        // This handles the case where clones: [] is provided to remove clones
-        const generatedTypes = [
-          'clones',
-          'stencil',
-          'pedestrians',
-          'striping',
-          'rail'
-        ];
-
-        generatedTypes.forEach((type) => {
-          // If the type exists in segment.generated and is an empty array, remove those components
-          if (
-            Array.isArray(segment.generated[type]) &&
-            segment.generated[type].length === 0
-          ) {
-            // Find all components of this type on the segment
-            Object.keys(segmentEl.components).forEach((componentName) => {
-              if (componentName.startsWith(`street-generated-${type}`)) {
-                // Remove the component
-                segmentEl.removeAttribute(componentName);
-              }
-            });
-          } else if (segment.generated[type] === null) {
-            // If the type is explicitly set to null, also remove those components
-            // Find all components of this type on the segment
-            Object.keys(segmentEl.components).forEach((componentName) => {
-              if (componentName.startsWith(`street-generated-${type}`)) {
-                // Remove the component
-                segmentEl.removeAttribute(componentName);
-              }
-            });
-          }
-        });
-
-        // Only call generateComponentsFromSegmentObject if there are non-empty arrays
-        // or if the generated object has properties other than those we explicitly handled
-        const hasNonEmptyArrays = generatedTypes.some(
-          (type) =>
-            Array.isArray(segment.generated[type]) &&
-            segment.generated[type].length > 0
-        );
-
-        const hasOtherProperties = Object.keys(segment.generated).some(
-          (key) => !generatedTypes.includes(key)
-        );
-
-        if (hasNonEmptyArrays || hasOtherProperties) {
-          // We need to wait for the next tick to ensure the segment component is updated
-          setTimeout(() => {
-            segmentEl.components[
-              'street-segment'
-            ].generateComponentsFromSegmentObject({
-              ...updatedData,
-              generated: segment.generated
-            });
-          }, 0);
-        }
-      }
-    } else if (operation === 'remove-segment') {
-      // Remove a segment
-      const segmentIndex = args.segmentIndex;
-
+    if (operation === 'remove-segment') {
+      const { segmentIndex } = args;
       if (segmentIndex === undefined) {
         throw new Error(
           'segmentIndex is required for remove-segment operation'
         );
       }
-
       if (segmentIndex < 0 || segmentIndex >= segmentEntities.length) {
         throw new Error(`Invalid segmentIndex: ${segmentIndex}`);
       }
-
-      // Get the segment entity to remove
       const segmentEl = segmentEntities[segmentIndex];
-
-      // Remove the segment from the parent
-      entity.removeChild(segmentEl);
-    } else {
-      throw new Error(`Unknown operation: ${operation}`);
+      const label =
+        segmentEl.getAttribute('data-layer-name') || `segment ${segmentIndex}`;
+      AFRAME.INSPECTOR.execute(
+        'segmentremove',
+        { entity: segmentEl },
+        `Remove ${label}`
+      );
+      return `Removed segment: ${label}`;
     }
 
-    // Trigger a refresh of the managed street
-    // This will update the alignment and other properties
-    AFRAME.INSPECTOR.execute('entityupdate', {
-      entity: entity,
-      component: 'street-align',
-      property: 'refresh',
-      value: true
-    });
-
-    return 'Managed street updated successfully';
+    throw new Error(`Unknown operation: ${operation}`);
   },
 
   /**
@@ -1006,6 +883,10 @@ const AIChatTools = {
    * @returns {Promise<string>} Result message
    */
   setLatLon: async (args, currentUser) => {
+    // NOT routed through INSPECTOR.execute by design. Wrapping this as a
+    // command would require capturing pre/post lat/lon/elevation, and undo
+    // would fire two extra elevation HTTP roundtrips per toggle. Leave
+    // uninstrumented until we have a concrete need for undoable geolocation.
     const { latitude, longitude } = args;
 
     try {

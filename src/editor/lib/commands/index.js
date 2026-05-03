@@ -6,6 +6,10 @@ import { EntityRemoveCommand } from './EntityRemoveCommand.js';
 import { EntityReparentCommand } from './EntityReparentCommand.js';
 import { EntityUpdateCommand } from './EntityUpdateCommand.js';
 import { MultiCommand } from './MultiCommand.js';
+import { SceneTitleCommand } from './SceneTitleCommand.js';
+import { SegmentAddCommand } from './SegmentAddCommand.js';
+import { SegmentRemoveCommand } from './SegmentRemoveCommand.js';
+import { SegmentUpdateCommand } from './SegmentUpdateCommand.js';
 
 export const commandsByType = new Map();
 commandsByType.set('componentadd', ComponentAddCommand);
@@ -16,3 +20,7 @@ commandsByType.set('entityremove', EntityRemoveCommand);
 commandsByType.set('entityreparent', EntityReparentCommand);
 commandsByType.set('entityupdate', EntityUpdateCommand);
 commandsByType.set('multi', MultiCommand);
+commandsByType.set('scenetitle', SceneTitleCommand);
+commandsByType.set('segmentadd', SegmentAddCommand);
+commandsByType.set('segmentremove', SegmentRemoveCommand);
+commandsByType.set('segmentupdate', SegmentUpdateCommand);

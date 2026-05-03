@@ -376,6 +376,11 @@
     }
   }
 
+  .chatInputContainer {
+    position: relative;
+    flex-shrink: 0;
+  }
+
   .chatInput {
     display: flex;
     flex-direction: column;

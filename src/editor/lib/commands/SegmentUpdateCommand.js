@@ -111,15 +111,12 @@ export class SegmentUpdateCommand extends Command {
       );
 
       if (hasNonEmptyArrays || hasOtherProperties) {
-        // Defer one tick so the street-segment update lands first.
-        setTimeout(() => {
-          entity.components[
-            'street-segment'
-          ]?.generateComponentsFromSegmentObject({
-            ...updatedData,
-            generated: segment.generated
-          });
-        }, 0);
+        entity.components[
+          'street-segment'
+        ]?.generateComponentsFromSegmentObject({
+          ...updatedData,
+          generated: segment.generated
+        });
       }
     }
   }

@@ -1,4 +1,3 @@
-/* global STREET */
 import Events from '../Events.js';
 import { Command } from '../command.js';
 import { createUniqueId } from '../entity.js';
@@ -87,6 +86,7 @@ export class SegmentAddCommand extends Command {
     segmentEl.addEventListener(
       'loaded',
       () => {
+        segmentEl.pause();
         if (segment.generated) {
           segmentEl.components[
             'street-segment'
@@ -106,17 +106,7 @@ export class SegmentAddCommand extends Command {
     const segmentEl = document.getElementById(this.entityId);
     if (!segmentEl) return;
 
-    // Save full element data so redo can losslessly recreate (mirrors
-    // EntityReparentCommand's approach). getElementData reads live component
-    // data via getAttribute, so flushToDOM is not needed.
-    this.entityData = STREET.utils.getElementData(segmentEl);
-    this.parentId = segmentEl.parentNode?.id;
-    this.indexInParent = Array.from(segmentEl.parentNode.children).indexOf(
-      segmentEl
-    );
-
-    const parent = segmentEl.parentNode;
-    parent.removeChild(segmentEl);
+    segmentEl.parentNode.removeChild(segmentEl);
     Events.emit('entityremoved', segmentEl);
     this.editor.selectEntity(null);
     nextCommandCallback?.(null);

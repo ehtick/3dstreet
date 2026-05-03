@@ -385,7 +385,7 @@ const AIChatTools = {
     const { value } = args;
     AFRAME.INSPECTOR.execute(
       'scenetitle',
-      { value, name: `Set scene title to "${value}"` },
+      { value },
       `Set scene title to "${value}"`
     );
     return `Updated scene title to: ${value}`;
@@ -559,8 +559,7 @@ const AIChatTools = {
         {
           streetId: entityId,
           segment,
-          segmentIndex: args.segmentIndex,
-          name: `Add ${label}`
+          segmentIndex: args.segmentIndex
         },
         `Add ${label}`
       );
@@ -586,8 +585,7 @@ const AIChatTools = {
         'segmentupdate',
         {
           entity: segmentEl,
-          segment,
-          name: `Update ${label}`
+          segment
         },
         `Update ${label}`
       );
@@ -609,10 +607,7 @@ const AIChatTools = {
         segmentEl.getAttribute('data-layer-name') || `segment ${segmentIndex}`;
       AFRAME.INSPECTOR.execute(
         'segmentremove',
-        {
-          entity: segmentEl,
-          name: `Remove ${label}`
-        },
+        { entity: segmentEl },
         `Remove ${label}`
       );
       return `Removed segment: ${label}`;
@@ -883,16 +878,15 @@ const AIChatTools = {
    * @returns {Promise<any>} Promise resolving to the function result
    */
   /**
-   * Handles setLatLon function call.
-   *
-   * Direct mutation (not routed through INSPECTOR.execute). Wrapping this in a
-   * command would require capturing pre/post lat/lon/elevation, and undo would
-   * fire two extra elevation HTTP roundtrips per toggle. Pragmatic call: leave
-   * uninstrumented until we have a concrete need for undoable geolocation.
+   * Handles setLatLon function call
    * @param {Object} args - The function arguments (latitude, longitude)
    * @returns {Promise<string>} Result message
    */
   setLatLon: async (args, currentUser) => {
+    // NOT routed through INSPECTOR.execute by design. Wrapping this as a
+    // command would require capturing pre/post lat/lon/elevation, and undo
+    // would fire two extra elevation HTTP roundtrips per toggle. Leave
+    // uninstrumented until we have a concrete need for undoable geolocation.
     const { latitude, longitude } = args;
 
     try {

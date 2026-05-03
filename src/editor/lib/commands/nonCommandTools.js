@@ -470,6 +470,14 @@ const segmentSchema = {
   required: ['type', 'surface', 'color', 'level', 'width', 'direction']
 };
 
+// For update-segment, every field is optional — the caller patches only what
+// it wants to change. Reusing the create schema's `required` list forces the
+// LLM to fabricate values for fields it doesn't intend to touch.
+const segmentUpdateSchema = {
+  ...segmentSchema,
+  required: []
+};
+
 export const nonCommandTools = [
   {
     name: 'managedStreetCreate',
@@ -523,9 +531,9 @@ export const nonCommandTools = [
             'Index of the segment to update or remove (for update-segment and remove-segment operations)'
         },
         segment: {
-          ...segmentSchema,
+          ...segmentUpdateSchema,
           description:
-            'Segment definition for add-segment or update-segment operations'
+            'Segment definition. For add-segment, "type" is required; other fields fall back to defaults if omitted. For update-segment, supply only the fields you want to change — omitted fields are left untouched.'
         }
       },
       required: ['entityId', 'operation']

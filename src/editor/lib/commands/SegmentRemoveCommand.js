@@ -58,7 +58,7 @@ export class SegmentRemoveCommand extends Command {
         : null;
 
     // Deep-clone because createEntityFromObj mutates the data
-    const entityData = JSON.parse(JSON.stringify(this.entityData));
+    const entityData = structuredClone(this.entityData);
     const recreated = STREET.utils.createEntityFromObj(
       entityData,
       parent,

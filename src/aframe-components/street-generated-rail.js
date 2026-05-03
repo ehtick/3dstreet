@@ -12,26 +12,28 @@ AFRAME.registerComponent('street-generated-rail', {
   },
   init: function () {
     this.createdEntities = [];
-    this.length = this.el.getAttribute('street-segment')?.length;
-    this.el.addEventListener('segment-length-changed', (event) => {
-      this.length = event.detail.newLength;
+    this.onSegmentChanged = (event) => {
+      if (!event.detail.lengthChanged) return;
       this.update();
-    });
+    };
+    this.el.addEventListener('segment-changed', this.onSegmentChanged);
+  },
+  clearEntities: function () {
+    this.createdEntities.forEach((entity) => entity.remove());
+    this.createdEntities.length = 0;
   },
   remove: function () {
-    this.createdEntities.forEach((entity) => entity.remove());
-    this.createdEntities.length = 0; // Clear the array
+    this.el.removeEventListener('segment-changed', this.onSegmentChanged);
+    this.clearEntities();
   },
   update: function (oldData) {
-    if (!this.length) {
+    const segment = this.el.components['street-segment']?.data;
+    if (!segment?.length) {
       return;
     }
-    // Early return if data is not yet initialized
-    if (!this.data) {
-      return;
-    }
+    this.length = segment.length;
     // Clean up old entities
-    this.remove();
+    this.clearEntities();
 
     const clone = document.createElement('a-entity');
     clone.setAttribute('data-layer-name', 'Cloned Railroad Tracks');
@@ -70,7 +72,6 @@ AFRAME.registerComponent('street-generated-rail', {
     placedObjectEl.setAttribute('data-ignore-raycaster', '');
     placedObjectEl.setAttribute('position', railsPosX + ' 0.2 0'); // position="1.043 0.100 -3.463"
     placedObjectEl.classList.add('autocreated');
-    this.createdEntities.push(placedObjectEl);
 
     return placedObjectEl;
   }

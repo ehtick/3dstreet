@@ -36,35 +36,28 @@ AFRAME.registerComponent('street-generated-striping', {
   },
   init: function () {
     this.createdEntities = [];
-    // Add listener for segment width changes
-    this.width = this.el.getAttribute('street-segment')?.width;
-    this.el.addEventListener('segment-width-changed', (event) => {
-      this.width = event.detail.newWidth;
-      this.update();
-    });
-
-    this.length = this.el.getAttribute('street-segment')?.length;
-    this.el.addEventListener('segment-length-changed', (event) => {
-      this.length = event.detail.newLength;
-      this.update();
-    });
+    this.onSegmentChanged = () => this.update();
+    this.el.addEventListener('segment-changed', this.onSegmentChanged);
+  },
+  clearEntities: function () {
+    this.createdEntities.forEach((entity) => entity.remove());
+    this.createdEntities.length = 0;
   },
   remove: function () {
-    this.createdEntities.forEach((entity) => entity.remove());
-    this.createdEntities.length = 0; // Clear the array
+    this.el.removeEventListener('segment-changed', this.onSegmentChanged);
+    this.clearEntities();
   },
   update: function (oldData) {
-    if (!this.length || !this.width) {
+    const segment = this.el.components['street-segment']?.data;
+    if (!segment?.length || !segment?.width) {
       return;
     }
-    // Early return if data is not yet initialized
-    if (!this.data) {
-      return;
-    }
+    this.length = segment.length;
+    this.width = segment.width;
     const data = this.data;
 
     // Clean up old entities
-    this.remove();
+    this.clearEntities();
 
     if (!data.striping || data.striping === 'none') {
       return;

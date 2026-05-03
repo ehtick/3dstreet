@@ -107,8 +107,8 @@ export class SegmentAddCommand extends Command {
     if (!segmentEl) return;
 
     // Save full element data so redo can losslessly recreate (mirrors
-    // EntityReparentCommand's approach).
-    segmentEl.flushToDOM();
+    // EntityReparentCommand's approach). getElementData reads live component
+    // data via getAttribute, so flushToDOM is not needed.
     this.entityData = STREET.utils.getElementData(segmentEl);
     this.parentId = segmentEl.parentNode?.id;
     this.indexInParent = Array.from(segmentEl.parentNode.children).indexOf(

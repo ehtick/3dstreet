@@ -11,15 +11,17 @@ const GENERATED_TYPES = [
 ];
 
 function snapshotSegment(entity) {
-  entity.flushToDOM();
+  // Note: do NOT call entity.flushToDOM() here — it puts components into a
+  // state where subsequent setAttribute calls on the same component are
+  // silently ignored (A-Frame quirk around attrValue/data merging).
   const snapshot = {
-    'street-segment': structuredClone(entity.getDOMAttribute('street-segment')),
+    'street-segment': structuredClone(entity.getAttribute('street-segment')),
     'data-layer-name': entity.getAttribute('data-layer-name'),
     generated: {}
   };
   Object.keys(entity.components).forEach((name) => {
     if (name.startsWith('street-generated-')) {
-      snapshot.generated[name] = structuredClone(entity.getDOMAttribute(name));
+      snapshot.generated[name] = structuredClone(entity.getAttribute(name));
     }
   });
   return snapshot;

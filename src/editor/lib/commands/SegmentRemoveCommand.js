@@ -27,8 +27,8 @@ export class SegmentRemoveCommand extends Command {
     this.indexInParent = Array.from(entity.parentNode.children).indexOf(entity);
 
     // Serialize using the save/load pipeline format so we can recreate
-    // losslessly on undo (matches EntityReparentCommand).
-    entity.flushToDOM();
+    // losslessly on undo (matches EntityReparentCommand). getElementData reads
+    // live component data via getAttribute, so flushToDOM is not needed.
     this.entityData = STREET.utils.getElementData(entity);
   }
 

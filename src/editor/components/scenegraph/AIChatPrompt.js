@@ -33,7 +33,7 @@ export const systemPrompt = `
         "value": "fire-truck-rig"
       }
 
-      When using entityCreateMixin, ensure that the new entity is not placed at the same coordinates as any existing objects. Adjust its position on the x and z axes to avoid collisions.
+      When using entityCreate, ensure that the new entity is not placed at the same coordinates as any existing objects. Adjust its position on the x and z axes to avoid collisions.
 
       When updating a model's position, rotation or scale, use the "entityupdate" command with the following payload:
       {

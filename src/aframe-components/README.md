@@ -34,7 +34,7 @@ them.
 | Event              | Emitter                                                        | Payload                                                                                                                                   | Bubbles |
 | ------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `segment-changed`  | `street-segment.update`, only when `width` or `length` changed | `{ widthChanged, lengthChanged, oldWidth, newWidth, oldLength, newLength }`                                                               | yes     |
-| `segments-changed` | `managed-street`                                               | `{ changeType: 'structure', added, removed }` or `{ changeType: 'property', property: 'width' \| 'length', segment, oldValue, newValue }` | yes     |
+| `segments-changed` | `managed-street`                                               | `{ changeType: 'structure', added, removed }` or `{ changeType: 'property', property: 'width' \| 'length', segment, oldValue, newValue }` (`segment` is `null` for length changes, since the change is at the managed-street level) | yes     |
 
 #### Listener wiring
 
@@ -115,7 +115,11 @@ The HTML / JSON has managed-street and its segment children pre-baked.
 4. **managed-street.update** runs. `synchronize` is `false` in a saved
    scene, so `refreshFromSource()` is not called.
 5. Sibling components on managed-street (street-align, etc.) init around
-   the same time and start listening for `segments-changed`.
+   the same time and start listening for `segments-changed`. They don't
+   depend on those missed initial `segment-changed` events: each one
+   schedules a `setTimeout(0)` in its own `init` that queries the DOM
+   for existing segments and runs an initial alignment / dirt patch /
+   label render from the loaded state.
 
 ### Subsequent edits
 

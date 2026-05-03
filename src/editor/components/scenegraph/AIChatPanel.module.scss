@@ -944,3 +944,95 @@
     }
   }
 }
+
+.mcpStatusBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: variables.$gray-300;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mcpStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #888;
+  flex-shrink: 0;
+}
+
+.mcpStatus_connected {
+  background: #44ff88;
+  box-shadow: 0 0 6px rgba(68, 255, 136, 0.7);
+}
+.mcpStatus_connecting {
+  background: #ffaa44;
+  animation: mcpPulse 1.4s ease-in-out infinite;
+}
+.mcpStatus_disconnected {
+  background: #666;
+}
+.mcpStatus_paired-elsewhere {
+  background: #ff5555;
+}
+
+@keyframes mcpPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mcpStatusLabel {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mcpStatusButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  color: variables.$gray-300;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: variables.$white;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.mcpReadOnlyOn {
+  background: rgba(255, 170, 68, 0.18);
+  color: #ffcc77;
+  border-color: rgba(255, 170, 68, 0.4);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 170, 68, 0.28);
+    color: #ffe0a8;
+  }
+}

@@ -9,6 +9,89 @@ const { segmentVariants } = require('../segments-variants.js');
 const streetmixUtils = require('../tested/streetmix-utils');
 const streetmixParsersTested = require('../tested/aframe-streetmix-parsers-tested');
 
+const GENERATED_KINDS = [
+  'clones',
+  'stencil',
+  'pedestrians',
+  'striping',
+  'rail'
+];
+const GENERATED_RE =
+  /^street-generated-(clones|stencil|pedestrians|striping|rail)__(\d+)$/;
+
+/**
+ * Reverse of `parseStreetObject`: walk a managed-street entity and rebuild
+ * the Format-2 segment list from live DOM. Per-segment mutations
+ * (SegmentAddCommand etc.) edit the DOM directly without rewriting the
+ * parent `sourceValue` blob, so the cached blob is stale after edits — this
+ * helper reads the authoritative state for callers that need the current
+ * segment list (MCP `getManagedStreet`, future export flows).
+ */
+function getManagedStreetJSON(streetEl) {
+  if (!streetEl || !streetEl.components?.['managed-street']) {
+    throw new Error('Element is not a managed-street');
+  }
+  const msData = streetEl.components['managed-street'].data;
+  const segments = [];
+  for (const child of streetEl.children) {
+    if (
+      child.nodeType !== Node.ELEMENT_NODE ||
+      !child.hasAttribute('street-segment')
+    ) {
+      continue;
+    }
+    const segData = child.getAttribute('street-segment') || {};
+    const segment = {
+      name: child.getAttribute('data-layer-name') || `${segData.type}`,
+      type: segData.type,
+      width: segData.width,
+      level: segData.level,
+      direction: segData.direction,
+      color: segData.color,
+      surface: segData.surface
+    };
+    if (segData.variant) segment.variant = segData.variant;
+    if (segData.side) segment.side = segData.side;
+
+    const generatedByKind = {};
+    for (const compName in child.components) {
+      const m = compName.match(GENERATED_RE);
+      if (!m) continue;
+      const kind = m[1];
+      const idx = parseInt(m[2], 10) - 1;
+      const data = { ...child.components[compName].data };
+      if (!generatedByKind[kind]) generatedByKind[kind] = [];
+      generatedByKind[kind][idx] = data;
+    }
+    if (Object.keys(generatedByKind).length > 0) {
+      const generated = {};
+      for (const kind of GENERATED_KINDS) {
+        if (generatedByKind[kind]) {
+          generated[kind] = generatedByKind[kind].filter(
+            (entry) => entry !== undefined
+          );
+        }
+      }
+      segment.generated = generated;
+    }
+    segments.push(segment);
+  }
+
+  const layerName = streetEl.getAttribute('data-layer-name') || '';
+  const name = layerName.startsWith('Managed Street • ')
+    ? layerName.slice('Managed Street • '.length)
+    : layerName || 'Untitled';
+
+  return {
+    name,
+    width: segments.reduce((sum, seg) => sum + (seg.width || 0), 0),
+    length: msData.length,
+    segments
+  };
+}
+
+window.STREET.utils.getManagedStreetJSON = getManagedStreetJSON;
+
 // Streetplan Helper function to parse O-Tags string into array
 function parseOTags(tags) {
   if (!tags || tags === '-') return [];

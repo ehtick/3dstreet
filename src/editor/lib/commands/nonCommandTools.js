@@ -43,7 +43,7 @@ async function managedStreetCreateHandler(args) {
     0
   );
 
-  const uniqueId = 'managed-street-' + Math.random().toString(36).substr(2, 9);
+  const uniqueId = 'managed-street-' + Math.random().toString(36).slice(2, 11);
 
   const definition = {
     id: uniqueId,
@@ -86,6 +86,10 @@ async function managedStreetUpdateHandler(args) {
       throw new Error('Segment must have at least a type property');
     }
     const label = segment.name || `${segment.type} • default`;
+    // segmentadd takes streetId (string), not the resolved element, because
+    // its execute() runs on redo too — the parent DOM may have been recreated
+    // since construction, so it looks up by id at execute time. update/remove
+    // already hold the segment element and don't need that.
     AFRAME.INSPECTOR.execute(
       'segmentadd',
       { streetId: entityId, segment, segmentIndex },

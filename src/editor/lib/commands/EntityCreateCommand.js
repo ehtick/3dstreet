@@ -10,6 +10,53 @@ import { createEntity, createUniqueId } from '../entity.js';
  * @constructor
  */
 export class EntityCreateCommand extends Command {
+  static llmTool = {
+    name: 'entityCreate',
+    description:
+      'Create a new entity in the A-Frame scene with specified components and transforms',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        mixin: {
+          type: 'string',
+          description:
+            'The mixin id value for the new entity (e.g., "box-truck-rig")'
+        },
+        position: {
+          type: 'string',
+          description:
+            'Position as space-separated x y z values (e.g., "0 1.5 -3") default 0 0 0'
+        },
+        rotation: {
+          type: 'string',
+          description:
+            'Rotation as space-separated x y z values in degrees (e.g., "0 45 0") default 0 0 0'
+        },
+        scale: {
+          type: 'string',
+          description:
+            'Scale as space-separated x y z values (e.g., "2 2 2") default 1 1 1'
+        }
+      },
+      required: []
+    }
+  };
+
+  // Reshape flat LLM args into the {components: {...}, mixin?} payload the
+  // command constructor expects. The command itself doesn't care about the
+  // LLM-facing flat shape; this lives here so commands stay pure.
+  static transformLLMArgs(args) {
+    const payload = {
+      components: {
+        position: args.position || '0 0 0',
+        rotation: args.rotation || '0 0 0',
+        scale: args.scale || '1 1 1'
+      }
+    };
+    if (args.mixin) payload.mixin = args.mixin;
+    return payload;
+  }
+
   constructor(editor, definition, callback = undefined) {
     super(editor);
 

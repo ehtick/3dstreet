@@ -991,7 +991,7 @@ function AIChatPanel() {
         {
           role: 'assistant',
           content:
-            'Sorry, I encountered an error. Please try again, or reset the chat. (See browser console for details.)',
+            'Sorry, I encountered an error. Please try again, or reset the chat.',
           isRecoverable: true,
           responseId: errorResponseId,
           timestamp: new Date()

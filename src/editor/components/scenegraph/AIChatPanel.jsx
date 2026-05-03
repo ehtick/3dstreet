@@ -78,13 +78,23 @@ const MCP_HELP_MARKDOWN = `**MCP integration** (alpha)
 
 Drive this scene from Claude Desktop or Claude Code. The status bar above will turn green once the relay pairs.
 
-The relay isn't published as an npm package yet — for now, run it from a clone of the 3DStreet repo:
+**Claude Code:**
 
 \`\`\`
-node scripts/dev-mcp-relay.cjs
+claude mcp add 3dstreet -- npx -y 3dstreet-mcp
 \`\`\`
 
-Then click **Reconnect** above. Once paired, the relay forwards Claude's tool calls to this tab. Toggle **Read-only** to block scene mutations.`;
+**Claude Desktop:** add this to \`claude_desktop_config.json\` and restart:
+
+\`\`\`json
+{
+  "mcpServers": {
+    "3dstreet": { "command": "npx", "args": ["-y", "3dstreet-mcp"] }
+  }
+}
+\`\`\`
+
+Then click **Reconnect** above. Once paired, the relay forwards Claude's tool calls to this tab. Toggle **Read-only** to block scene mutations. Source and docs: [github.com/3DStreet/3dstreet-mcp](https://github.com/3DStreet/3dstreet-mcp).`;
 
 // Helper component for the copy button
 const CopyButton = ({ jsonData, textContent }) => {

@@ -1,3 +1,4 @@
+import { Parser } from 'expr-eval';
 import { Command } from '../command.js';
 import { createUniqueId, updateEntity } from '../entity.js';
 
@@ -7,6 +8,58 @@ import { createUniqueId, updateEntity } from '../entity.js';
  * @constructor
  */
 export class EntityUpdateCommand extends Command {
+  static llmTool = {
+    name: 'entityUpdate',
+    description:
+      'Update an entity in the A-Frame scene with new properties or components',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entityId: {
+          type: 'string',
+          description: 'The ID of the entity to update'
+        },
+        component: {
+          type: 'string',
+          description:
+            'The component to update (e.g., position, rotation, mixin)'
+        },
+        property: {
+          type: 'string',
+          description: 'The property to update within the component (optional)'
+        },
+        value: {
+          type: 'string',
+          description: 'The new value to set'
+        },
+        expressionForValue: {
+          type: 'string',
+          description:
+            'Mathematical expression to evaluate for the value (e.g., "5 - 2"). Use this instead of value when calculation is needed.'
+        }
+      },
+      required: ['entityId', 'component']
+    }
+  };
+
+  // Resolve expressionForValue → numeric value before dispatch. The id→DOM
+  // resolution for entityId is handled by the registry's generic adapter.
+  static transformLLMArgs(args) {
+    const out = { ...args };
+    if (out.expressionForValue) {
+      const expr = String(out.expressionForValue).trim();
+      if (!/^[-+0-9\s()*/%.]*$/.test(expr)) {
+        throw new Error('Invalid expression: contains forbidden characters');
+      }
+      out.value = new Parser().evaluate(expr);
+      delete out.expressionForValue;
+    }
+    if (out.value === undefined) {
+      throw new Error('Either value or expressionForValue must be provided');
+    }
+    return out;
+  }
+
   constructor(editor, payload) {
     super(editor);
 

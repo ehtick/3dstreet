@@ -8,6 +8,21 @@ import useStore from '@/store';
  * payload: { value, name? }
  */
 export class SceneTitleCommand extends Command {
+  static llmTool = {
+    name: 'updateSceneTitle',
+    description: 'Update the scene title in the global state',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        value: {
+          type: 'string',
+          description: 'The new scene title'
+        }
+      },
+      required: ['value']
+    }
+  };
+
   constructor(editor, payload) {
     super(editor);
 

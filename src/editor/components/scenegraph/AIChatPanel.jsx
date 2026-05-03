@@ -960,6 +960,7 @@ function AIChatPanel() {
         const aiMessage = {
           role: 'assistant',
           content: 'No response available',
+          isRecoverable: true,
           responseId: responseId, // Add the response ID
           timestamp: new Date()
         };
@@ -979,6 +980,9 @@ function AIChatPanel() {
       // We'll add the rating message after all function calls are processed
       // This will happen in the processFunctionCalls().then() callback
     } catch (error) {
+      // Log full error to console for debugging — never to chat UI, since
+      // SDK errors routinely embed endpoint URLs, auth details, and quota
+      // metadata that we don't want to surface to users.
       console.error('Error generating response:', error);
       const errorResponseId = Date.now() + Math.random().toString(16).slice(2);
       setLatestResponseId(errorResponseId);
@@ -986,7 +990,9 @@ function AIChatPanel() {
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content:
+            'Sorry, I encountered an error. Please try again, or reset the chat.',
+          isRecoverable: true,
           responseId: errorResponseId,
           timestamp: new Date()
         },
@@ -1310,6 +1316,16 @@ function AIChatPanel() {
                     content={message.content}
                     isAssistant={message.role === 'assistant'}
                   />
+                  {message.isRecoverable && (
+                    <button
+                      onClick={resetConversation}
+                      className={styles.inlineResetButton}
+                      title="Clear chat history and start fresh"
+                    >
+                      <AwesomeIcon icon={faRotate} />
+                      <span>Reset chat</span>
+                    </button>
+                  )}
                 </div>
               );
             }

@@ -980,17 +980,18 @@ function AIChatPanel() {
       // We'll add the rating message after all function calls are processed
       // This will happen in the processFunctionCalls().then() callback
     } catch (error) {
+      // Log full error to console for debugging — never to chat UI, since
+      // SDK errors routinely embed endpoint URLs, auth details, and quota
+      // metadata that we don't want to surface to users.
       console.error('Error generating response:', error);
       const errorResponseId = Date.now() + Math.random().toString(16).slice(2);
       setLatestResponseId(errorResponseId);
-      const detail = (error?.message || String(error || '')).slice(0, 400);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: detail
-            ? `Sorry, I encountered an error: ${detail}`
-            : 'Sorry, I encountered an error. Please try again.',
+          content:
+            'Sorry, I encountered an error. Please try again, or reset the chat. (See browser console for details.)',
           isRecoverable: true,
           responseId: errorResponseId,
           timestamp: new Date()

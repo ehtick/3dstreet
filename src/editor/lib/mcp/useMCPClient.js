@@ -31,7 +31,12 @@ const resolvePort = () => {
   return DEFAULT_PORT;
 };
 
-export function useMCPClient({ currentUser, enabled, readOnly }) {
+export function useMCPClient({
+  currentUser,
+  enabled,
+  readOnly,
+  persistRetries
+}) {
   const [status, setStatus] = useState('disconnected');
   const [lastError, setLastError] = useState(null);
   const [transcript, setTranscript] = useState([]);
@@ -42,6 +47,10 @@ export function useMCPClient({ currentUser, enabled, readOnly }) {
   const userRef = useRef(currentUser);
   const readOnlyRef = useRef(!!readOnly);
   const enabledRef = useRef(!!enabled);
+  const persistRef = useRef(!!persistRetries);
+  // Sticky for the session: once we've successfully paired, drops are worth
+  // retrying through even after `persistRetries` flips back off.
+  const everConnectedRef = useRef(false);
   // Indirection so `scheduleReconnect` can reach `connect` without forcing
   // either callback to re-create on every dependency churn.
   const connectRef = useRef(null);
@@ -56,6 +65,9 @@ export function useMCPClient({ currentUser, enabled, readOnly }) {
   useEffect(() => {
     enabledRef.current = !!enabled;
   }, [enabled]);
+  useEffect(() => {
+    persistRef.current = !!persistRetries;
+  }, [persistRetries]);
 
   const appendTranscript = useCallback((entry) => {
     setTranscript((prev) => {
@@ -80,6 +92,9 @@ export function useMCPClient({ currentUser, enabled, readOnly }) {
 
   const scheduleReconnect = useCallback(() => {
     if (!enabledRef.current) return;
+    // Probe mode: one shot, then idle. Avoids spamming console with
+    // connection errors for users who never installed the relay.
+    if (!persistRef.current && !everConnectedRef.current) return;
     clearReconnectTimer();
     const delay = backoffRef.current;
     backoffRef.current = Math.min(delay * 2, MAX_BACKOFF_MS);
@@ -111,6 +126,7 @@ export function useMCPClient({ currentUser, enabled, readOnly }) {
 
     ws.addEventListener('open', () => {
       backoffRef.current = 1000;
+      everConnectedRef.current = true;
       setStatus('connected');
       setLastError(null);
     });
@@ -215,6 +231,9 @@ export function useMCPClient({ currentUser, enabled, readOnly }) {
   const reconnect = useCallback(() => {
     clearReconnectTimer();
     backoffRef.current = 1000;
+    // Manual reconnect = explicit user intent; treat the same as a prior
+    // successful pairing so subsequent drops trigger backoff retries.
+    everConnectedRef.current = true;
     if (wsRef.current) {
       try {
         wsRef.current.close(1000, 'manual-reconnect');

@@ -66,6 +66,26 @@ const HELP_EXAMPLES = [
   'Rename the scene to "Market Street redesign"'
 ];
 
+const HELP_COMMANDS = [
+  {
+    command: '/mcp',
+    description:
+      'Connect Claude Desktop or Claude Code over the MCP relay (alpha)'
+  }
+];
+
+const MCP_HELP_MARKDOWN = `**MCP integration** (alpha)
+
+Drive this scene from Claude Desktop or Claude Code. The status bar above will turn green once the relay pairs.
+
+The relay isn't published as an npm package yet — for now, run it from a clone of the 3DStreet repo:
+
+\`\`\`
+node scripts/dev-mcp-relay.cjs
+\`\`\`
+
+Then click **Reconnect** above. Once paired, the relay forwards Claude's tool calls to this tab. Toggle **Read-only** to block scene mutations.`;
+
 // Helper component for the copy button
 const CopyButton = ({ jsonData, textContent }) => {
   const [copied, setCopied] = useState(false);
@@ -407,22 +427,23 @@ const MCPStatusBar = ({
           <span>Reconnect</span>
         </button>
       )}
-      <button
-        type="button"
-        className={`${styles.mcpStatusButton} ${
-          readOnly ? styles.mcpReadOnlyOn : ''
-        }`}
-        onClick={onToggleReadOnly}
-        disabled={!isConnected}
-        title={
-          readOnly
-            ? 'Read-only mode on: mutating tools rejected'
-            : 'Toggle read-only mode (block scene mutations from the MCP)'
-        }
-      >
-        <AwesomeIcon icon={readOnly ? faLock : faLockOpen} />
-        <span>{readOnly ? 'Read-only' : 'Allow edits'}</span>
-      </button>
+      {isConnected && (
+        <button
+          type="button"
+          className={`${styles.mcpStatusButton} ${
+            readOnly ? styles.mcpReadOnlyOn : ''
+          }`}
+          onClick={onToggleReadOnly}
+          title={
+            readOnly
+              ? 'Read-only mode on: mutating tools rejected'
+              : 'Toggle read-only mode (block scene mutations from the MCP)'
+          }
+        >
+          <AwesomeIcon icon={readOnly ? faLock : faLockOpen} />
+          <span>{readOnly ? 'Read-only' : 'Allow edits'}</span>
+        </button>
+      )}
     </div>
   );
 };
@@ -664,6 +685,9 @@ function AIChatPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [mcpReadOnly, setMcpReadOnly] = useState(false);
+  // Hide the MCP UI for users who never opted in. Flips true once we
+  // actually pair (`mcp.status === 'connected'`) or the user types `/mcp`.
+  const [mcpVisible, setMcpVisible] = useState(false);
   const chatContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const { currentUser } = useAuthContext();
@@ -675,8 +699,16 @@ function AIChatPanel() {
   const mcp = useMCPClient({
     currentUser,
     enabled: true,
-    readOnly: mcpReadOnly
+    readOnly: mcpReadOnly,
+    // Without explicit user intent, do a single quiet probe and idle —
+    // don't want to surface an MCP UI to users who never installed the relay.
+    persistRetries: mcpVisible
   });
+
+  // First successful pair "unlocks" the bar for the rest of the session.
+  useEffect(() => {
+    if (mcp.status === 'connected') setMcpVisible(true);
+  }, [mcp.status]);
 
   // Interleave Gemini chat messages with incoming MCP frames so a single
   // chronological feed shows both LLM channels. Both arrays already carry
@@ -1172,7 +1204,26 @@ function AIChatPanel() {
       type: 'help',
       id: `help_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       timestamp: new Date(),
-      examples: HELP_EXAMPLES
+      examples: HELP_EXAMPLES,
+      commands: HELP_COMMANDS
+    };
+    setMessages((prev) => [...prev, userMessage, helpMessage]);
+  };
+
+  const showMCPHelpMessage = (rawInput) => {
+    setMcpVisible(true);
+    if (mcp.status !== 'connected' && mcp.status !== 'connecting') {
+      mcp.reconnect();
+    }
+    const userMessage = {
+      role: 'user',
+      content: rawInput,
+      timestamp: new Date()
+    };
+    const helpMessage = {
+      role: 'assistant',
+      content: MCP_HELP_MARKDOWN,
+      timestamp: new Date()
     };
     setMessages((prev) => [...prev, userMessage, helpMessage]);
   };
@@ -1181,8 +1232,13 @@ function AIChatPanel() {
   const handleSendMessage = async () => {
     const currentInput = input;
     setInput(''); // Clear the input field immediately
-    if (currentInput.trim().toLowerCase().startsWith('/help')) {
+    const trimmed = currentInput.trim().toLowerCase();
+    if (trimmed.startsWith('/help')) {
       showHelpMessage(currentInput);
+      return;
+    }
+    if (trimmed === '/mcp') {
+      showMCPHelpMessage(currentInput);
       return;
     }
     await processMessage(currentInput);
@@ -1315,14 +1371,16 @@ function AIChatPanel() {
   return (
     <div className={`${styles.chatContainer} ai-chat-panel-container`}>
       <div className={styles.proFeaturesWrapper}>
-        <MCPStatusBar
-          status={mcp.status}
-          port={mcp.port}
-          lastError={mcp.lastError}
-          readOnly={mcpReadOnly}
-          onToggleReadOnly={() => setMcpReadOnly((v) => !v)}
-          onReconnect={mcp.reconnect}
-        />
+        {mcpVisible && (
+          <MCPStatusBar
+            status={mcp.status}
+            port={mcp.port}
+            lastError={mcp.lastError}
+            readOnly={mcpReadOnly}
+            onToggleReadOnly={() => setMcpReadOnly((v) => !v)}
+            onReconnect={mcp.reconnect}
+          />
+        )}
         {showResetConfirm && (
           <div className={styles.resetConfirmOverlay}>
             <div className={styles.resetConfirmModal}>
@@ -1367,6 +1425,24 @@ function AIChatPanel() {
                       </button>
                     ))}
                   </div>
+                  {message.commands && message.commands.length > 0 && (
+                    <>
+                      <div className={styles.helpHeader}>Commands:</div>
+                      <div className={styles.helpExamples}>
+                        {message.commands.map((cmd) => (
+                          <button
+                            key={cmd.command}
+                            type="button"
+                            className={styles.helpExampleButton}
+                            onClick={() => setInput(cmd.command)}
+                            title={cmd.description}
+                          >
+                            <code>{cmd.command}</code> — {cmd.description}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             } else if (message.type === 'commandPill') {

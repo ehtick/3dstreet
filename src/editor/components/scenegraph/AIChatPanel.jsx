@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Tooltip } from 'radix-ui';
 import { ai } from '@shared/services/firebase';
 import { getGenerativeModel } from 'firebase/ai';
@@ -22,10 +22,14 @@ import {
   faThumbsUp,
   faThumbsDown,
   faRotateLeft,
-  faRotateRight
+  faRotateRight,
+  faPlug,
+  faLock,
+  faLockOpen
 } from '@fortawesome/free-solid-svg-icons';
 import { getGroupedMixinOptions } from '../../lib/mixinUtils';
 import Events from '../../lib/Events';
+import { useMCPClient } from '../../lib/mcp/useMCPClient.js';
 
 const AI_MODEL_ID = 'gemini-3-flash-preview';
 let AI_CONVERSATION_ID = uuidv4();
@@ -61,6 +65,36 @@ const HELP_EXAMPLES = [
   'Set the location to 37.7749, -122.4194',
   'Rename the scene to "Market Street redesign"'
 ];
+
+const HELP_COMMANDS = [
+  {
+    command: '/mcp',
+    description:
+      'Connect Claude Desktop or Claude Code over the MCP relay (alpha)'
+  }
+];
+
+const MCP_HELP_MARKDOWN = `**MCP integration** (alpha)
+
+Drive this scene from Claude Desktop or Claude Code. The status bar above will turn green once the relay pairs.
+
+**Claude Code:**
+
+\`\`\`
+claude mcp add 3dstreet -- npx -y 3dstreet-mcp
+\`\`\`
+
+**Claude Desktop:** add this to \`claude_desktop_config.json\` and restart:
+
+\`\`\`json
+{
+  "mcpServers": {
+    "3dstreet": { "command": "npx", "args": ["-y", "3dstreet-mcp"] }
+  }
+}
+\`\`\`
+
+Then click **Reconnect** above. Once paired, the relay forwards Claude's tool calls to this tab. Toggle **Read-only** to block scene mutations. Source and docs: [github.com/3DStreet/3dstreet-mcp](https://github.com/3DStreet/3dstreet-mcp).`;
 
 // Helper component for the copy button
 const CopyButton = ({ jsonData, textContent }) => {
@@ -295,6 +329,131 @@ const SnapshotMessage = ({ snapshot }) => {
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Inline transcript entry for an incoming MCP frame. Mirrors
+// FunctionCallMessage so users can recognize "the LLM is calling a tool"
+// regardless of whether it came from the in-editor Gemini path or from
+// Claude over the MCP relay.
+const MCPFrameMessage = ({ frame }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { method, name, args, status, result } = frame;
+  const label = name || method;
+
+  return (
+    <div
+      className={`${styles.chatMessage} ${styles.functionCall} ${styles[status]}`}
+    >
+      <div
+        className={styles.functionCallSummary}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span className={`${styles.statusIndicator} ${styles[status]}`}></span>
+        <strong>mcp · {label}</strong>:{' '}
+        {status === 'pending'
+          ? 'Executing…'
+          : status === 'success'
+            ? 'Completed'
+            : 'Failed'}
+      </div>
+
+      {isExpanded && (
+        <div className={styles.functionCallDetails}>
+          <div>
+            <strong>Method:</strong> {method}
+          </div>
+          {name && (
+            <div>
+              <strong>Tool:</strong> {name}
+            </div>
+          )}
+          {args && (
+            <>
+              <div>
+                <strong>Arguments:</strong>
+              </div>
+              <pre>{JSON.stringify(args, null, 2)}</pre>
+            </>
+          )}
+          {status !== 'pending' && (
+            <>
+              <div>
+                <strong>{status === 'error' ? 'Error:' : 'Result:'}</strong>
+              </div>
+              <pre>
+                {typeof result === 'object'
+                  ? JSON.stringify(result, null, 2)
+                  : String(result ?? '')}
+              </pre>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MCP_STATUS_LABEL = {
+  disconnected: 'MCP not detected',
+  connecting: 'Connecting to MCP…',
+  connected: 'MCP connected',
+  'paired-elsewhere': 'MCP paired with another tab'
+};
+
+const MCPStatusBar = ({
+  status,
+  port,
+  lastError,
+  readOnly,
+  onToggleReadOnly,
+  onReconnect
+}) => {
+  const isConnected = status === 'connected';
+  const tooltip =
+    status === 'disconnected'
+      ? `No relay listening on 127.0.0.1:${port}. Start it from Claude Desktop or Code, then click Reconnect.`
+      : status === 'paired-elsewhere'
+        ? lastError ||
+          'Another browser tab owns the MCP connection. Close it and reconnect to take over.'
+        : status === 'connecting'
+          ? `Trying ws://127.0.0.1:${port}…`
+          : `Paired to ws://127.0.0.1:${port}`;
+  return (
+    <div className={styles.mcpStatusBar} title={tooltip}>
+      <span
+        className={`${styles.mcpStatusDot} ${styles[`mcpStatus_${status}`]}`}
+      />
+      <span className={styles.mcpStatusLabel}>{MCP_STATUS_LABEL[status]}</span>
+      {(status === 'disconnected' || status === 'paired-elsewhere') && (
+        <button
+          type="button"
+          className={styles.mcpStatusButton}
+          onClick={onReconnect}
+          title="Try connecting again"
+        >
+          <AwesomeIcon icon={faPlug} />
+          <span>Reconnect</span>
+        </button>
+      )}
+      {isConnected && (
+        <button
+          type="button"
+          className={`${styles.mcpStatusButton} ${
+            readOnly ? styles.mcpReadOnlyOn : ''
+          }`}
+          onClick={onToggleReadOnly}
+          title={
+            readOnly
+              ? 'Read-only mode on: mutating tools rejected'
+              : 'Toggle read-only mode (block scene mutations from the MCP)'
+          }
+        >
+          <AwesomeIcon icon={readOnly ? faLock : faLockOpen} />
+          <span>{readOnly ? 'Read-only' : 'Allow edits'}</span>
+        </button>
+      )}
     </div>
   );
 };
@@ -535,6 +694,10 @@ function AIChatPanel() {
   const [latestResponseId, setLatestResponseId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [mcpReadOnly, setMcpReadOnly] = useState(false);
+  // Hide the MCP UI for users who never opted in. Flips true once we
+  // actually pair (`mcp.status === 'connected'`) or the user types `/mcp`.
+  const [mcpVisible, setMcpVisible] = useState(false);
   const chatContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const { currentUser } = useAuthContext();
@@ -542,6 +705,37 @@ function AIChatPanel() {
   const rightPanelTab = useStore((state) => state.rightPanelTab);
 
   const modelRef = useRef(null);
+
+  const mcp = useMCPClient({
+    currentUser,
+    readOnly: mcpReadOnly,
+    // Without explicit user intent, do a single quiet probe and idle —
+    // don't want to surface an MCP UI to users who never installed the relay.
+    persistRetries: mcpVisible
+  });
+
+  // First successful pair "unlocks" the bar for the rest of the session.
+  useEffect(() => {
+    if (mcp.status === 'connected') setMcpVisible(true);
+  }, [mcp.status]);
+
+  // Interleave Gemini chat messages with incoming MCP frames so a single
+  // chronological feed shows both LLM channels. Both arrays already carry
+  // Date timestamps; sort once per render.
+  const renderedMessages = useMemo(() => {
+    if (mcp.transcript.length === 0) return messages;
+    const mcpEntries = mcp.transcript.map((t) => ({
+      ...t,
+      type: 'mcpFrame'
+    }));
+    const merged = messages.concat(mcpEntries);
+    merged.sort((a, b) => {
+      const at = a.timestamp ? a.timestamp.getTime() : 0;
+      const bt = b.timestamp ? b.timestamp.getTime() : 0;
+      return at - bt;
+    });
+    return merged;
+  }, [messages, mcp.transcript]);
 
   // Focus the textarea when the console tab becomes active so Enter sends the
   // command instead of re-clicking the tab button that was just focused.
@@ -1019,7 +1213,26 @@ function AIChatPanel() {
       type: 'help',
       id: `help_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       timestamp: new Date(),
-      examples: HELP_EXAMPLES
+      examples: HELP_EXAMPLES,
+      commands: HELP_COMMANDS
+    };
+    setMessages((prev) => [...prev, userMessage, helpMessage]);
+  };
+
+  const showMCPHelpMessage = (rawInput) => {
+    setMcpVisible(true);
+    if (mcp.status !== 'connected' && mcp.status !== 'connecting') {
+      mcp.reconnect();
+    }
+    const userMessage = {
+      role: 'user',
+      content: rawInput,
+      timestamp: new Date()
+    };
+    const helpMessage = {
+      role: 'assistant',
+      content: MCP_HELP_MARKDOWN,
+      timestamp: new Date()
     };
     setMessages((prev) => [...prev, userMessage, helpMessage]);
   };
@@ -1028,20 +1241,25 @@ function AIChatPanel() {
   const handleSendMessage = async () => {
     const currentInput = input;
     setInput(''); // Clear the input field immediately
-    if (currentInput.trim().toLowerCase().startsWith('/help')) {
+    const trimmed = currentInput.trim().toLowerCase();
+    if (trimmed.startsWith('/help')) {
       showHelpMessage(currentInput);
+      return;
+    }
+    if (trimmed === '/mcp') {
+      showMCPHelpMessage(currentInput);
       return;
     }
     await processMessage(currentInput);
   };
 
-  // Scroll to bottom when new messages are added
+  // Scroll to bottom when new messages are added (includes MCP frames).
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, mcp.transcript]);
 
   const resetConversation = () => {
     // Preserve command history pills — the underlying A-Frame undo stack
@@ -1162,6 +1380,16 @@ function AIChatPanel() {
   return (
     <div className={`${styles.chatContainer} ai-chat-panel-container`}>
       <div className={styles.proFeaturesWrapper}>
+        {mcpVisible && (
+          <MCPStatusBar
+            status={mcp.status}
+            port={mcp.port}
+            lastError={mcp.lastError}
+            readOnly={mcpReadOnly}
+            onToggleReadOnly={() => setMcpReadOnly((v) => !v)}
+            onReconnect={mcp.reconnect}
+          />
+        )}
         {showResetConfirm && (
           <div className={styles.resetConfirmOverlay}>
             <div className={styles.resetConfirmModal}>
@@ -1181,11 +1409,13 @@ function AIChatPanel() {
           </div>
         )}
         <div ref={chatContainerRef} className={styles.chatMessages}>
-          {messages.map((message, index) => {
+          {renderedMessages.map((message, index) => {
             if (message.type === 'functionCall') {
               return (
                 <FunctionCallMessage key={message.id} functionCall={message} />
               );
+            } else if (message.type === 'mcpFrame') {
+              return <MCPFrameMessage key={message.id} frame={message} />;
             } else if (message.type === 'snapshot') {
               return <SnapshotMessage key={message.id} snapshot={message} />;
             } else if (message.type === 'help') {
@@ -1204,6 +1434,24 @@ function AIChatPanel() {
                       </button>
                     ))}
                   </div>
+                  {message.commands && message.commands.length > 0 && (
+                    <>
+                      <div className={styles.helpHeader}>Commands:</div>
+                      <div className={styles.helpExamples}>
+                        {message.commands.map((cmd) => (
+                          <button
+                            key={cmd.command}
+                            type="button"
+                            className={styles.helpExampleButton}
+                            onClick={() => setInput(cmd.command)}
+                            title={cmd.description}
+                          >
+                            <code>{cmd.command}</code> — {cmd.description}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             } else if (message.type === 'commandPill') {

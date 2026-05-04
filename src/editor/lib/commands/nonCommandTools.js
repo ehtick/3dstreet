@@ -358,12 +358,12 @@ const segmentSchema = {
     type: {
       type: 'string',
       description:
-        'Type of segment (e.g., "drive-lane", "bike-lane", "sidewalk", "parking-lane", "divider", "grass", "rail", "bus-lane")'
+        'Type of segment. Valid values: "drive-lane", "bike-lane", "sidewalk", "parking-lane", "divider", "grass", "rail", "bus-lane", "building". Use "building" with `variant` + `side` for building-flanked streets — the segment auto-tiles building models edge-to-edge with no need to supply `generated`.'
     },
     surface: {
       type: 'string',
       description:
-        'Surface material (e.g., "asphalt", "concrete", "grass", "sidewalk", "gravel", "sand", "hatched", "planting-strip", "none", "solid")'
+        'Surface material (e.g., "asphalt", "concrete", "grass", "sidewalk", "gravel", "sand", "hatched", "planting-strip", "none", "solid"). Optional for building segments — the variant supplies a sensible default.'
     },
     color: { type: 'string', description: 'Hex color code (e.g., "#ffffff")' },
     level: { type: 'number', description: 'Vertical offset (-1, 0, 1, 2)' },
@@ -371,6 +371,17 @@ const segmentSchema = {
     direction: {
       type: 'string',
       description: 'Traffic direction ("none", "inbound", "outbound")'
+    },
+    variant: {
+      type: 'string',
+      description:
+        'Variant preset for `type: "building"` segments. Valid values: "brownstone" (urban mixed-use SM3D blocks), "suburban" (detached single-family houses), "arcade" (arched street-front buildings), "water" (seawall), "grass" (fenced grass strip), "parking" (fenced parking lot), "sp-mixeduse" (StreetPlan mixed-use), "sp-residential" (StreetPlan single-family/townhouse), "sp-big-box" (StreetPlan big-box stores), "custom" (preserve existing settings). Setting variant on a building segment auto-fits the model array; do NOT pass `generated.clones` for buildings unless you want full control. Only meaningful when `type: "building"`.'
+    },
+    side: {
+      type: 'string',
+      description:
+        'Side of the street the segment sits on. Required for `type: "building"` (controls which direction the buildings face — "left" rotates them to face right toward the street, "right" rotates them to face left). Valid values: "left", "right".',
+      enum: ['left', 'right']
     },
     generated: {
       type: 'object',

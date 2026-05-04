@@ -292,6 +292,7 @@ AFRAME.registerComponent('managed-street', {
       this.el.emit('segments-changed', {
         changeType: 'property',
         property: 'length',
+        segment: null,
         oldValue: oldData.length,
         newValue: data.length
       });

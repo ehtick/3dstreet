@@ -31,12 +31,7 @@ const resolvePort = () => {
   return DEFAULT_PORT;
 };
 
-export function useMCPClient({
-  currentUser,
-  enabled,
-  readOnly,
-  persistRetries
-}) {
+export function useMCPClient({ currentUser, readOnly, persistRetries }) {
   const [status, setStatus] = useState('disconnected');
   const [lastError, setLastError] = useState(null);
   const [transcript, setTranscript] = useState([]);
@@ -46,7 +41,6 @@ export function useMCPClient({
   const reconnectTimerRef = useRef(null);
   const userRef = useRef(currentUser);
   const readOnlyRef = useRef(!!readOnly);
-  const enabledRef = useRef(!!enabled);
   const persistRef = useRef(!!persistRetries);
   // Sticky for the session: once we've successfully paired, drops are worth
   // retrying through even after `persistRetries` flips back off.
@@ -62,9 +56,6 @@ export function useMCPClient({
   useEffect(() => {
     readOnlyRef.current = !!readOnly;
   }, [readOnly]);
-  useEffect(() => {
-    enabledRef.current = !!enabled;
-  }, [enabled]);
   useEffect(() => {
     persistRef.current = !!persistRetries;
   }, [persistRetries]);
@@ -91,7 +82,6 @@ export function useMCPClient({
   };
 
   const scheduleReconnect = useCallback(() => {
-    if (!enabledRef.current) return;
     // Probe mode: one shot, then idle. Avoids spamming console with
     // connection errors for users who never installed the relay.
     if (!persistRef.current && !everConnectedRef.current) return;
@@ -105,7 +95,6 @@ export function useMCPClient({
   }, []);
 
   const connect = useCallback(() => {
-    if (!enabledRef.current) return;
     if (wsRef.current) {
       const state = wsRef.current.readyState;
       if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) return;
@@ -196,22 +185,8 @@ export function useMCPClient({
     connectRef.current = connect;
   }, [connect]);
 
-  // Bring the connection up when enabled flips on; tear it down when off.
+  // Probe on mount, tear down on unmount.
   useEffect(() => {
-    if (!enabled) {
-      clearReconnectTimer();
-      if (wsRef.current) {
-        try {
-          wsRef.current.close(1000, 'panel-closing');
-        } catch (err) {
-          console.warn('[mcp] error closing socket:', err);
-        }
-        wsRef.current = null;
-      }
-      backoffRef.current = 1000;
-      setStatus('disconnected');
-      return;
-    }
     backoffRef.current = 1000;
     connect();
     return () => {
@@ -226,7 +201,7 @@ export function useMCPClient({
         }
       }
     };
-  }, [enabled, connect]);
+  }, [connect]);
 
   const reconnect = useCallback(() => {
     clearReconnectTimer();

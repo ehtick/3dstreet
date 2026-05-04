@@ -708,7 +708,6 @@ function AIChatPanel() {
 
   const mcp = useMCPClient({
     currentUser,
-    enabled: true,
     readOnly: mcpReadOnly,
     // Without explicit user intent, do a single quiet probe and idle —
     // don't want to surface an MCP UI to users who never installed the relay.

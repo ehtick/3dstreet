@@ -16,8 +16,12 @@ const GENERATED_KINDS = [
   'striping',
   'rail'
 ];
+// Matches `street-generated-<kind>__N` (canonical, 1-indexed) and the bare
+// `street-generated-<kind>` that AddGeneratorComponent emits when a user
+// adds the first instance and skips the id prompt — without this case we
+// silently drop those generators from the export.
 const GENERATED_RE =
-  /^street-generated-(clones|stencil|pedestrians|striping|rail)__(\d+)$/;
+  /^street-generated-(clones|stencil|pedestrians|striping|rail)(?:__(\d+))?$/;
 
 /**
  * Reverse of `parseStreetObject`: walk a managed-street entity and rebuild
@@ -58,7 +62,7 @@ function getManagedStreetJSON(streetEl) {
       const m = compName.match(GENERATED_RE);
       if (!m) continue;
       const kind = m[1];
-      const idx = parseInt(m[2], 10) - 1;
+      const idx = m[2] ? parseInt(m[2], 10) - 1 : 0;
       const data = { ...child.components[compName].data };
       if (!generatedByKind[kind]) generatedByKind[kind] = [];
       generatedByKind[kind][idx] = data;

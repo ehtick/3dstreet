@@ -15,6 +15,20 @@
 
 import { getGroupedMixinOptions } from '../mixinUtils.js';
 import Events from '../Events.js';
+import { getUserProfile } from '@shared/utils/username';
+
+// Guard for entity-id args: the relay forwards arbitrary strings from
+// Claude. Resolve to an A-Frame entity or throw a clean error so the
+// JSON-RPC reply carries it back instead of crashing the inspector.
+function resolveEntity(entityId) {
+  if (!entityId) throw new Error('entityId is required');
+  const el = document.getElementById(entityId);
+  if (!el) throw new Error(`Entity with ID ${entityId} not found`);
+  if (!el.isEntity) {
+    throw new Error(`DOM id ${entityId} is not an A-Frame entity`);
+  }
+  return el;
+}
 
 async function getSceneHandler() {
   const root = document.getElementById('street-container');
@@ -30,13 +44,10 @@ async function getSceneHandler() {
 }
 
 async function getEntityHandler(args) {
-  const { entityId } = args;
-  if (!entityId) throw new Error('entityId is required');
-  const el = document.getElementById(entityId);
-  if (!el) throw new Error(`Entity with ID ${entityId} not found`);
+  const el = resolveEntity(args?.entityId);
   const data = STREET.utils.getElementData(el);
   if (!data) {
-    throw new Error(`Entity ${entityId} produced no serializable data`);
+    throw new Error(`Entity ${args.entityId} produced no serializable data`);
   }
   return data;
 }
@@ -56,8 +67,7 @@ async function selectEntityHandler(args) {
     AFRAME.INSPECTOR?.selectEntity?.(null);
     return 'Selection cleared';
   }
-  const el = document.getElementById(entityId);
-  if (!el) throw new Error(`Entity with ID ${entityId} not found`);
+  const el = resolveEntity(entityId);
   AFRAME.INSPECTOR.selectEntity(el);
   return `Selected ${entityId}`;
 }
@@ -80,10 +90,22 @@ async function listMixinsHandler(args) {
 async function getSessionInfoHandler(args, currentUser) {
   const sceneEl = AFRAME.scenes?.[0];
   const canvas = sceneEl?.canvas;
+  // Public-handle only — email comes from the auth provider and isn't ours
+  // to expose to a separate local process. uid + chosen username is enough
+  // for Claude to identify the session and reference the user in copy.
+  let user = null;
+  if (currentUser) {
+    let username = null;
+    try {
+      const profile = await getUserProfile(currentUser.uid);
+      username = profile?.username || null;
+    } catch (err) {
+      console.warn('[mcp] getSessionInfo: profile lookup failed:', err);
+    }
+    user = { uid: currentUser.uid, username };
+  }
   return {
-    user: currentUser
-      ? { uid: currentUser.uid, email: currentUser.email || null }
-      : null,
+    user,
     sceneId: STREET.utils.getCurrentSceneId?.() || null,
     sceneTitle: STREET.store?.getState?.()?.sceneTitle || null,
     viewport: canvas ? { width: canvas.width, height: canvas.height } : null
@@ -91,12 +113,9 @@ async function getSessionInfoHandler(args, currentUser) {
 }
 
 async function getManagedStreetHandler(args) {
-  const { entityId } = args;
-  if (!entityId) throw new Error('entityId is required');
-  const el = document.getElementById(entityId);
-  if (!el) throw new Error(`Entity with ID ${entityId} not found`);
+  const el = resolveEntity(args?.entityId);
   if (!el.components?.['managed-street']) {
-    throw new Error(`Entity ${entityId} is not a managed-street`);
+    throw new Error(`Entity ${args.entityId} is not a managed-street`);
   }
   return STREET.utils.getManagedStreetJSON(el);
 }
@@ -122,12 +141,9 @@ async function redoHandler() {
 }
 
 async function focusCameraHandler(args) {
-  const { entityId } = args;
-  if (!entityId) throw new Error('entityId is required');
-  const el = document.getElementById(entityId);
-  if (!el) throw new Error(`Entity with ID ${entityId} not found`);
+  const el = resolveEntity(args?.entityId);
   Events.emit('objectfocus', el.object3D);
-  return `Focused camera on ${entityId}`;
+  return `Focused camera on ${args.entityId}`;
 }
 
 export const mcpReadTools = [

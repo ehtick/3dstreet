@@ -20,8 +20,9 @@ const GENERATED_KINDS = [
 // `street-generated-<kind>` that AddGeneratorComponent emits when a user
 // adds the first instance and skips the id prompt — without this case we
 // silently drop those generators from the export.
-const GENERATED_RE =
-  /^street-generated-(clones|stencil|pedestrians|striping|rail)(?:__(\d+))?$/;
+const GENERATED_RE = new RegExp(
+  `^street-generated-(${GENERATED_KINDS.join('|')})(?:__(\\d+))?$`
+);
 
 /**
  * Reverse of `parseStreetObject`: walk a managed-street entity and rebuild

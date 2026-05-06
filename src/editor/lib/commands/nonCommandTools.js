@@ -85,6 +85,12 @@ async function managedStreetUpdateHandler(args) {
     if (!segment || !segment.type) {
       throw new Error('Segment must have at least a type property');
     }
+    if (
+      segmentIndex !== undefined &&
+      (segmentIndex < 0 || segmentIndex > segmentEntities.length)
+    ) {
+      throw new Error(`Invalid segmentIndex: ${segmentIndex}`);
+    }
     const label = segment.name || `${segment.type} • default`;
     // segmentadd takes streetId (string), not the resolved element, because
     // its execute() runs on redo too — the parent DOM may have been recreated

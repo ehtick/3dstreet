@@ -34,24 +34,11 @@ export class SegmentAddCommand extends Command {
       console.error(`[segmentadd] street ${this.streetId} not found`);
       return;
     }
-
     const segment = this.segment;
-    if (!segment || !segment.type) {
-      throw new Error('SegmentAddCommand: segment.type is required');
-    }
 
     const segmentEntities = Array.from(streetEl.children).filter((child) =>
       child.hasAttribute('street-segment')
     );
-
-    if (
-      this.segmentIndex !== undefined &&
-      (this.segmentIndex < 0 || this.segmentIndex > segmentEntities.length)
-    ) {
-      throw new Error(
-        `SegmentAddCommand: invalid segmentIndex ${this.segmentIndex}`
-      );
-    }
 
     const segmentEl = document.createElement('a-entity');
     segmentEl.id = this.entityId;

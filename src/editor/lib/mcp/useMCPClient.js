@@ -21,8 +21,18 @@ const MAX_TRANSCRIPT = 200;
 const MAX_BACKOFF_MS = 30_000;
 const PAIRED_ELSEWHERE_CODE = 4001;
 
+// `#mcp` (auto-pair URL emitted by the relay) optionally encodes a port as
+// `#mcp=PORT`. Take the hash first since it's the documented form; fall back
+// to the legacy `?mcp=PORT` query for backwards compatibility.
 const resolvePort = () => {
   if (typeof window === 'undefined') return DEFAULT_PORT;
+  const hashMatch = (window.location.hash || '').match(/^#mcp(?:=(\d+))?$/);
+  if (hashMatch && hashMatch[1]) {
+    const fromHash = parseInt(hashMatch[1], 10);
+    if (Number.isFinite(fromHash) && fromHash > 0 && fromHash < 65536) {
+      return fromHash;
+    }
+  }
   const params = new URLSearchParams(window.location.search);
   const fromQuery = parseInt(params.get('mcp'), 10);
   if (Number.isFinite(fromQuery) && fromQuery > 0 && fromQuery < 65536) {

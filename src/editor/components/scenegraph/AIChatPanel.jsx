@@ -703,8 +703,14 @@ function AIChatPanel() {
   const { currentUser } = useAuthContext();
   const setModal = useStore((state) => state.setModal);
   const rightPanelTab = useStore((state) => state.rightPanelTab);
+  const setRightPanelTab = useStore((state) => state.setRightPanelTab);
 
   const modelRef = useRef(null);
+  // Set when the user explicitly opts into MCP (typed `/mcp` or arrived via
+  // the auto-pair URL). Used to gate the post-pair success message so users
+  // who never engaged with MCP don't see a "return to your MCP client"
+  // message they have no context for.
+  const awaitingPairRef = useRef(false);
 
   const mcp = useMCPClient({
     currentUser,
@@ -715,9 +721,54 @@ function AIChatPanel() {
   });
 
   // First successful pair "unlocks" the bar for the rest of the session.
+  // When the user explicitly engaged (`/mcp` or auto-pair URL), also post a
+  // confirmation in the chat so they know to switch back to their MCP
+  // client to continue the workflow.
   useEffect(() => {
-    if (mcp.status === 'connected') setMcpVisible(true);
+    if (mcp.status !== 'connected') return;
+    setMcpVisible(true);
+    if (!awaitingPairRef.current) return;
+    awaitingPairRef.current = false;
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content:
+          '**MCP relay paired.** Tool calls from your MCP client are now wired through this tab. Return to **Claude** (or whichever MCP client you launched the relay from) to continue your workflow — you can leave this tab open in the background.',
+        timestamp: new Date()
+      }
+    ]);
   }, [mcp.status]);
+
+  // Auto-pair on `#mcp` (or `#mcp=PORT`) URL fragment. Equivalent to the
+  // user typing `/mcp` and clicking Reconnect, but skips the manual step
+  // entirely — the relay's startup banner prints this URL so the only
+  // pairing action is opening the link.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash || '';
+    if (!/^#mcp(?:=\d+)?$/.test(hash)) return;
+    setRightPanelTab('console');
+    setMcpVisible(true);
+    awaitingPairRef.current = true;
+    if (mcp.status !== 'connected' && mcp.status !== 'connecting') {
+      mcp.reconnect();
+    }
+    // Strip the hash so a refresh doesn't re-trigger and the URL bar isn't
+    // cluttered. `replaceState` keeps history clean (no stale forward entry).
+    try {
+      window.history.replaceState(
+        null,
+        '',
+        window.location.pathname + window.location.search
+      );
+    } catch {
+      // best-effort — older browsers without replaceState just keep the hash
+    }
+    // Mount-only: read the URL once at startup. Subsequent pairing should
+    // go through the normal `/mcp` command flow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Interleave Gemini chat messages with incoming MCP frames so a single
   // chronological feed shows both LLM channels. Both arrays already carry
@@ -1221,6 +1272,7 @@ function AIChatPanel() {
 
   const showMCPHelpMessage = (rawInput) => {
     setMcpVisible(true);
+    awaitingPairRef.current = true;
     if (mcp.status !== 'connected' && mcp.status !== 'connecting') {
       mcp.reconnect();
     }

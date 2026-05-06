@@ -227,6 +227,16 @@ export function useMCPClient({ currentUser, readOnly, persistRetries }) {
     // successful pairing so subsequent drops trigger backoff retries.
     everConnectedRef.current = true;
     if (wsRef.current) {
+      const state = wsRef.current.readyState;
+      if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
+        // Already paired or handshake in flight — don't tear it down.
+        // Without this guard, an auto-pair URL that fires reconnect()
+        // during the hook's own mount probe races a fresh socket
+        // against the relay's still-set peer, landing on close code
+        // 4001 `paired-elsewhere` and showing the user a red status
+        // bar plus a transient "MCP relay paired" chat message.
+        return;
+      }
       try {
         wsRef.current.close(1000, 'manual-reconnect');
       } catch {

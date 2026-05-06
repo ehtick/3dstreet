@@ -763,9 +763,11 @@ function AIChatPanel() {
       postPairSuccess();
     } else {
       awaitingPairRef.current = true;
-      if (mcp.status !== 'connecting') {
-        mcp.reconnect();
-      }
+      // Idempotent: reconnect() no-ops if the hook's mount probe is
+      // already in flight (CONNECTING) or has already paired (OPEN).
+      // Calling it unconditionally also covers the case where the
+      // probe gave up in idle mode and we need a fresh attempt.
+      mcp.reconnect();
     }
     // Strip the hash so a refresh doesn't re-trigger and the URL bar isn't
     // cluttered. `replaceState` keeps history clean (no stale forward entry).

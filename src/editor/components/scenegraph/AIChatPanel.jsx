@@ -96,6 +96,9 @@ claude mcp add 3dstreet -- npx -y 3dstreet-mcp
 
 Then click **Reconnect** above. Once paired, the relay forwards Claude's tool calls to this tab. Toggle **Read-only** to block scene mutations. Source and docs: [github.com/3DStreet/3dstreet-mcp](https://github.com/3DStreet/3dstreet-mcp).`;
 
+const MCP_PAIR_SUCCESS_MARKDOWN =
+  '**MCP relay paired.** Tool calls from your MCP client are now wired through this tab. Return to **Claude** (or whichever MCP client you launched the relay from) to continue your workflow — you can leave this tab open in the background.';
+
 // Helper component for the copy button
 const CopyButton = ({ jsonData, textContent }) => {
   const [copied, setCopied] = useState(false);
@@ -720,24 +723,27 @@ function AIChatPanel() {
     persistRetries: mcpVisible
   });
 
+  const postPairSuccess = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: MCP_PAIR_SUCCESS_MARKDOWN,
+        timestamp: new Date()
+      }
+    ]);
+  };
+
   // First successful pair "unlocks" the bar for the rest of the session.
-  // When the user explicitly engaged (`/mcp` or auto-pair URL), also post a
-  // confirmation in the chat so they know to switch back to their MCP
-  // client to continue the workflow.
+  // When the user explicitly engaged (`/mcp` or auto-pair URL) and the
+  // status transitions to 'connected', post a confirmation in the chat so
+  // they know to switch back to their MCP client to continue the workflow.
   useEffect(() => {
     if (mcp.status !== 'connected') return;
     setMcpVisible(true);
     if (!awaitingPairRef.current) return;
     awaitingPairRef.current = false;
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: 'assistant',
-        content:
-          '**MCP relay paired.** Tool calls from your MCP client are now wired through this tab. Return to **Claude** (or whichever MCP client you launched the relay from) to continue your workflow — you can leave this tab open in the background.',
-        timestamp: new Date()
-      }
-    ]);
+    postPairSuccess();
   }, [mcp.status]);
 
   // Auto-pair on `#mcp` (or `#mcp=PORT`) URL fragment. Equivalent to the
@@ -750,9 +756,16 @@ function AIChatPanel() {
     if (!/^#mcp(?:=\d+)?$/.test(hash)) return;
     setRightPanelTab('console');
     setMcpVisible(true);
-    awaitingPairRef.current = true;
-    if (mcp.status !== 'connected' && mcp.status !== 'connecting') {
-      mcp.reconnect();
+    if (mcp.status === 'connected') {
+      // Already paired (panel remount, hot reload, etc). The transition
+      // effect won't fire because there's no status change, so emit the
+      // confirmation inline instead of leaving the user without feedback.
+      postPairSuccess();
+    } else {
+      awaitingPairRef.current = true;
+      if (mcp.status !== 'connecting') {
+        mcp.reconnect();
+      }
     }
     // Strip the hash so a refresh doesn't re-trigger and the URL bar isn't
     // cluttered. `replaceState` keeps history clean (no stale forward entry).

@@ -97,7 +97,7 @@ claude mcp add 3dstreet -- npx -y 3dstreet-mcp
 Then click **Reconnect** above. Once paired, the relay forwards Claude's tool calls to this tab. Toggle **Read-only** to block scene mutations. Source and docs: [github.com/3DStreet/3dstreet-mcp](https://github.com/3DStreet/3dstreet-mcp).`;
 
 const MCP_PAIR_SUCCESS_MARKDOWN =
-  '**MCP relay paired.** Tool calls from your MCP client are now wired through this tab. Return to **Claude** (or whichever MCP client you launched the relay from) to continue your workflow — you can leave this tab open in the background.';
+  '**MCP relay paired.** Tool calls from your MCP client are now wired through this tab. Return to **Claude** (or whichever MCP client you launched the relay from) to continue your workflow. Keep this tab open in the background.';
 
 // Helper component for the copy button
 const CopyButton = ({ jsonData, textContent }) => {

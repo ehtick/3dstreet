@@ -21,8 +21,25 @@ const MAX_TRANSCRIPT = 200;
 const MAX_BACKOFF_MS = 30_000;
 const PAIRED_ELSEWHERE_CODE = 4001;
 
+// `#mcp` (auto-pair URL emitted by the relay) optionally encodes a port as
+// `#mcp=PORT`. The hash, when present, takes precedence — bare `#mcp`
+// resolves to DEFAULT_PORT even if a `?mcp=PORT` query is also set, since
+// the auto-pair URL is the explicit user intent. The legacy `?mcp=PORT`
+// query remains as a fallback for URLs without the hash.
 const resolvePort = () => {
   if (typeof window === 'undefined') return DEFAULT_PORT;
+  const hashMatch = (window.location.hash || '').match(/^#mcp(?:=(\d+))?$/);
+  if (hashMatch) {
+    if (hashMatch[1]) {
+      const fromHash = parseInt(hashMatch[1], 10);
+      if (Number.isFinite(fromHash) && fromHash > 0 && fromHash < 65536) {
+        return fromHash;
+      }
+      // Out-of-range port digits in the hash: don't silently fall through
+      // to the query param, since the user wrote a hash. Use the default.
+    }
+    return DEFAULT_PORT;
+  }
   const params = new URLSearchParams(window.location.search);
   const fromQuery = parseInt(params.get('mcp'), 10);
   if (Number.isFinite(fromQuery) && fromQuery > 0 && fromQuery < 65536) {
@@ -210,6 +227,16 @@ export function useMCPClient({ currentUser, readOnly, persistRetries }) {
     // successful pairing so subsequent drops trigger backoff retries.
     everConnectedRef.current = true;
     if (wsRef.current) {
+      const state = wsRef.current.readyState;
+      if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
+        // Already paired or handshake in flight — don't tear it down.
+        // Without this guard, an auto-pair URL that fires reconnect()
+        // during the hook's own mount probe races a fresh socket
+        // against the relay's still-set peer, landing on close code
+        // 4001 `paired-elsewhere` and showing the user a red status
+        // bar plus a transient "MCP relay paired" chat message.
+        return;
+      }
       try {
         wsRef.current.close(1000, 'manual-reconnect');
       } catch {

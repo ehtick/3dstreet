@@ -746,6 +746,26 @@ function AIChatPanel() {
     postPairSuccess();
   }, [mcp.status]);
 
+  // Drop the pending-pair intent if retries stop (`mcpVisible` off → the
+  // hook idles) or the connection was kicked by another tab
+  // (`paired-elsewhere` doesn't auto-recover). Without this, a stale
+  // `awaitingPairRef = true` would survive forever and a much later
+  // reconnect — long after the user moved on — would surface a confusing
+  // "MCP relay paired" message. Unmount cleanup is split into its own
+  // mount-only effect so it doesn't fire on every status flip and race
+  // the success effect above.
+  useEffect(() => {
+    if (mcp.status === 'paired-elsewhere' || !mcpVisible) {
+      awaitingPairRef.current = false;
+    }
+  }, [mcp.status, mcpVisible]);
+
+  useEffect(() => {
+    return () => {
+      awaitingPairRef.current = false;
+    };
+  }, []);
+
   // Auto-pair on `#mcp` (or `#mcp=PORT`) URL fragment. Equivalent to the
   // user typing `/mcp` and clicking Reconnect, but skips the manual step
   // entirely — the relay's startup banner prints this URL so the only
